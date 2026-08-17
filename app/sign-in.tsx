@@ -1,23 +1,28 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from 'heroui-native';
-import { Redirect } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import { Leaf } from 'lucide-react-native';
 
+import { SelectChip } from '@/components/SelectChip';
 import { bilt } from '@/lib/bilt';
 import { showAlert } from '@/lib/alert';
-import { SAGE } from '@/lib/constants';
+import { ROLE_OPTIONS, SAGE, type UserRole } from '@/lib/constants';
+import { goBackOrReplace } from '@/lib/navigation';
 import { useLetaoStore } from '@/lib/store';
 
 export default function SignInScreen() {
   const status = useLetaoStore((state) => state.status);
+  const setPendingRole = useLetaoStore((state) => state.setPendingRole);
+
   const [step, setStep] = useState<'email' | 'code'>('email');
+  const [role, setRole] = useState<UserRole>('both');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [isBusy, setIsBusy] = useState(false);
 
   if (status === 'ready') {
-    return <Redirect href="/" />;
+    return <Redirect href="/(tabs)" />;
   }
 
   const sendCode = async () => {
@@ -46,6 +51,7 @@ export default function SignInScreen() {
       return;
     }
 
+    setPendingRole(role);
     setIsBusy(true);
     const { error } = await bilt.auth.verifyOtp({
       email: email.trim().toLowerCase(),
@@ -68,7 +74,12 @@ export default function SignInScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       className="bg-canvas p-safe flex-1"
     >
-      <View className="flex-1 justify-center px-6">
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="items-center">
           <View className="bg-mint h-14 w-14 items-center justify-center rounded-2xl">
             <Leaf size={28} color={SAGE} strokeWidth={1.8} />
@@ -82,7 +93,25 @@ export default function SignInScreen() {
         <View className="bg-background mt-8 rounded-2xl border border-neutral-200 p-5">
           {step === 'email' ? (
             <>
-              <Text className="text-foreground text-[13px] font-semibold">Email</Text>
+              <Text className="text-foreground text-[13px] font-semibold">
+                您想以什麼身分使用樂淘？
+              </Text>
+              <View className="mt-2 gap-1.5">
+                {ROLE_OPTIONS.map((option) => (
+                  <SelectChip
+                    key={option.code}
+                    label={`${option.label} ｜ ${option.hint}`}
+                    isSelected={role === option.code}
+                    onPress={() => setRole(option.code)}
+                    className="h-11 w-full items-start justify-center rounded-xl px-4"
+                  />
+                ))}
+              </View>
+              <Text className="text-muted mt-2 text-[11px] leading-4">
+                買家與賣家共用同一組帳號，之後可以隨時切換身分使用全部功能。
+              </Text>
+
+              <Text className="text-foreground mt-4 text-[13px] font-semibold">Email</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -93,7 +122,7 @@ export default function SignInScreen() {
                 className="bg-canvas text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
               />
               <Text className="text-muted mt-2 text-[11px] leading-4">
-                我們會寄送 6 位數驗證碼，登入後即可管理商品、EcoCoins 錢包與置頂曝光。
+                按下按鈕後才會寄出 6 位數驗證碼。首次驗證即完成註冊，並自動建立 EcoCoins 錢包。
               </Text>
               <Button
                 className="mt-4"
@@ -102,7 +131,7 @@ export default function SignInScreen() {
                   void sendCode();
                 }}
               >
-                <Button.Label>{isBusy ? '寄送中...' : '寄送驗證碼'}</Button.Label>
+                <Button.Label>{isBusy ? '寄送中...' : '寄送驗證碼並註冊'}</Button.Label>
               </Button>
             </>
           ) : (
@@ -125,7 +154,7 @@ export default function SignInScreen() {
                   void verifyCode();
                 }}
               >
-                <Button.Label>{isBusy ? '驗證中...' : '登入樂淘'}</Button.Label>
+                <Button.Label>{isBusy ? '驗證中...' : '完成註冊 / 登入'}</Button.Label>
               </Button>
               <Button
                 variant="tertiary"
@@ -140,7 +169,11 @@ export default function SignInScreen() {
             </>
           )}
         </View>
-      </View>
+
+        <Button variant="tertiary" className="mt-3" onPress={() => goBackOrReplace('/(tabs)')}>
+          <Button.Label>先繼續逛逛，不註冊</Button.Label>
+        </Button>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

@@ -1,13 +1,41 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Modal, Platform, Text, View, useWindowDimensions } from 'react-native';
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { Button } from 'heroui-native';
+import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { BadgeCheck, Coins, Zap } from 'lucide-react-native';
+import {
+  BadgeCheck,
+  ChevronRight,
+  Coins,
+  Heart,
+  ShieldCheck,
+  Star,
+  UserPlus,
+  Zap,
+} from 'lucide-react-native';
 
 import { BumpFx } from '@/components/BumpFx';
 import { ListingCard } from '@/components/ListingCard';
+import { ModerationBadge } from '@/components/ModerationBadge';
 import { showAlert } from '@/lib/alert';
-import { BUMP_COST, BUMP_DURATION_LABEL, DAILY_CLAIM_AMOUNT, SAGE } from '@/lib/constants';
+import {
+  BUMP_COST,
+  BUMP_DURATION_LABEL,
+  DAILY_CLAIM_AMOUNT,
+  SAGE,
+  getModeration,
+  getRoleLabel,
+} from '@/lib/constants';
 import { type Listing, useLetaoStore } from '@/lib/store';
 import { formatRemaining } from '@/lib/utils';
 
@@ -15,28 +43,40 @@ export default function ProfileScreen() {
   const { width } = useWindowDimensions();
   const userId = useLetaoStore((state) => state.userId);
   const username = useLetaoStore((state) => state.username);
+  const role = useLetaoStore((state) => state.role);
+  const isAdmin = useLetaoStore((state) => state.isAdmin);
   const trustScore = useLetaoStore((state) => state.trustScore);
   const verified = useLetaoStore((state) => state.verified);
   const balance = useLetaoStore((state) => state.balance);
   const listings = useLetaoStore((state) => state.listings);
+  const favorites = useLetaoStore((state) => state.favorites);
   const promotedUntil = useLetaoStore((state) => state.promotedUntil);
   const isRefreshing = useLetaoStore((state) => state.isRefreshing);
   const refresh = useLetaoStore((state) => state.refresh);
   const bump = useLetaoStore((state) => state.bump);
   const claimDaily = useLetaoStore((state) => state.claimDaily);
+  const claimAdminCode = useLetaoStore((state) => state.claimAdminCode);
   const signOut = useLetaoStore((state) => state.signOut);
 
   const [playTokens, setPlayTokens] = useState<Record<string, number>>({});
   const [pendingBump, setPendingBump] = useState<Listing | null>(null);
   const [isBumping, setIsBumping] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
+  const [adminModalVisible, setAdminModalVisible] = useState(false);
+  const [adminCode, setAdminCode] = useState('');
+  const [isClaimingAdmin, setIsClaimingAdmin] = useState(false);
 
   const cardWidth = width - 36;
+  const favoriteCount = Object.keys(favorites).length;
 
   const myListings = useMemo(
     () => listings.filter((listing) => listing.seller_id === userId),
     [listings, userId],
   );
+
+  const publicCount = myListings.filter(
+    (listing) => listing.moderation_status === 'approved',
+  ).length;
 
   const handleConfirmBump = async () => {
     const listing = pendingBump;
@@ -102,6 +142,59 @@ export default function ProfileScreen() {
     });
   };
 
+  const handleClaimAdmin = async () => {
+    setIsClaimingAdmin(true);
+    const ok = await claimAdminCode(adminCode);
+    setIsClaimingAdmin(false);
+    setAdminModalVisible(false);
+    setAdminCode('');
+
+    if (!ok) {
+      showAlert({
+        title: '邀請碼無效',
+        tone: 'danger',
+        message: '這組邀請碼不存在或已被使用。請向平台負責人索取新的管理員邀請碼。',
+      });
+      return;
+    }
+
+    showAlert({
+      title: '已開通管理員權限',
+      tone: 'success',
+      message: '您現在可以進入管理平台審核商品與處理檢舉。',
+      confirmLabel: '進入管理平台',
+      onConfirm: () => router.push('/admin'),
+    });
+  };
+
+  if (!userId) {
+    return (
+      <View className="bg-canvas flex-1 p-4">
+        <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
+          <UserPlus size={32} color={SAGE} strokeWidth={1.6} />
+          <Text className="text-foreground mt-4 text-base font-bold">建立您的樂淘帳號</Text>
+          <Text className="text-muted mt-2 text-center text-[13px] leading-5">
+            註冊後才會有 EcoCoins
+            錢包、收藏清單、私訊、評價與信任度。買家與賣家共用同一組帳號，可隨時切換身分。
+          </Text>
+          <Button className="mt-4" onPress={() => router.push('/sign-in')}>
+            <Button.Label>註冊 / 登入</Button.Label>
+          </Button>
+        </View>
+
+        <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
+          <View className="flex-row items-center gap-2">
+            <ShieldCheck size={16} color={SAGE} strokeWidth={2} />
+            <Text className="text-foreground text-[13px] font-semibold">為什麼一定要註冊</Text>
+          </View>
+          <Text className="text-muted mt-2 text-[12px] leading-5">
+            樂淘的防砍價機制、賣家信任度與內容審核都綁在帳號上。沒有帳號的訪客可以自由瀏覽商品，但無法出價、上架、私訊或收藏。
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View className="bg-canvas flex-1">
       <FlatList
@@ -126,9 +219,14 @@ export default function ProfileScreen() {
                     {username ?? '樂淘用戶'}
                   </Text>
                   {verified ? <BadgeCheck size={15} color={SAGE} strokeWidth={2} /> : null}
+                  {isAdmin ? (
+                    <View className="bg-sage ml-1 rounded px-1.5 py-0.5">
+                      <Text className="text-[9px] font-bold text-white">管理員</Text>
+                    </View>
+                  ) : null}
                 </View>
                 <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
-                  信任度 {trustScore}% ∙ 共 {myListings.length} 件上架商品
+                  {getRoleLabel(role)} ∙ 信任度 {trustScore}% ∙ 公開上架 {publicCount} 件
                 </Text>
               </View>
               <Button
@@ -140,6 +238,38 @@ export default function ProfileScreen() {
               >
                 <Button.Label>登出</Button.Label>
               </Button>
+            </View>
+
+            <View className="bg-background rounded-2xl border border-neutral-200">
+              <ProfileLink
+                icon={<Heart size={16} color={SAGE} strokeWidth={2} />}
+                label="我的收藏"
+                value={`${favoriteCount} 件`}
+                onPress={() => router.push('/favorites')}
+              />
+              <ProfileLink
+                icon={<Star size={16} color={SAGE} strokeWidth={2} />}
+                label="我的賣家主頁與評價"
+                value={`信任度 ${trustScore}%`}
+                onPress={() => router.push({ pathname: '/seller/[id]', params: { id: userId } })}
+              />
+              {isAdmin ? (
+                <ProfileLink
+                  icon={<ShieldCheck size={16} color={SAGE} strokeWidth={2} />}
+                  label="管理平台"
+                  value="審核與檢舉"
+                  onPress={() => router.push('/admin')}
+                  isLast
+                />
+              ) : (
+                <ProfileLink
+                  icon={<ShieldCheck size={16} color="#9CA3AF" strokeWidth={2} />}
+                  label="輸入管理員邀請碼"
+                  value="開通後台"
+                  onPress={() => setAdminModalVisible(true)}
+                  isLast
+                />
+              )}
             </View>
 
             <View className="bg-background rounded-2xl border border-neutral-200 p-4">
@@ -167,7 +297,9 @@ export default function ProfileScreen() {
               </Button>
             </View>
 
-            <Text className="text-foreground mt-1 text-[13px] font-semibold">我的上架商品</Text>
+            <Text className="text-foreground mt-1 text-[13px] font-semibold">
+              我的上架商品（含審核狀態）
+            </Text>
           </View>
         }
         ListEmptyComponent={
@@ -180,6 +312,8 @@ export default function ProfileScreen() {
         renderItem={({ item }) => {
           const endsAt = promotedUntil[item.id];
           const isPromoted = Boolean(endsAt);
+          const meta = getModeration(item.moderation_status);
+          const canBump = item.moderation_status === 'approved';
 
           return (
             <BumpFx playToken={playTokens[item.id] ?? 0} persistGlow={isPromoted}>
@@ -188,20 +322,44 @@ export default function ProfileScreen() {
                 width={cardWidth}
                 bordered={false}
                 isPromoted={isPromoted}
+                showFavorite={false}
+                showModeration
+                onPress={() => router.push({ pathname: '/listing/[id]', params: { id: item.id } })}
                 footer={
-                  isPromoted ? (
-                    <View className="bg-mint flex-row items-center justify-between rounded-xl px-3 py-2">
-                      <Text className="text-sage-deep text-[12px] font-bold">⚡ 置頂曝光中</Text>
-                      <Text className="text-sage-deep text-[11px] font-medium">
-                        {formatRemaining(endsAt)}
-                      </Text>
-                    </View>
-                  ) : (
-                    <Button size="sm" onPress={() => setPendingBump(item)}>
-                      <Zap size={14} color="#FFFFFF" strokeWidth={2.2} />
-                      <Button.Label>提升商品排名 ∙ {BUMP_COST} EcoCoins</Button.Label>
-                    </Button>
-                  )
+                  <View className="gap-2">
+                    {item.moderation_status === 'approved' ? null : (
+                      <View className="bg-canvas rounded-xl px-3 py-2">
+                        <ModerationBadge
+                          status={item.moderation_status}
+                          className="mb-1.5 self-start"
+                        />
+                        <Text className="text-muted text-[11px] leading-4">{meta.hint}</Text>
+                        {item.moderation_reason ? (
+                          <Text className="mt-1 text-[11px] leading-4 font-medium text-red-700">
+                            {item.moderation_reason}
+                          </Text>
+                        ) : null}
+                      </View>
+                    )}
+
+                    {isPromoted ? (
+                      <View className="bg-mint flex-row items-center justify-between rounded-xl px-3 py-2">
+                        <Text className="text-sage-deep text-[12px] font-bold">⚡ 置頂曝光中</Text>
+                        <Text className="text-sage-deep text-[11px] font-medium">
+                          {formatRemaining(endsAt)}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Button size="sm" isDisabled={!canBump} onPress={() => setPendingBump(item)}>
+                        <Zap size={14} color="#FFFFFF" strokeWidth={2.2} />
+                        <Button.Label>
+                          {canBump
+                            ? `提升商品排名 ∙ ${BUMP_COST} EcoCoins`
+                            : '通過審核後才能提升排名'}
+                        </Button.Label>
+                      </Button>
+                    )}
+                  </View>
                 }
               />
             </BumpFx>
@@ -250,6 +408,74 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={adminModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAdminModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1 items-center justify-center bg-black/40 px-6"
+        >
+          <View className="bg-background w-full max-w-sm rounded-2xl border border-neutral-200 p-5">
+            <Text className="text-foreground text-base font-bold">管理員邀請碼</Text>
+            <Text className="text-muted mt-2 text-[12px] leading-4">
+              輸入平台核發的邀請碼即可開通管理後台。每組邀請碼只能使用一次，啟用紀錄會保存在資料庫。
+            </Text>
+            <TextInput
+              value={adminCode}
+              onChangeText={setAdminCode}
+              autoCapitalize="characters"
+              placeholder="LETAO-XXXX-XXXX"
+              placeholderTextColorClassName="accent-neutral-400"
+              className="bg-canvas text-foreground mt-3 h-11 rounded-xl border border-neutral-200 px-4 text-[13px] tracking-[1px]"
+            />
+            <View className="mt-4 flex-row gap-2">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onPress={() => setAdminModalVisible(false)}
+              >
+                <Button.Label>取消</Button.Label>
+              </Button>
+              <Button
+                className="flex-1"
+                isDisabled={isClaimingAdmin || adminCode.trim() === ''}
+                onPress={() => {
+                  void handleClaimAdmin();
+                }}
+              >
+                <Button.Label>{isClaimingAdmin ? '驗證中...' : '啟用'}</Button.Label>
+              </Button>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
+  );
+}
+
+type ProfileLinkProps = {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  onPress: () => void;
+  isLast?: boolean;
+};
+
+function ProfileLink({ icon, label, value, onPress, isLast = false }: ProfileLinkProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className={`flex-row items-center px-4 py-3.5 ${isLast ? '' : 'border-b border-neutral-100'}`}
+    >
+      {icon}
+      <Text className="text-foreground ml-3 flex-1 text-[13px] font-medium">{label}</Text>
+      <Text className="text-muted mr-1.5 text-[11px]">{value}</Text>
+      <ChevronRight size={16} color="#9CA3AF" strokeWidth={2} />
+    </Pressable>
   );
 }

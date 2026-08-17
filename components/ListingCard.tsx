@@ -4,6 +4,8 @@ import { Leaf } from 'lucide-react-native';
 
 import { BumpedBadge } from '@/components/BumpedBadge';
 import { ConditionBadge } from '@/components/ConditionBadge';
+import { FavoriteButton } from '@/components/FavoriteButton';
+import { ModerationBadge } from '@/components/ModerationBadge';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { MINT, SAGE } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
@@ -18,6 +20,8 @@ type ListingCardProps = {
   footer?: ReactNode;
   /** Set false when the card sits inside the BumpFx glow border. */
   bordered?: boolean;
+  showFavorite?: boolean;
+  showModeration?: boolean;
 };
 
 export function ListingCard({
@@ -27,6 +31,8 @@ export function ListingCard({
   onPress,
   footer,
   bordered = true,
+  showFavorite = true,
+  showModeration = false,
 }: ListingCardProps) {
   const imageSource = resolveListingImage(listing.images?.[0]);
   const imageHeight = Math.round(width * 1.1);
@@ -60,10 +66,24 @@ export function ListingCard({
         )}
 
         <ConditionBadge code={listing.condition_rating} className="absolute top-2 left-2" />
+
         {isPromoted ? <BumpedBadge className="absolute top-2 right-2" /> : null}
+        {!isPromoted && showFavorite ? (
+          <FavoriteButton listingId={listing.id} className="absolute top-1.5 right-1.5" />
+        ) : null}
+
+        {(listing.images?.length ?? 0) > 1 ? (
+          <View className="absolute right-2 bottom-2 rounded-md bg-black/50 px-1.5 py-0.5">
+            <Text className="text-[9px] font-bold text-white">{listing.images?.length} 張</Text>
+          </View>
+        ) : null}
       </View>
 
       <View className="p-3">
+        {showModeration ? (
+          <ModerationBadge status={listing.moderation_status} className="mb-2 self-start" />
+        ) : null}
+
         <Text numberOfLines={1} className="text-foreground text-[13px] font-medium">
           {listing.title}
         </Text>

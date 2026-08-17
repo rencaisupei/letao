@@ -41,7 +41,18 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       appStoreAppId: process.env.BILT_APP_STORE_APP_ID,
     },
-    plugins: ['expo-router', 'expo-font', ...nativePlugins],
+    plugins: [
+      'expo-router',
+      'expo-font',
+      [
+        'expo-image-picker',
+        {
+          photosPermission: '樂淘需要讀取相簿，讓您挑選要上架的商品照片。',
+          cameraPermission: '樂淘需要使用相機，讓您直接拍攝商品照片。',
+        },
+      ],
+      ...nativePlugins,
+    ],
     experiments: {
       typedRoutes: true,
       reactCompiler: true,

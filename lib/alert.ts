@@ -6,6 +6,12 @@ export type AlertPayload = {
   title: string;
   message: string;
   tone?: AlertTone;
+  /** Label of the primary button. Defaults to 我了解了 */
+  confirmLabel?: string;
+  /** Runs after the alert closes. */
+  onConfirm?: () => void;
+  /** When set, a secondary dismiss button is shown next to the primary one. */
+  dismissLabel?: string;
 };
 
 type AlertState = {

@@ -120,6 +120,83 @@ export const LOGISTICS_OPTIONS = [
   '面交',
 ];
 
+export type UserRole = 'buyer' | 'seller' | 'both';
+
+export const ROLE_OPTIONS: { code: UserRole; label: string; hint: string }[] = [
+  { code: 'buyer', label: '我要買', hint: '出價、收藏、與賣家私訊' },
+  { code: 'seller', label: '我要賣', hint: '上架商品、置頂曝光、收取評價' },
+  { code: 'both', label: '買賣都要', hint: '同時使用買家與賣家的全部功能' },
+];
+
+export function getRoleLabel(role: string | null | undefined): string {
+  return ROLE_OPTIONS.find((item) => item.code === role)?.label ?? '買賣都要';
+}
+
+export type ModerationStatus = 'pending' | 'approved' | 'flagged' | 'rejected';
+
+export type ModerationMeta = {
+  status: ModerationStatus;
+  label: string;
+  hint: string;
+  bgClass: string;
+  textClass: string;
+};
+
+export const MODERATION_META: Record<ModerationStatus, ModerationMeta> = {
+  pending: {
+    status: 'pending',
+    label: '🕓 審核中',
+    hint: '已送出，AI 正在檢查內容是否符合刊登規範。',
+    bgClass: 'bg-neutral-100',
+    textClass: 'text-neutral-600',
+  },
+  approved: {
+    status: 'approved',
+    label: '✅ 已上架',
+    hint: '通過審核，已公開在探索首頁。',
+    bgClass: 'bg-green-100',
+    textClass: 'text-green-700',
+  },
+  flagged: {
+    status: 'flagged',
+    label: '🔍 待人工複審',
+    hint: 'AI 判定需要管理員確認，通過後才會公開。',
+    bgClass: 'bg-yellow-100',
+    textClass: 'text-yellow-700',
+  },
+  rejected: {
+    status: 'rejected',
+    label: '⛔ 未通過',
+    hint: '內容不符刊登規範，僅您本人看得到。可修正後重新上架。',
+    bgClass: 'bg-red-100',
+    textClass: 'text-red-700',
+  },
+};
+
+export function getModeration(status: string | null | undefined): ModerationMeta {
+  if (
+    status === 'approved' ||
+    status === 'flagged' ||
+    status === 'rejected' ||
+    status === 'pending'
+  ) {
+    return MODERATION_META[status];
+  }
+  return MODERATION_META.pending;
+}
+
+export const REPORT_REASONS = [
+  '疑似違禁或管制商品',
+  '仿冒品或盜版',
+  '詐騙或假交易',
+  '商品資訊不實',
+  '冒犯或不當內容',
+  '其他問題',
+];
+
+export const MAX_LISTING_PHOTOS = 4;
+export const LISTING_PHOTO_BUCKET = 'listing-photos';
+
 export const PROHIBITED_ITEMS = [
   '藥品與醫療器材（如：隱形眼鏡、OK繃、體溫計）',
   '菸酒類商品、電子菸及相關配件',

@@ -1,5 +1,5 @@
 import { Compass, MessageCircle, PlusCircle, User } from 'lucide-react-native';
-import { Redirect, Tabs } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -9,10 +9,6 @@ import { useLetaoStore } from '@/lib/store';
 
 export default function TabLayout() {
   const status = useLetaoStore((state) => state.status);
-
-  if (status === 'signedOut') {
-    return <Redirect href="/sign-in" />;
-  }
 
   if (status === 'loading') {
     return (

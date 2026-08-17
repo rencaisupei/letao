@@ -1,12 +1,19 @@
 import { create } from 'zustand';
 
 import { bilt } from '@/lib/bilt';
-import { BUMP_COST, DEMO_LISTINGS, type ConditionCode } from '@/lib/constants';
+import {
+  BUMP_COST,
+  DEMO_LISTINGS,
+  type ConditionCode,
+  type ModerationStatus,
+  type UserRole,
+} from '@/lib/constants';
 import { demoImageUri } from '@/lib/demoImages';
 
 export type Seller = {
   username: string | null;
   trust_score: number | null;
+  verified_status?: boolean | null;
 };
 
 export type Listing = {
@@ -22,6 +29,8 @@ export type Listing = {
   images: string[] | null;
   meetup_location: string | null;
   status: 'available' | 'reserved' | 'sold';
+  moderation_status: ModerationStatus;
+  moderation_reason: string | null;
   created_at: string;
   seller: Seller | null;
 };
@@ -34,14 +43,26 @@ export type NewListingInput = {
   logistics: string;
   meetupLocation: string;
   description: string;
-  imageUrl: string;
+  images: string[];
 };
+
+export type PublishResult =
+  | { ok: true; status: ModerationStatus; reason: string | null }
+  | { ok: false };
 
 export type BumpResult =
   | { ok: true; endsAt: string; balance: number }
   | { ok: false; reason: 'insufficient' | 'active' | 'error'; balance: number };
 
-type BootstrapRow = { user_id: string | null; username: string | null; balance: number | null };
+type AccountRow = {
+  user_id: string | null;
+  username: string | null;
+  role: UserRole | null;
+  is_admin: boolean | null;
+  trust_score: number | null;
+  verified: boolean | null;
+  balance: number | null;
+};
 type BumpRow = {
   ok: boolean;
   balance: number | null;
@@ -49,28 +70,40 @@ type BumpRow = {
   ends_at: string | null;
 };
 type ClaimRow = { ok: boolean; balance: number | null };
+type OkRow = { ok: boolean };
 
 type ListingRow = Omit<Listing, 'seller' | 'price'> & {
   price: number | string;
   profiles: Seller | Seller[] | null;
 };
 
+const LISTING_COLUMNS =
+  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
+
 type LetaoState = {
-  status: 'loading' | 'signedOut' | 'ready';
+  status: 'loading' | 'guest' | 'ready';
   userId: string | null;
   username: string | null;
+  role: UserRole;
+  isAdmin: boolean;
   trustScore: number;
   verified: boolean;
   balance: number;
   listings: Listing[];
   /** listing id -> ISO end time of its active promotion */
   promotedUntil: Record<string, string>;
+  /** listing id -> true when the signed-in user saved it */
+  favorites: Record<string, true>;
   isRefreshing: boolean;
   init: () => void;
   refresh: () => Promise<void>;
-  createListing: (input: NewListingInput) => Promise<boolean>;
+  setPendingRole: (role: UserRole) => void;
+  createListing: (input: NewListingInput) => Promise<PublishResult>;
   bump: (listingId: string) => Promise<BumpResult>;
   claimDaily: () => Promise<{ ok: boolean; balance: number }>;
+  toggleFavorite: (listingId: string) => Promise<boolean>;
+  reportListing: (listingId: string, reason: string, detail: string) => Promise<boolean>;
+  claimAdminCode: (code: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 };
 
@@ -109,6 +142,8 @@ async function seedDemoListings(userId: string) {
     meetup_location: item.meetup,
     images: [demoImageUri(item.imageKey)],
     allow_negotiation: true,
+    moderation_status: 'approved',
+    moderation_source: 'seed',
   }));
   await bilt.from('listings').insert(rows);
 }
@@ -138,16 +173,23 @@ function sortListings(listings: Listing[], promotedUntil: Record<string, string>
   });
 }
 
+export function toListing(row: ListingRow): Listing {
+  return {
+    ...row,
+    price: Number(row.price),
+    seller: toSeller(row.profiles),
+  };
+}
+
 let subscribed = false;
+let pendingRole: UserRole | null = null;
 
 export const useLetaoStore = create<LetaoState>((set, get) => {
   async function loadFeed() {
     const [listingsResult, promotionsResult] = await Promise.all([
       bilt
         .from('listings')
-        .select(
-          'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, images, meetup_location, status, created_at, profiles(username, trust_score)',
-        )
+        .select(LISTING_COLUMNS)
         .order('created_at', { ascending: false })
         .limit(200),
       bilt
@@ -167,39 +209,33 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
       }
     }
 
-    const listings: Listing[] = rows.map((row) => ({
-      ...row,
-      price: Number(row.price),
-      seller: toSeller(row.profiles),
-    }));
-
+    const listings = rows.map(toListing);
     return { listings: sortListings(listings, promotedUntil), promotedUntil };
   }
 
-  async function loadProfile(userId: string) {
-    const { data } = await bilt
-      .from('profiles')
-      .select('username, trust_score, verified_status')
-      .eq('id', userId)
-      .maybeSingle();
-    const profile = data;
-    if (!profile) return;
-    set({
-      username: profile.username,
-      trustScore: profile.trust_score ?? 80,
-      verified: profile.verified_status ?? false,
-    });
+  async function loadFavorites(userId: string) {
+    const { data } = await bilt.from('favorites').select('listing_id').eq('user_id', userId);
+    const favorites: Record<string, true> = {};
+    for (const row of asRows<{ listing_id: string }>(data)) {
+      favorites[row.listing_id] = true;
+    }
+    return favorites;
   }
 
   async function applySession(userId: string | null) {
     if (!userId) {
+      const feed = await loadFeed();
       set({
-        status: 'signedOut',
+        status: 'guest',
         userId: null,
         username: null,
+        role: 'both',
+        isAdmin: false,
+        trustScore: 80,
+        verified: false,
         balance: 0,
-        listings: [],
-        promotedUntil: {},
+        favorites: {},
+        ...feed,
       });
       return;
     }
@@ -208,11 +244,21 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
 
     set({ status: 'loading', userId });
 
-    const { data } = await bilt.rpc('bootstrap_account', { p_username: '' });
-    const account = asRow<BootstrapRow>(data);
+    const roleForBootstrap = pendingRole ?? '';
+    pendingRole = null;
+
+    const { data } = await bilt.rpc('ensure_account', {
+      p_username: '',
+      p_role: roleForBootstrap,
+    });
+    const account = asRow<AccountRow>(data);
 
     set({
       username: account?.username ?? null,
+      role: account?.role ?? 'both',
+      isAdmin: account?.is_admin ?? false,
+      trustScore: account?.trust_score ?? 80,
+      verified: account?.verified ?? false,
       balance: account?.balance ?? 0,
     });
 
@@ -223,20 +269,22 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
       await backfillDemoImages(userId);
     }
 
-    await loadProfile(userId);
-    const feed = await loadFeed();
-    set({ ...feed, status: 'ready' });
+    const [feed, favorites] = await Promise.all([loadFeed(), loadFavorites(userId)]);
+    set({ ...feed, favorites, status: 'ready' });
   }
 
   return {
     status: 'loading',
     userId: null,
     username: null,
+    role: 'both',
+    isAdmin: false,
     trustScore: 80,
     verified: false,
     balance: 0,
     listings: [],
     promotedUntil: {},
+    favorites: {},
     isRefreshing: false,
 
     init: () => {
@@ -257,40 +305,71 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
     },
 
     refresh: async () => {
-      if (!get().userId) return;
       set({ isRefreshing: true });
-      const [feed, wallet] = await Promise.all([
+      const userId = get().userId;
+
+      if (!userId) {
+        const feed = await loadFeed();
+        set({ ...feed, isRefreshing: false });
+        return;
+      }
+
+      const [feed, favorites, wallet] = await Promise.all([
         loadFeed(),
+        loadFavorites(userId),
         bilt.from('user_wallets').select('ecocoin_balance').maybeSingle(),
       ]);
       const balanceRow = wallet.data;
       set({
         ...feed,
+        favorites,
         balance: balanceRow?.ecocoin_balance ?? get().balance,
         isRefreshing: false,
       });
     },
 
+    setPendingRole: (role) => {
+      pendingRole = role;
+    },
+
     createListing: async (input) => {
       const userId = get().userId;
-      if (!userId) return false;
+      if (!userId) return { ok: false };
 
-      const { error } = await bilt.from('listings').insert({
-        seller_id: userId,
-        title: input.title,
-        description: input.description || null,
-        price: input.price,
-        condition_rating: input.condition,
-        category: input.category,
-        logistics: input.logistics,
-        meetup_location: input.meetupLocation || null,
-        images: input.imageUrl ? [input.imageUrl] : null,
-        allow_negotiation: true,
+      const { data, error } = await bilt
+        .from('listings')
+        .insert({
+          seller_id: userId,
+          title: input.title,
+          description: input.description || null,
+          price: input.price,
+          condition_rating: input.condition,
+          category: input.category,
+          logistics: input.logistics,
+          meetup_location: input.meetupLocation || null,
+          images: input.images.length > 0 ? input.images : null,
+          allow_negotiation: true,
+        })
+        .select('id')
+        .maybeSingle();
+
+      if (error || !data?.id) return { ok: false };
+
+      const moderation = await bilt.functions.invoke('moderate-listing', {
+        body: { listing_id: data.id },
       });
-      if (error) return false;
 
       await get().refresh();
-      return true;
+
+      const verdict = moderation.data;
+      if (moderation.error || !verdict) {
+        return { ok: true, status: 'pending', reason: null };
+      }
+      return {
+        ok: true,
+        status: verdict.status ?? 'pending',
+        reason: verdict.reason ?? null,
+      };
     },
 
     bump: async (listingId) => {
@@ -330,15 +409,75 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
       return { ok: row?.ok ?? false, balance };
     },
 
+    toggleFavorite: async (listingId) => {
+      const userId = get().userId;
+      if (!userId) return false;
+
+      const isSaved = get().favorites[listingId];
+      const next = { ...get().favorites };
+      if (isSaved) {
+        delete next[listingId];
+      } else {
+        next[listingId] = true;
+      }
+      set({ favorites: next });
+
+      const { error } = isSaved
+        ? await bilt.from('favorites').delete().eq('user_id', userId).eq('listing_id', listingId)
+        : await bilt.from('favorites').insert({ user_id: userId, listing_id: listingId });
+
+      if (error) {
+        const reverted = { ...get().favorites };
+        if (isSaved) {
+          reverted[listingId] = true;
+        } else {
+          delete reverted[listingId];
+        }
+        set({ favorites: reverted });
+        return false;
+      }
+      return true;
+    },
+
+    reportListing: async (listingId, reason, detail) => {
+      const userId = get().userId;
+      if (!userId) return false;
+      const { error } = await bilt.from('reports').upsert(
+        {
+          listing_id: listingId,
+          reporter_id: userId,
+          reason,
+          detail: detail.trim() === '' ? null : detail.trim(),
+          status: 'open',
+        },
+        { onConflict: 'listing_id,reporter_id' },
+      );
+      return !error;
+    },
+
+    claimAdminCode: async (code) => {
+      const { data, error } = await bilt.rpc('claim_admin', { p_code: code });
+      if (error) return false;
+      const row = asRow<OkRow>(data);
+      if (!row?.ok) return false;
+      set({ isAdmin: true });
+      return true;
+    },
+
     signOut: async () => {
       await bilt.auth.signOut();
+      const feed = await loadFeed();
       set({
-        status: 'signedOut',
+        status: 'guest',
         userId: null,
         username: null,
+        role: 'both',
+        isAdmin: false,
+        trustScore: 80,
+        verified: false,
         balance: 0,
-        listings: [],
-        promotedUntil: {},
+        favorites: {},
+        ...feed,
       });
     },
   };

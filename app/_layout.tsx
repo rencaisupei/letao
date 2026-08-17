@@ -149,9 +149,21 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HeroUINativeProvider>
-        <Stack>
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: '#FFFFFF' },
+            headerTintColor: '#111827',
+            headerTitleStyle: { fontSize: 15, fontWeight: '700' },
+            contentStyle: { backgroundColor: '#F8F9FA' },
+          }}
+        >
           <Stack.Screen name="(tabs)" options={{ title: '樂淘拍賣', headerShown: false }} />
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+          <Stack.Screen name="listing/[id]" options={{ title: '商品詳情' }} />
+          <Stack.Screen name="seller/[id]" options={{ title: '賣家主頁' }} />
+          <Stack.Screen name="chat/[id]" options={{ title: '對話' }} />
+          <Stack.Screen name="favorites" options={{ title: '我的收藏' }} />
+          <Stack.Screen name="admin/index" options={{ title: '樂淘管理平台' }} />
         </Stack>
         <AlertHost />
         <InstallPrompt />
