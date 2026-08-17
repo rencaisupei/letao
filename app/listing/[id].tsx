@@ -32,6 +32,7 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { ListingStatusBadge } from '@/components/ListingStatusBadge';
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { PaymentChoiceList } from '@/components/PaymentPicker';
+import { PaymentMethodsSheet } from '@/components/PaymentMethodsSheet';
 import { SelectChip } from '@/components/SelectChip';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { showAlert } from '@/lib/alert';
@@ -75,6 +76,7 @@ export default function ListingDetailScreen() {
   const userId = useLetaoStore((state) => state.userId);
   const listings = useLetaoStore((state) => state.listings);
   const reportListing = useLetaoStore((state) => state.reportListing);
+  const setListingPayments = useLetaoStore((state) => state.setListingPayments);
   const refreshFeed = useLetaoStore((state) => state.refresh);
   const startConversation = useChatStore((state) => state.startConversation);
   const orders = useOrderStore((state) => state.orders);
@@ -98,6 +100,8 @@ export default function ListingDetailScreen() {
   const [liveQuotes, setLiveQuotes] = useState<ListingShippingQuote[]>([]);
   const [isQuoting, setIsQuoting] = useState(false);
   const [reportVisible, setReportVisible] = useState(false);
+  const [paymentEditVisible, setPaymentEditVisible] = useState(false);
+  const [isSavingPayments, setIsSavingPayments] = useState(false);
   const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
   const [reportDetail, setReportDetail] = useState('');
   const [isBusy, setIsBusy] = useState(false);
@@ -330,6 +334,31 @@ export default function ListingDetailScreen() {
       onConfirm: () => {
         void openConversation();
       },
+    });
+  };
+
+  const handleSavePayments = async (payments: PaymentCode[]) => {
+    if (!listing) return;
+
+    setIsSavingPayments(true);
+    const ok = await setListingPayments(listing.id, payments);
+    setIsSavingPayments(false);
+
+    if (!ok) {
+      showAlert({
+        title: '沒有儲存成功',
+        tone: 'danger',
+        message: '請確認網路狀態後再試一次。',
+      });
+      return;
+    }
+
+    setPaymentEditVisible(false);
+    setFetched((current) => (current ? { ...current, payment_methods: payments } : current));
+    showAlert({
+      title: '付款方式已更新',
+      tone: 'success',
+      message: `買家在商品頁會看到：${paymentSummary(payments)}，出價時從中選一種。`,
     });
   };
 
@@ -590,7 +619,9 @@ export default function ListingDetailScreen() {
           <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
             {paymentOptions.length === 0 ? (
               <Text className="text-muted text-[12px] leading-4">
-                賣家尚未設定付款方式，出價成立後請在私訊中確認怎麼付款。
+                {isMine
+                  ? '您還沒設定付款方式，買家出價後只能在私訊中另外確認怎麼付款。'
+                  : '賣家尚未設定付款方式，出價成立後請在私訊中確認怎麼付款。'}
               </Text>
             ) : (
               paymentOptions.map((code, index) => {
@@ -622,6 +653,18 @@ export default function ListingDetailScreen() {
             <Text className="text-muted mt-2 text-[11px] leading-4">
               取貨方式就是上面選定的運送方式：超商店到店到店取貨、宅配送到指定地址、面交則由雙方碰面交付。
             </Text>
+            {isMine ? (
+              <Button
+                size="sm"
+                variant={paymentOptions.length === 0 ? 'primary' : 'secondary'}
+                className="mt-3"
+                onPress={() => setPaymentEditVisible(true)}
+              >
+                <Button.Label>
+                  {paymentOptions.length === 0 ? '補設定付款方式' : '調整付款方式'}
+                </Button.Label>
+              </Button>
+            ) : null}
           </View>
 
           <Text className="text-foreground mt-4 text-[13px] font-semibold">商品描述</Text>
@@ -874,6 +917,15 @@ export default function ListingDetailScreen() {
           </View>
         )}
       </View>
+
+      <PaymentMethodsSheet
+        listing={paymentEditVisible && isMine ? listing : null}
+        isSaving={isSavingPayments}
+        onCancel={() => setPaymentEditVisible(false)}
+        onSave={(payments) => {
+          void handleSavePayments(payments);
+        }}
+      />
 
       <Modal
         visible={offerVisible}

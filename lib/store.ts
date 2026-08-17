@@ -171,6 +171,7 @@ type LetaoState = {
   createListing: (input: NewListingInput) => Promise<PublishResult>;
   updateProfile: (input: ProfileEdit) => Promise<boolean>;
   setListingStatus: (listingId: string, status: ListingStatus) => Promise<boolean>;
+  setListingPayments: (listingId: string, payments: PaymentCode[]) => Promise<boolean>;
   deleteListing: (listingId: string) => Promise<boolean>;
   bump: (listingId: string) => Promise<BumpResult>;
   claimDaily: () => Promise<ClaimResult>;
@@ -568,6 +569,26 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
       set({
         listings: get().listings.map((listing) =>
           listing.id === listingId ? { ...listing, status } : listing,
+        ),
+      });
+      return true;
+    },
+
+    setListingPayments: async (listingId, payments) => {
+      const userId = get().userId;
+      if (!userId) return false;
+
+      const { error } = await bilt
+        .from('listings')
+        .update({ payment_methods: payments })
+        .eq('id', listingId)
+        .eq('seller_id', userId);
+
+      if (error) return false;
+
+      set({
+        listings: get().listings.map((listing) =>
+          listing.id === listingId ? { ...listing, payment_methods: payments } : listing,
         ),
       });
       return true;

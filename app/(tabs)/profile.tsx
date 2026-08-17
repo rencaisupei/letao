@@ -27,6 +27,7 @@ import {
   Stethoscope,
   Trash2,
   UserPlus,
+  Wallet,
   Zap,
 } from 'lucide-react-native';
 
@@ -34,15 +35,18 @@ import { Avatar } from '@/components/Avatar';
 import { BumpFx } from '@/components/BumpFx';
 import { ListingCard } from '@/components/ListingCard';
 import { ModerationBadge } from '@/components/ModerationBadge';
+import { PaymentMethodsSheet } from '@/components/PaymentMethodsSheet';
 import { showAlert } from '@/lib/alert';
 import {
   BUMP_COST,
   BUMP_DURATION_LABEL,
   DAILY_STREAK_CAP,
+  type PaymentCode,
   SAGE,
   dailyRewardFor,
   getModeration,
   getRoleLabel,
+  paymentSummary,
 } from '@/lib/constants';
 import { useNotificationStore } from '@/lib/notificationStore';
 import { useOrderStore } from '@/lib/orderStore';
@@ -72,6 +76,7 @@ export default function ProfileScreen() {
   const claimDaily = useLetaoStore((state) => state.claimDaily);
   const claimAdminCode = useLetaoStore((state) => state.claimAdminCode);
   const setListingStatus = useLetaoStore((state) => state.setListingStatus);
+  const setListingPayments = useLetaoStore((state) => state.setListingPayments);
   const deleteListing = useLetaoStore((state) => state.deleteListing);
   const signOut = useLetaoStore((state) => state.signOut);
   const orders = useOrderStore((state) => state.orders);
@@ -81,6 +86,8 @@ export default function ProfileScreen() {
   const [playTokens, setPlayTokens] = useState<Record<string, number>>({});
   const [pendingBump, setPendingBump] = useState<Listing | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Listing | null>(null);
+  const [pendingPayments, setPendingPayments] = useState<Listing | null>(null);
+  const [isSavingPayments, setIsSavingPayments] = useState(false);
   const [isBumping, setIsBumping] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [adminModalVisible, setAdminModalVisible] = useState(false);
@@ -201,6 +208,31 @@ export default function ProfileScreen() {
         nextStatus === 'hidden'
           ? '買家在探索首頁上都看不到這件商品了，你隨時可以重新上架。'
           : '商品重新公開在探索首頁，開始接受出價。',
+    });
+  };
+
+  const handleSavePayments = async (payments: PaymentCode[]) => {
+    const listing = pendingPayments;
+    if (!listing) return;
+
+    setIsSavingPayments(true);
+    const ok = await setListingPayments(listing.id, payments);
+    setIsSavingPayments(false);
+
+    if (!ok) {
+      showAlert({
+        title: '沒有儲存成功',
+        tone: 'danger',
+        message: '請確認網路狀態後再試一次。',
+      });
+      return;
+    }
+
+    setPendingPayments(null);
+    showAlert({
+      title: '付款方式已更新',
+      tone: 'success',
+      message: `買家在商品頁會看到：${paymentSummary(payments)}，出價時從中選一種。`,
     });
   };
 
@@ -485,6 +517,37 @@ export default function ProfileScreen() {
                       </View>
                     )}
 
+                    {item.payment_methods.length === 0 ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => setPendingPayments(item)}
+                        className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2"
+                      >
+                        <View className="flex-row items-center gap-1.5">
+                          <Wallet size={13} color="#B45309" strokeWidth={2.2} />
+                          <Text className="flex-1 text-[12px] font-bold text-amber-800">
+                            未設定付款方式
+                          </Text>
+                          <Text className="text-[11px] font-semibold text-amber-700">補設定</Text>
+                        </View>
+                        <Text className="mt-1 text-[11px] leading-4 text-amber-700">
+                          買家出價後只能在私訊中另外確認怎麼付款，點這裡補上。
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => setPendingPayments(item)}
+                        className="bg-canvas flex-row items-center gap-1.5 rounded-xl px-3 py-2"
+                      >
+                        <Wallet size={13} color={SAGE} strokeWidth={2.2} />
+                        <Text className="text-muted flex-1 text-[11px]" numberOfLines={1}>
+                          付款方式：{paymentSummary(item.payment_methods)}
+                        </Text>
+                        <Text className="text-sage-deep text-[11px] font-semibold">調整</Text>
+                      </Pressable>
+                    )}
+
                     {isPromoted ? (
                       <View className="bg-mint flex-row items-center justify-between rounded-xl px-3 py-2">
                         <Text className="text-sage-deep text-[12px] font-bold">⚡ 置頂曝光中</Text>
@@ -530,6 +593,15 @@ export default function ProfileScreen() {
               />
             </BumpFx>
           );
+        }}
+      />
+
+      <PaymentMethodsSheet
+        listing={pendingPayments}
+        isSaving={isSavingPayments}
+        onCancel={() => setPendingPayments(null)}
+        onSave={(payments) => {
+          void handleSavePayments(payments);
         }}
       />
 
