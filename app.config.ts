@@ -51,6 +51,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           cameraPermission: '樂淘需要使用相機，讓您直接拍攝商品照片。',
         },
       ],
+      [
+        'expo-location',
+        {
+          locationWhenInUsePermission:
+            '樂淘需要您的位置，用來計算與面交地點的距離並排出附近的好物。',
+        },
+      ],
       ...nativePlugins,
     ],
     experiments: {

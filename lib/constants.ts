@@ -9,6 +9,15 @@ export const CANVAS = '#F8F9FA';
 export const BUMP_COST = 10;
 export const DAILY_CLAIM_AMOUNT = 30;
 export const BUMP_DURATION_LABEL = '24 小時';
+/** Consecutive check-in days that still increase the reward. */
+export const DAILY_STREAK_CAP = 5;
+export const DAILY_STREAK_BONUS = 5;
+
+/** Reward for the n-th consecutive check-in day, mirroring claim_daily_reward(). */
+export function dailyRewardFor(streak: number): number {
+  const steps = Math.min(Math.max(streak, 1) - 1, DAILY_STREAK_CAP - 1);
+  return DAILY_CLAIM_AMOUNT + steps * DAILY_STREAK_BONUS;
+}
 
 export type ConditionCode = 'brand_new' | 'near_new' | 'excellent' | 'good' | 'used';
 
@@ -196,6 +205,109 @@ export const REPORT_REASONS = [
 
 export const MAX_LISTING_PHOTOS = 4;
 export const LISTING_PHOTO_BUCKET = 'listing-photos';
+export const AVATAR_BUCKET = 'avatars';
+
+/** Explore sorting */
+export const SORT_OPTIONS = [
+  { code: 'recommended', label: '推薦排序' },
+  { code: 'newest', label: '最新上架' },
+  { code: 'price_low', label: '價格低到高' },
+  { code: 'price_high', label: '價格高到低' },
+  { code: 'trust', label: '信任度優先' },
+] as const;
+
+export type SortCode = (typeof SORT_OPTIONS)[number]['code'];
+
+export type PriceRange = {
+  code: string;
+  label: string;
+  min: number;
+  max: number | null;
+};
+
+export const PRICE_RANGES: PriceRange[] = [
+  { code: 'all', label: '不限價格', min: 0, max: null },
+  { code: 'u500', label: 'NT$ 500 以下', min: 0, max: 500 },
+  { code: 'u2000', label: '500 – 2,000', min: 500, max: 2000 },
+  { code: 'u8000', label: '2,000 – 8,000', min: 2000, max: 8000 },
+  { code: 'u30000', label: '8,000 – 30,000', min: 8000, max: 30000 },
+  { code: 'o30000', label: '30,000 以上', min: 30000, max: null },
+];
+
+export type ListingStatus = 'available' | 'reserved' | 'sold' | 'hidden';
+
+export const LISTING_STATUS_META: Record<
+  ListingStatus,
+  { label: string; bgClass: string; textClass: string }
+> = {
+  available: { label: '上架中', bgClass: 'bg-green-100', textClass: 'text-green-700' },
+  reserved: { label: '已預訂', bgClass: 'bg-yellow-100', textClass: 'text-yellow-700' },
+  sold: { label: '已售出', bgClass: 'bg-neutral-200', textClass: 'text-neutral-600' },
+  hidden: { label: '已下架', bgClass: 'bg-neutral-100', textClass: 'text-neutral-500' },
+};
+
+export function getListingStatus(status: string | null | undefined): ListingStatus {
+  if (status === 'reserved' || status === 'sold' || status === 'hidden') return status;
+  return 'available';
+}
+
+export type OrderStatus = 'pending' | 'completed' | 'cancelled';
+
+export const ORDER_STATUS_META: Record<
+  OrderStatus,
+  { label: string; hint: string; bgClass: string; textClass: string }
+> = {
+  pending: {
+    label: '⏳ 待完成交付',
+    hint: '雙方已媒合，約好交付方式後由任一方標記完成。',
+    bgClass: 'bg-yellow-100',
+    textClass: 'text-yellow-700',
+  },
+  completed: {
+    label: '✅ 交易完成',
+    hint: '交易已完成，買家可以給賣家評價。',
+    bgClass: 'bg-green-100',
+    textClass: 'text-green-700',
+  },
+  cancelled: {
+    label: '✖️ 已取消',
+    hint: '這筆交易已取消，商品會重新開放出價。',
+    bgClass: 'bg-neutral-100',
+    textClass: 'text-neutral-500',
+  },
+};
+
+export function getOrderStatus(status: string | null | undefined): OrderStatus {
+  if (status === 'completed' || status === 'cancelled') return status;
+  return 'pending';
+}
+
+export type NotificationKind =
+  | 'message'
+  | 'order'
+  | 'moderation'
+  | 'report'
+  | 'review'
+  | 'reward'
+  | 'system';
+
+export const NOTIFICATION_META: Record<NotificationKind, { label: string; emoji: string }> = {
+  message: { label: '私訊', emoji: '💬' },
+  order: { label: '交易', emoji: '🤝' },
+  moderation: { label: '審核', emoji: '🛡️' },
+  report: { label: '檢舉', emoji: '🚩' },
+  review: { label: '評價', emoji: '⭐' },
+  reward: { label: 'EcoCoins', emoji: '🪙' },
+  system: { label: '系統', emoji: '🔔' },
+};
+
+export function getNotificationMeta(kind: string | null | undefined) {
+  if (kind && kind in NOTIFICATION_META) {
+    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- guarded by the `in` check above
+    return NOTIFICATION_META[kind as NotificationKind];
+  }
+  return NOTIFICATION_META.system;
+}
 
 export const PROHIBITED_ITEMS = [
   '藥品與醫療器材（如：隱形眼鏡、OK繃、體溫計）',

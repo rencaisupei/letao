@@ -14,10 +14,12 @@ import { Button } from 'heroui-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { BadgeCheck, Star } from 'lucide-react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { ListingCard } from '@/components/ListingCard';
 import { StarRating } from '@/components/StarRating';
 import { showAlert } from '@/lib/alert';
 import { SAGE, getRoleLabel } from '@/lib/constants';
+import { hasCompletedDealWith, useOrderStore } from '@/lib/orderStore';
 import {
   type Review,
   type SellerProfile,
@@ -35,6 +37,8 @@ export default function SellerScreen() {
   const { width } = useWindowDimensions();
   const userId = useLetaoStore((state) => state.userId);
   const refresh = useLetaoStore((state) => state.refresh);
+  const orders = useOrderStore((state) => state.orders);
+  const loadOrders = useOrderStore((state) => state.load);
 
   const [profile, setProfile] = useState<SellerProfile | null>(null);
   const [sellerListings, setSellerListings] = useState<Listing[]>([]);
@@ -68,10 +72,28 @@ export default function SellerScreen() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!userId) return;
+    void loadOrders(userId);
+  }, [userId, loadOrders]);
+
+  const canReview = userId && id ? hasCompletedDealWith(orders, id, userId) : false;
+
   const openForm = () => {
     if (!requireAccount('評價賣家')) return;
     if (isMe) {
       showAlert({ title: '無法評價自己', message: '評價是給交易對象的，不能評價自己的帳號。' });
+      return;
+    }
+    if (!canReview) {
+      showAlert({
+        title: '完成交易後才能評價',
+        message:
+          '樂淘的評價只開放給真實成交的買家：先在商品頁出價媒合，交付完成後在「我的交易」標記完成，就可以回來評價這位賣家。',
+        confirmLabel: '查看我的交易',
+        dismissLabel: '我知道了',
+        onConfirm: () => router.push('/orders'),
+      });
       return;
     }
     setRating(myReview?.rating ?? 5);
@@ -90,7 +112,7 @@ export default function SellerScreen() {
       showAlert({
         title: '評價沒有送出',
         tone: 'danger',
-        message: '請確認網路狀態後再試一次。同一位賣家只會保留你最新一次的評價。',
+        message: '評價需要一筆已完成的交易紀錄。請確認交易已在「我的交易」標記完成後再試一次。',
       });
       return;
     }
@@ -125,11 +147,7 @@ export default function SellerScreen() {
 
       <View className="bg-background rounded-2xl border border-neutral-200 p-4">
         <View className="flex-row items-center">
-          <View className="bg-mint h-14 w-14 items-center justify-center rounded-full">
-            <Text className="text-sage-deep text-lg font-bold">
-              {(profile?.username ?? 'L').slice(0, 1).toUpperCase()}
-            </Text>
-          </View>
+          <Avatar uri={profile?.avatar_url} name={profile?.username} size={56} />
           <View className="ml-3 flex-1">
             <View className="flex-row items-center gap-1">
               <Text className="text-foreground text-[16px] font-bold">
@@ -150,6 +168,10 @@ export default function SellerScreen() {
           </View>
         </View>
 
+        {profile?.bio ? (
+          <Text className="text-muted mt-3 text-[12px] leading-5">{profile.bio}</Text>
+        ) : null}
+
         <View className="bg-mint mt-3 flex-row items-center justify-between rounded-xl px-3 py-2.5">
           <Text className="text-sage-deep text-[12px] font-semibold">信任度</Text>
           <Text className="text-sage-deep text-[15px] font-bold">
@@ -163,7 +185,9 @@ export default function SellerScreen() {
         {isMe ? null : (
           <Button size="sm" variant="secondary" className="mt-3 self-start" onPress={openForm}>
             <Star size={13} color={SAGE} strokeWidth={2.2} />
-            <Button.Label>{myReview ? '修改我的評價' : '給這位賣家評價'}</Button.Label>
+            <Button.Label>
+              {myReview ? '修改我的評價' : canReview ? '給這位賣家評價' : '完成交易後可評價'}
+            </Button.Label>
           </Button>
         )}
       </View>

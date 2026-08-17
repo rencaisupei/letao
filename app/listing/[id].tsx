@@ -14,17 +14,38 @@ import {
 } from 'react-native';
 import { Button } from 'heroui-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { BadgeCheck, ChevronRight, Flag, Leaf, MessageCircle } from 'lucide-react-native';
+import {
+  BadgeCheck,
+  ChevronRight,
+  Flag,
+  Leaf,
+  MapPin,
+  MessageCircle,
+  Star,
+} from 'lucide-react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { ConditionBadge } from '@/components/ConditionBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { ListingStatusBadge } from '@/components/ListingStatusBadge';
+import MapView from '@/components/MapView';
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { showAlert } from '@/lib/alert';
 import { useChatStore } from '@/lib/chatStore';
-import { MINT, REPORT_REASONS, SAGE, getCondition, getModeration } from '@/lib/constants';
+import {
+  MINT,
+  ORDER_STATUS_META,
+  REPORT_REASONS,
+  SAGE,
+  getCondition,
+  getModeration,
+  getOrderStatus,
+} from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
+import { CITY_REGION_VIEW, resolveListingCoords } from '@/lib/geo';
 import { goBackOrReplace } from '@/lib/navigation';
+import { useOrderStore } from '@/lib/orderStore';
 import { fetchListingById } from '@/lib/queries';
 import { requireAccount } from '@/lib/requireAccount';
 import { type Listing, useLetaoStore } from '@/lib/store';
@@ -36,7 +57,13 @@ export default function ListingDetailScreen() {
   const userId = useLetaoStore((state) => state.userId);
   const listings = useLetaoStore((state) => state.listings);
   const reportListing = useLetaoStore((state) => state.reportListing);
+  const refreshFeed = useLetaoStore((state) => state.refresh);
   const startConversation = useChatStore((state) => state.startConversation);
+  const orders = useOrderStore((state) => state.orders);
+  const loadOrders = useOrderStore((state) => state.load);
+  const createOrder = useOrderStore((state) => state.createOrder);
+  const completeOrder = useOrderStore((state) => state.completeOrder);
+  const cancelOrder = useOrderStore((state) => state.cancelOrder);
 
   const storeListing = useMemo(
     () => listings.find((item) => item.id === id) ?? null,
@@ -66,13 +93,37 @@ export default function ListingDetailScreen() {
     void loadListing();
   }, [loadListing]);
 
+  useEffect(() => {
+    if (!userId) return;
+    void loadOrders(userId);
+  }, [userId, loadOrders]);
+
   const isMine = listing?.seller_id === userId;
   const condition = getCondition(listing?.condition_rating);
   const minAllowed = listing ? Math.ceil(listing.price * condition.minRatio) : 0;
   const images = listing?.images ?? [];
   const heroHeight = Math.round(width * 0.92);
 
-  const submitOffer = () => {
+  const myOrder = useMemo(
+    () =>
+      orders.find(
+        (order) =>
+          order.listing_id === id && order.buyer_id === userId && order.status !== 'cancelled',
+      ) ?? null,
+    [orders, id, userId],
+  );
+
+  const incomingOrders = useMemo(
+    () =>
+      isMine
+        ? orders.filter((order) => order.listing_id === id && order.status !== 'cancelled')
+        : [],
+    [orders, id, isMine],
+  );
+
+  const coords = useMemo(() => (listing ? resolveListingCoords(listing) : null), [listing]);
+
+  const submitOffer = async () => {
     if (!listing) return;
     const offer = Number.parseFloat(offerPrice);
 
@@ -88,23 +139,102 @@ export default function ListingDetailScreen() {
       return;
     }
 
+    setIsBusy(true);
+    const result = await createOrder(listing.id, offer);
+    setIsBusy(false);
     setOfferVisible(false);
-    setTimeout(() => {
-      const locationInfo =
-        listing.logistics === '面交'
-          ? (listing.meetup_location ?? '雙方約定之公共場所')
-          : `${listing.logistics ?? '指定物流'}（設定的指定物流）`;
+
+    if (!result.ok) {
+      if (result.reason === 'lowball') {
+        showAlert({
+          title: '⚠️ 出價遭系統攔截',
+          tone: 'danger',
+          message: `伺服器再次驗算防砍價門檻後仍未通過。\n\n該單品最低接受金額為：NT$ ${result.minPrice.toLocaleString('en-US')}`,
+        });
+        return;
+      }
+      if (result.reason === 'sold') {
+        showAlert({
+          title: '商品已完成交易',
+          message: '這件商品已經售出，看看其他相似的好物吧。',
+        });
+        return;
+      }
+      if (result.reason === 'unavailable') {
+        showAlert({
+          title: '商品目前無法出價',
+          message: '這件商品還在審核或已被賣家下架。',
+        });
+        return;
+      }
       showAlert({
-        title: '🤝 樂淘媒合成功！準備面交囉',
-        tone: 'success',
-        message: `您與對方針對「${listing.title}」已達成交易共識。\n\n安全交手節點：${locationInfo}。\n\n接下來可以在「即時私訊」和賣家確認細節，完成後別忘了給賣家評價。`,
-        confirmLabel: '前往私訊',
-        dismissLabel: '稍後再說',
-        onConfirm: () => {
-          void openConversation();
-        },
+        title: '出價沒有送出',
+        tone: 'danger',
+        message: '請確認網路狀態後再試一次。',
       });
-    }, 700);
+      return;
+    }
+
+    if (userId) await loadOrders(userId);
+    await refreshFeed();
+
+    const locationInfo =
+      listing.logistics === '面交'
+        ? (listing.meetup_location ?? '雙方約定之公共場所')
+        : `${listing.logistics ?? '指定物流'}（賣家設定的指定物流）`;
+
+    showAlert({
+      title: '🤝 樂淘媒合成功！交易單已建立',
+      tone: 'success',
+      message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}。\n\n安全交手節點：${locationInfo}。\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
+      confirmLabel: '前往私訊',
+      dismissLabel: '稍後再說',
+      onConfirm: () => {
+        void openConversation();
+      },
+    });
+  };
+
+  const handleCompleteOrder = async (orderId: string) => {
+    setIsBusy(true);
+    const ok = await completeOrder(orderId);
+    setIsBusy(false);
+
+    if (!ok) {
+      showAlert({
+        title: '沒有更新成功',
+        tone: 'danger',
+        message: '這筆交易可能已被對方處理過，請稍後再試。',
+      });
+      return;
+    }
+
+    if (userId) await loadOrders(userId);
+    await refreshFeed();
+    showAlert({
+      title: '交易已完成',
+      tone: 'success',
+      message: '雙方都收到通知了。買家可以到賣家主頁留下評價。',
+    });
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    setIsBusy(true);
+    const ok = await cancelOrder(orderId);
+    setIsBusy(false);
+
+    if (!ok) {
+      showAlert({
+        title: '沒有取消成功',
+        tone: 'danger',
+        message: '這筆交易可能已被對方處理過，請稍後再試。',
+      });
+      return;
+    }
+
+    if (userId) await loadOrders(userId);
+    await refreshFeed();
+    showAlert({ title: '交易已取消', message: '商品重新開放出價，對方也收到通知了。' });
   };
 
   const openConversation = async () => {
@@ -216,6 +346,9 @@ export default function ListingDetailScreen() {
           )}
 
           <ConditionBadge code={listing.condition_rating} className="absolute top-3 left-3" />
+          {listing.status === 'available' ? null : (
+            <ListingStatusBadge status={listing.status} className="absolute top-11 left-3" />
+          )}
           <FavoriteButton listingId={listing.id} size={20} className="absolute top-2.5 right-3" />
           {images.length > 1 ? (
             <View className="absolute right-3 bottom-3 rounded-md bg-black/50 px-2 py-1">
@@ -265,6 +398,172 @@ export default function ListingDetailScreen() {
             </Text>
           </View>
 
+          {coords ? (
+            <>
+              <Text className="text-foreground mt-4 text-[13px] font-semibold">
+                {listing.logistics === '面交' ? '面交地點' : '商品所在地'}
+              </Text>
+              <View className="bg-background mt-2 overflow-hidden rounded-2xl border border-neutral-200">
+                <MapView
+                  style={{ height: 180 }}
+                  initialRegion={{ ...coords, ...CITY_REGION_VIEW }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                  markers={[
+                    {
+                      id: listing.id,
+                      coordinate: coords,
+                      title: listing.meetup_location ?? '交付地點',
+                      color: SAGE,
+                    },
+                  ]}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push('/map')}
+                  className="flex-row items-center gap-1.5 px-4 py-3"
+                >
+                  <MapPin size={13} color={SAGE} strokeWidth={2.2} />
+                  <Text className="text-foreground flex-1 text-[12px] font-medium">
+                    {listing.meetup_location ?? '台灣本島'}
+                  </Text>
+                  <Text className="text-sage-deep text-[11px] font-semibold">看附近好物</Text>
+                  <ChevronRight size={14} color={SAGE} strokeWidth={2.2} />
+                </Pressable>
+              </View>
+              <Text className="text-muted mt-1.5 text-[10px] leading-4">
+                {listing.latitude === null
+                  ? '賣家只填寫了地區，地圖顯示的是該地區的概略位置。'
+                  : '地圖標記為賣家指定的交付位置，實際碰面請選人潮多、有監視器的公共場所。'}
+              </Text>
+            </>
+          ) : null}
+
+          {myOrder ? (
+            <>
+              <Text className="text-foreground mt-4 text-[13px] font-semibold">我的交易</Text>
+              <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
+                <View
+                  className={`self-start rounded-md px-1.5 py-0.5 ${
+                    ORDER_STATUS_META[getOrderStatus(myOrder.status)].bgClass
+                  }`}
+                >
+                  <Text
+                    className={`text-[9px] font-bold ${
+                      ORDER_STATUS_META[getOrderStatus(myOrder.status)].textClass
+                    }`}
+                  >
+                    {ORDER_STATUS_META[getOrderStatus(myOrder.status)].label}
+                  </Text>
+                </View>
+                <Text className="text-foreground mt-2 text-[14px] font-bold">
+                  成交價 NT$ {myOrder.offer_price.toLocaleString('en-US')}
+                </Text>
+                <Text className="text-muted mt-1 text-[11px] leading-4">
+                  {ORDER_STATUS_META[getOrderStatus(myOrder.status)].hint}
+                </Text>
+
+                <View className="mt-3 flex-row gap-2">
+                  {myOrder.status === 'pending' ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        isDisabled={isBusy}
+                        onPress={() => {
+                          void handleCancelOrder(myOrder.id);
+                        }}
+                      >
+                        <Button.Label>取消交易</Button.Label>
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        isDisabled={isBusy}
+                        onPress={() => {
+                          void handleCompleteOrder(myOrder.id);
+                        }}
+                      >
+                        <Button.Label>標記完成交易</Button.Label>
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onPress={() =>
+                        router.push({
+                          pathname: '/seller/[id]',
+                          params: { id: listing.seller_id },
+                        })
+                      }
+                    >
+                      <Star size={13} color="#FFFFFF" strokeWidth={2.2} />
+                      <Button.Label>評價這位賣家</Button.Label>
+                    </Button>
+                  )}
+                </View>
+              </View>
+            </>
+          ) : null}
+
+          {incomingOrders.length > 0 ? (
+            <>
+              <Text className="text-foreground mt-4 text-[13px] font-semibold">
+                買家出價（{incomingOrders.length}）
+              </Text>
+              <View className="mt-2 gap-2">
+                {incomingOrders.map((order) => {
+                  const meta = ORDER_STATUS_META[getOrderStatus(order.status)];
+                  return (
+                    <View
+                      key={order.id}
+                      className="bg-background rounded-2xl border border-neutral-200 p-4"
+                    >
+                      <View className="flex-row items-center justify-between">
+                        <Text className="text-foreground text-[13px] font-bold">
+                          {order.counterpartName ?? '樂淘買家'}
+                        </Text>
+                        <View className={`rounded-md px-1.5 py-0.5 ${meta.bgClass}`}>
+                          <Text className={`text-[9px] font-bold ${meta.textClass}`}>
+                            {meta.label}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text className="text-foreground mt-1.5 text-[14px] font-bold">
+                        出價 NT$ {order.offer_price.toLocaleString('en-US')}
+                      </Text>
+                      {order.status === 'pending' ? (
+                        <View className="mt-3 flex-row gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            isDisabled={isBusy}
+                            onPress={() => {
+                              void handleCancelOrder(order.id);
+                            }}
+                          >
+                            <Button.Label>取消</Button.Label>
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            isDisabled={isBusy}
+                            onPress={() => {
+                              void handleCompleteOrder(order.id);
+                            }}
+                          >
+                            <Button.Label>已交付，標記完成</Button.Label>
+                          </Button>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          ) : null}
+
           <Text className="text-foreground mt-4 text-[13px] font-semibold">賣家資訊</Text>
           <Pressable
             accessibilityRole="button"
@@ -273,11 +572,7 @@ export default function ListingDetailScreen() {
             }
             className="bg-background mt-2 flex-row items-center rounded-2xl border border-neutral-200 p-4"
           >
-            <View className="bg-mint h-11 w-11 items-center justify-center rounded-full">
-              <Text className="text-sage-deep text-[15px] font-bold">
-                {(listing.seller?.username ?? 'L').slice(0, 1).toUpperCase()}
-              </Text>
-            </View>
+            <Avatar name={listing.seller?.username} size={44} />
             <View className="ml-3 flex-1">
               <View className="flex-row items-center gap-1">
                 <Text className="text-foreground text-[14px] font-bold">
@@ -328,13 +623,20 @@ export default function ListingDetailScreen() {
             </Button>
             <Button
               className="flex-1"
+              isDisabled={listing.status === 'sold' || myOrder?.status === 'pending'}
               onPress={() => {
                 if (!requireAccount('出價')) return;
                 setOfferPrice('');
                 setOfferVisible(true);
               }}
             >
-              <Button.Label>出價與媒合</Button.Label>
+              <Button.Label>
+                {listing.status === 'sold'
+                  ? '已售出'
+                  : myOrder?.status === 'pending'
+                    ? '交易進行中'
+                    : '出價與媒合'}
+              </Button.Label>
             </Button>
           </View>
         )}
@@ -375,8 +677,14 @@ export default function ListingDetailScreen() {
               <Button variant="secondary" className="flex-1" onPress={() => setOfferVisible(false)}>
                 <Button.Label>取消</Button.Label>
               </Button>
-              <Button className="flex-1" onPress={submitOffer}>
-                <Button.Label>送出出價</Button.Label>
+              <Button
+                className="flex-1"
+                isDisabled={isBusy}
+                onPress={() => {
+                  void submitOffer();
+                }}
+              >
+                <Button.Label>{isBusy ? '送出中...' : '送出出價'}</Button.Label>
               </Button>
             </View>
           </View>

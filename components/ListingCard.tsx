@@ -5,6 +5,7 @@ import { Leaf } from 'lucide-react-native';
 import { BumpedBadge } from '@/components/BumpedBadge';
 import { ConditionBadge } from '@/components/ConditionBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { ListingStatusBadge } from '@/components/ListingStatusBadge';
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { MINT, SAGE } from '@/lib/constants';
@@ -66,6 +67,9 @@ export function ListingCard({
         )}
 
         <ConditionBadge code={listing.condition_rating} className="absolute top-2 left-2" />
+        {listing.status === 'available' ? null : (
+          <ListingStatusBadge status={listing.status} className="absolute top-8 left-2" />
+        )}
 
         {isPromoted ? <BumpedBadge className="absolute top-2 right-2" /> : null}
         {!isPromoted && showFavorite ? (

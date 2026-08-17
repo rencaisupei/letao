@@ -128,11 +128,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       },
     });
 
-    const { error } = await bilt
-      .from('messages')
-      .insert({ conversation_id: conversationId, sender_id: senderId, body: trimmed });
+    const { data, error } = await bilt.rpc('send_message', {
+      p_conversation_id: conversationId,
+      p_body: trimmed,
+    });
+    const result = asRow<{ ok: boolean; message_id: string | null }>(data);
 
-    if (error) {
+    if (error || !result?.ok) {
       set({
         messages: {
           ...get().messages,

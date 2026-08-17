@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 
 import { bilt } from '@/lib/bilt';
-import { LISTING_PHOTO_BUCKET, MAX_LISTING_PHOTOS } from '@/lib/constants';
+import { AVATAR_BUCKET, LISTING_PHOTO_BUCKET, MAX_LISTING_PHOTOS } from '@/lib/constants';
 
 export type PickedPhoto = {
   /** Local preview uri */
@@ -103,6 +103,20 @@ export async function uploadListingPhoto(
   photo: PickedPhoto,
   index: number,
 ): Promise<string | null> {
+  return uploadToBucket(LISTING_PHOTO_BUCKET, userId, photo, `${Date.now()}-${index}`);
+}
+
+/** Uploads a new avatar and returns its public URL. */
+export async function uploadAvatar(userId: string, photo: PickedPhoto): Promise<string | null> {
+  return uploadToBucket(AVATAR_BUCKET, userId, photo, `avatar-${Date.now()}`);
+}
+
+async function uploadToBucket(
+  bucket: string,
+  userId: string,
+  photo: PickedPhoto,
+  fileName: string,
+): Promise<string | null> {
   let bytes: Uint8Array | null = null;
 
   if (photo.base64 !== '') {
@@ -119,14 +133,14 @@ export async function uploadListingPhoto(
 
   if (!bytes || bytes.byteLength === 0) return null;
 
-  const path = `${userId}/${Date.now()}-${index}.${extensionFor(photo.mimeType)}`;
-  const { error } = await bilt.storage.from(LISTING_PHOTO_BUCKET).upload(path, bytes, {
+  const path = `${userId}/${fileName}.${extensionFor(photo.mimeType)}`;
+  const { error } = await bilt.storage.from(bucket).upload(path, bytes, {
     contentType: photo.mimeType,
     upsert: false,
   });
 
   if (error) return null;
 
-  const { data } = bilt.storage.from(LISTING_PHOTO_BUCKET).getPublicUrl(path);
+  const { data } = bilt.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }

@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { ShieldCheck, Sparkles, UserPlus } from 'lucide-react-native';
 
 import { PhotoPicker } from '@/components/PhotoPicker';
+import { MeetupPicker, type MeetupValue, composeMeetupLocation } from '@/components/MeetupPicker';
 import { SelectChip } from '@/components/SelectChip';
 import { showAlert } from '@/lib/alert';
 import {
@@ -29,18 +30,19 @@ export default function SellScreen() {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [condition, setCondition] = useState<ConditionCode>('brand_new');
   const [logistics, setLogistics] = useState(LOGISTICS_OPTIONS[0]);
-  const [meetupLocation, setMeetupLocation] = useState('');
+  const [meetup, setMeetup] = useState<MeetupValue>({ region: null, detail: '', coords: null });
   const [description, setDescription] = useState('');
   const [progress, setProgress] = useState<string | null>(null);
 
   const isSubmitting = progress !== null;
+  const needsMeetupPin = logistics === '面交';
 
   const resetForm = () => {
     setTitle('');
     setPrice('');
     setPhotos([]);
     setDescription('');
-    setMeetupLocation('');
+    setMeetup({ region: null, detail: '', coords: null });
   };
 
   const handlePublish = async () => {
@@ -52,6 +54,15 @@ export default function SellScreen() {
         title: '尚未完成填寫',
         tone: 'danger',
         message: '請填寫完整的商品名稱與正確的金額。',
+      });
+      return;
+    }
+
+    if (needsMeetupPin && !meetup.region) {
+      showAlert({
+        title: '請選擇面交地區',
+        tone: 'danger',
+        message: '選擇面交的商品需要指定地區，買家才能在地圖上找到交付地點。',
       });
       return;
     }
@@ -82,7 +93,9 @@ export default function SellScreen() {
       category,
       condition,
       logistics,
-      meetupLocation: meetupLocation.trim(),
+      meetupLocation: composeMeetupLocation(meetup),
+      latitude: meetup.coords?.latitude ?? null,
+      longitude: meetup.coords?.longitude ?? null,
       description: description.trim(),
       images: uploaded,
     });
@@ -250,14 +263,22 @@ export default function SellScreen() {
         </View>
 
         {logistics === '面交' ? (
-          <TextInput
-            value={meetupLocation}
-            onChangeText={setMeetupLocation}
-            placeholder="請填寫預期面交地點..."
-            placeholderTextColorClassName="accent-neutral-400"
-            className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
+          <Text className="text-foreground mt-4 text-[13px] font-semibold">
+            面交地點（買家會看到地圖標記）
+          </Text>
+        ) : (
+          <Text className="text-foreground mt-4 text-[13px] font-semibold">
+            商品所在地區（用於搜尋與地圖）
+          </Text>
+        )}
+        <View className="mt-2">
+          <MeetupPicker
+            value={meetup}
+            showMap={needsMeetupPin}
+            isDisabled={isSubmitting}
+            onChange={setMeetup}
           />
-        ) : null}
+        </View>
 
         <View className="bg-background mt-3 flex-row items-start gap-2 rounded-xl border border-neutral-200 p-3">
           <ShieldCheck size={14} color={SAGE} strokeWidth={2} />

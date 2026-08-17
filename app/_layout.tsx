@@ -163,6 +163,10 @@ export default function RootLayout() {
           <Stack.Screen name="seller/[id]" options={{ title: '賣家主頁' }} />
           <Stack.Screen name="chat/[id]" options={{ title: '對話' }} />
           <Stack.Screen name="favorites" options={{ title: '我的收藏' }} />
+          <Stack.Screen name="orders" options={{ title: '我的交易' }} />
+          <Stack.Screen name="notifications" options={{ title: '通知中心' }} />
+          <Stack.Screen name="account" options={{ title: '編輯個人資料' }} />
+          <Stack.Screen name="map" options={{ title: '面交地圖' }} />
           <Stack.Screen name="admin/index" options={{ title: '樂淘管理平台' }} />
         </Stack>
         <AlertHost />

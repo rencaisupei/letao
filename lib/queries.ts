@@ -5,6 +5,8 @@ import { type Listing, toListing } from '@/lib/store';
 export type SellerProfile = {
   id: string;
   username: string | null;
+  avatar_url: string | null;
+  bio: string | null;
   trust_score: number | null;
   verified_status: boolean | null;
   role: UserRole | null;
@@ -23,7 +25,7 @@ export type Review = {
 };
 
 const LISTING_COLUMNS =
-  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
+  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, images, meetup_location, latitude, longitude, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
 
 /**
  * PostgREST payloads are untyped, so rows are shaped here. `T` is provided by
@@ -61,7 +63,7 @@ export async function fetchListingsByIds(listingIds: string[]): Promise<Listing[
 export async function fetchSellerProfile(sellerId: string): Promise<SellerProfile | null> {
   const { data } = await bilt
     .from('profiles')
-    .select('id, username, trust_score, verified_status, role, created_at')
+    .select('id, username, avatar_url, bio, trust_score, verified_status, role, created_at')
     .eq('id', sellerId)
     .maybeSingle();
   return asRow<SellerProfile>(data);
