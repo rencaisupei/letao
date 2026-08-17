@@ -1,42 +1,69 @@
-import { Home } from 'lucide-react-native';
-import { Tabs } from 'expo-router';
+import { Compass, MessageCircle, PlusCircle, User } from 'lucide-react-native';
+import { Redirect, Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useThemeColor } from 'heroui-native';
-import { useUniwind } from 'uniwind';
+import { ActivityIndicator, View } from 'react-native';
+
+import { BrandHeader } from '@/components/BrandHeader';
+import { CANVAS, SAGE } from '@/lib/constants';
+import { useLetaoStore } from '@/lib/store';
 
 export default function TabLayout() {
-  const { theme } = useUniwind();
-  const [background, foreground, border, accent, muted] = useThemeColor([
-    'background',
-    'foreground',
-    'border',
-    'accent',
-    'muted',
-  ]);
+  const status = useLetaoStore((state) => state.status);
+
+  if (status === 'signedOut') {
+    return <Redirect href="/sign-in" />;
+  }
+
+  if (status === 'loading') {
+    return (
+      <View className="bg-canvas flex-1 items-center justify-center">
+        <ActivityIndicator color={SAGE} />
+      </View>
+    );
+  }
 
   return (
     <>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style="dark" />
       <Tabs
         screenOptions={{
-          headerStyle: { backgroundColor: background },
-          headerTintColor: foreground,
-          headerTitleStyle: { color: foreground },
-          headerShadowVisible: false,
-          sceneStyle: { backgroundColor: background },
+          header: () => <BrandHeader />,
+          sceneStyle: { backgroundColor: CANVAS },
           tabBarStyle: {
-            backgroundColor: background,
-            borderTopColor: border,
+            backgroundColor: '#FFFFFF',
+            borderTopColor: '#EEEEEE',
           },
-          tabBarActiveTintColor: accent,
-          tabBarInactiveTintColor: muted,
+          tabBarActiveTintColor: SAGE,
+          tabBarInactiveTintColor: '#9CA3AF',
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Home',
-            tabBarIcon: ({ color, size }) => <Home color={color} size={size ?? 24} />,
+            title: '探索首頁',
+            tabBarIcon: ({ color, size }) => <Compass color={color} size={size ?? 24} />,
+          }}
+        />
+        <Tabs.Screen
+          name="chat"
+          options={{
+            title: '即時私訊',
+            tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size ?? 24} />,
+          }}
+        />
+        <Tabs.Screen
+          name="sell"
+          options={{
+            title: '釋出好物',
+            tabBarIcon: ({ color, size }) => <PlusCircle color={color} size={size ?? 24} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: '個人主頁',
+            tabBarIcon: ({ color, size }) => <User color={color} size={size ?? 24} />,
           }}
         />
       </Tabs>

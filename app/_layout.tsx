@@ -26,6 +26,8 @@ import { initPostHog } from '@/lib/posthog';
 import { registerServiceWorker } from '@/lib/registerServiceWorker';
 import { reportErrorToParent } from '@/lib/reportPreviewError';
 import { InstallPrompt } from '@/components/InstallPrompt';
+import { AlertHost } from '@/components/AlertHost';
+import { useLetaoStore } from '@/lib/store';
 
 /**
  * Custom ErrorBoundary that reports React render errors to the parent window (Bilt preview iframe)
@@ -55,6 +57,12 @@ export default function RootLayout() {
     Inter_600SemiBold,
     Inter_700Bold,
   });
+
+  const initLetao = useLetaoStore((state) => state.init);
+
+  useEffect(() => {
+    initLetao();
+  }, [initLetao]);
 
   // Report uncaught JS errors and unhandled promise rejections to parent (Bilt preview iframe)
   useEffect(() => {
@@ -142,8 +150,10 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HeroUINativeProvider>
         <Stack>
-          <Stack.Screen name="(tabs)" options={{ title: 'Habits', headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ title: '樂淘拍賣', headerShown: false }} />
+          <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         </Stack>
+        <AlertHost />
         <InstallPrompt />
       </HeroUINativeProvider>
     </GestureHandlerRootView>
