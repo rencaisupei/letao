@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { bilt } from '@/lib/bilt';
 import { BUMP_COST, DEMO_LISTINGS, type ConditionCode } from '@/lib/constants';
+import { demoImageUri } from '@/lib/demoImages';
 
 export type Seller = {
   username: string | null;
@@ -78,13 +79,21 @@ function toSeller(value: Seller | Seller[] | null): Seller | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-/** The bilt client is schema-agnostic, so query payloads are shaped here. */
+/**
+ * The bilt client is schema-agnostic, so query payloads are shaped here.
+ * `T` is supplied explicitly by callers (there is nothing in `unknown` to
+ * infer it from), and the underlying data is untyped API/DB output, so the
+ * cast to `T` cannot be verified by the type checker.
+ */
 function asRows<T>(value: unknown): T[] {
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- unavoidable: casting untyped API rows to the caller-supplied shape
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+// eslint-disable-next-line typescript/no-unnecessary-type-parameters -- T is set explicitly by callers to shape untyped API rows; it can't be inferred from `unknown`
 function asRow<T>(value: unknown): T | null {
   const first = Array.isArray(value) ? value[0] : value;
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- unavoidable: casting an untyped API row to the caller-supplied shape
   return (first ?? null) as T | null;
 }
 
@@ -98,9 +107,24 @@ async function seedDemoListings(userId: string) {
     category: item.category,
     logistics: item.logistics,
     meetup_location: item.meetup,
+    images: [demoImageUri(item.imageKey)],
     allow_negotiation: true,
   }));
   await bilt.from('listings').insert(rows);
+}
+
+/** Demo rows seeded before bundled photos existed still have images = null. */
+async function backfillDemoImages(userId: string) {
+  await Promise.all(
+    DEMO_LISTINGS.map((item) =>
+      bilt
+        .from('listings')
+        .update({ images: [demoImageUri(item.imageKey)] })
+        .eq('seller_id', userId)
+        .eq('title', item.title)
+        .is('images', null),
+    ),
+  );
 }
 
 function sortListings(listings: Listing[], promotedUntil: Record<string, string>): Listing[] {
@@ -195,6 +219,8 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
     const mine = await bilt.from('listings').select('id').eq('seller_id', userId).limit(1);
     if ((mine.data ?? []).length === 0) {
       await seedDemoListings(userId);
+    } else {
+      await backfillDemoImages(userId);
     }
 
     await loadProfile(userId);

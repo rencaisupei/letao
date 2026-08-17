@@ -6,6 +6,7 @@ import { BumpedBadge } from '@/components/BumpedBadge';
 import { ConditionBadge } from '@/components/ConditionBadge';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { MINT, SAGE } from '@/lib/constants';
+import { resolveListingImage } from '@/lib/demoImages';
 import type { Listing } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +28,7 @@ export function ListingCard({
   footer,
   bordered = true,
 }: ListingCardProps) {
-  const imageUri = listing.images?.[0];
+  const imageSource = resolveListingImage(listing.images?.[0]);
   const imageHeight = Math.round(width * 1.1);
 
   return (
@@ -41,12 +42,8 @@ export function ListingCard({
       )}
     >
       <View style={{ width, height: imageHeight }} className="relative bg-neutral-100">
-        {imageUri ? (
-          <Image
-            source={{ uri: imageUri }}
-            style={{ width, height: imageHeight }}
-            resizeMode="cover"
-          />
+        {imageSource ? (
+          <Image source={imageSource} style={{ width, height: imageHeight }} resizeMode="cover" />
         ) : (
           <LinearGradient
             colors={[MINT, '#FFFFFF']}

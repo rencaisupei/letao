@@ -24,6 +24,7 @@ export default function TabLayout() {
 
   return (
     <>
+      {/* eslint-disable-next-line react/style-prop-object -- expo-status-bar's `style` prop is a string enum ("dark"/"light"/"auto"), not a React Native style object */}
       <StatusBar style="dark" />
       <Tabs
         screenOptions={{

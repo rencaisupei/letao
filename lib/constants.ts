@@ -1,3 +1,5 @@
+import type { DemoImageKey } from '@/lib/demoImages';
+
 /** Brand colors used where a className cannot be applied (SVG paint, icon props). */
 export const SAGE = '#87A987';
 export const MINT = '#E2EFE2';
@@ -133,6 +135,7 @@ export type DemoListing = {
   logistics: string;
   meetup: string;
   description: string;
+  imageKey: DemoImageKey;
 };
 
 export const DEMO_LISTINGS: DemoListing[] = [
@@ -144,6 +147,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     logistics: '7-ELEVEN 交貨便',
     meetup: '台北 ∙ 信義區',
     description: '功能完全正常，附原廠盒裝與兩顆電池，外觀極新便宜出清。',
+    imageKey: 'camera',
   },
   {
     title: '設計師工裝機能防風外套',
@@ -153,6 +157,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     logistics: '全家 店到店',
     meetup: '台中 ∙ 西屯區',
     description: '全新僅試穿，標牌未拆，重磅防風防潑水，服飾質感極佳。',
+    imageKey: 'jacket',
   },
   {
     title: '復古黃銅金屬防爆桌燈',
@@ -162,6 +167,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     logistics: '面交',
     meetup: '新北 ∙ 板橋區',
     description: '經典美式工業造型，金屬部分有正常使用留下的自然包漿痕跡。',
+    imageKey: 'lamp',
   },
   {
     title: '限量進口先鋒潮流黑膠唱片',
@@ -171,5 +177,6 @@ export const DEMO_LISTINGS: DemoListing[] = [
     logistics: '蝦皮店到店',
     meetup: '高雄 ∙ 苓雅區',
     description: '國外音樂發燒友收藏釋出，全新未拆封封膜完整。',
+    imageKey: 'vinyl',
   },
 ];
