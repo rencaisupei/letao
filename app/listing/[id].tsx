@@ -28,7 +28,6 @@ import { Avatar } from '@/components/Avatar';
 import { ConditionBadge } from '@/components/ConditionBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { ListingStatusBadge } from '@/components/ListingStatusBadge';
-import MapView from '@/components/MapView';
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { showAlert } from '@/lib/alert';
@@ -43,7 +42,6 @@ import {
   getOrderStatus,
 } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
-import { CITY_REGION_VIEW, resolveListingCoords } from '@/lib/geo';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useOrderStore } from '@/lib/orderStore';
 import { fetchListingById } from '@/lib/queries';
@@ -120,8 +118,6 @@ export default function ListingDetailScreen() {
         : [],
     [orders, id, isMine],
   );
-
-  const coords = useMemo(() => (listing ? resolveListingCoords(listing) : null), [listing]);
 
   const submitOffer = async () => {
     if (!listing) return;
@@ -398,44 +394,24 @@ export default function ListingDetailScreen() {
             </Text>
           </View>
 
-          {coords ? (
+          {listing.meetup_location ? (
             <>
               <Text className="text-foreground mt-4 text-[13px] font-semibold">
                 {listing.logistics === '面交' ? '面交地點' : '商品所在地'}
               </Text>
-              <View className="bg-background mt-2 overflow-hidden rounded-2xl border border-neutral-200">
-                <MapView
-                  style={{ height: 180 }}
-                  initialRegion={{ ...coords, ...CITY_REGION_VIEW }}
-                  scrollEnabled={false}
-                  zoomEnabled={false}
-                  markers={[
-                    {
-                      id: listing.id,
-                      coordinate: coords,
-                      title: listing.meetup_location ?? '交付地點',
-                      color: SAGE,
-                    },
-                  ]}
-                />
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => router.push('/map')}
-                  className="flex-row items-center gap-1.5 px-4 py-3"
-                >
+              <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
+                <View className="flex-row items-center gap-1.5">
                   <MapPin size={13} color={SAGE} strokeWidth={2.2} />
-                  <Text className="text-foreground flex-1 text-[12px] font-medium">
-                    {listing.meetup_location ?? '台灣本島'}
+                  <Text className="text-foreground flex-1 text-[13px] font-medium">
+                    {listing.meetup_location}
                   </Text>
-                  <Text className="text-sage-deep text-[11px] font-semibold">看附近好物</Text>
-                  <ChevronRight size={14} color={SAGE} strokeWidth={2.2} />
-                </Pressable>
+                </View>
+                <Text className="text-muted mt-2 text-[11px] leading-4">
+                  {listing.logistics === '面交'
+                    ? '碰面請選人潮多、有監視器的公共場所，並在私訊中先確認時間。'
+                    : '寄送前請與賣家確認包裝方式，並保留寄件單據。'}
+                </Text>
               </View>
-              <Text className="text-muted mt-1.5 text-[10px] leading-4">
-                {listing.latitude === null
-                  ? '賣家只填寫了地區，地圖顯示的是該地區的概略位置。'
-                  : '地圖標記為賣家指定的交付位置，實際碰面請選人潮多、有監視器的公共場所。'}
-              </Text>
             </>
           ) : null}
 

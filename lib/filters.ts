@@ -5,7 +5,7 @@ import {
   type SortCode,
   getCondition,
 } from '@/lib/constants';
-import { regionFromLocationText } from '@/lib/geo';
+import { regionFromLocationText } from '@/lib/regions';
 import type { Listing } from '@/lib/store';
 
 export type ListingFilters = {
@@ -92,7 +92,7 @@ export function applyFilters(
     if (range.max !== null && listing.price > range.max) return false;
     if (filters.region) {
       const region = regionFromLocationText(listing.meetup_location);
-      if (region?.name !== filters.region) return false;
+      if (region !== filters.region) return false;
     }
     return matchesQuery(listing, filters.query);
   });

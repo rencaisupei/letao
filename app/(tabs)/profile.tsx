@@ -20,7 +20,6 @@ import {
   Coins,
   Flame,
   Heart,
-  Map,
   PackageCheck,
   Pencil,
   ShieldCheck,
@@ -200,7 +199,7 @@ export default function ProfileScreen() {
       tone: 'success',
       message:
         nextStatus === 'hidden'
-          ? '買家在探索首頁與地圖上都看不到這件商品了，你隨時可以重新上架。'
+          ? '買家在探索首頁上都看不到這件商品了，你隨時可以重新上架。'
           : '商品重新公開在探索首頁，開始接受出價。',
     });
   };
@@ -330,12 +329,6 @@ export default function ProfileScreen() {
                 onPress={() => router.push('/favorites')}
               />
               <ProfileLink
-                icon={<Map size={16} color={SAGE} strokeWidth={2} />}
-                label="面交地圖"
-                value="看附近好物"
-                onPress={() => router.push('/map')}
-              />
-              <ProfileLink
                 icon={<Star size={16} color={SAGE} strokeWidth={2} />}
                 label="我的賣家主頁與評價"
                 value={`信任度 ${trustScore}%`}
@@ -344,7 +337,7 @@ export default function ProfileScreen() {
               <ProfileLink
                 icon={<Stethoscope size={16} color={SAGE} strokeWidth={2} />}
                 label="裝置檢查"
-                value="定位 / 地圖 / 相片"
+                value="相片 / 上傳"
                 onPress={() => router.push('/diagnostics')}
               />
               {isAdmin ? (

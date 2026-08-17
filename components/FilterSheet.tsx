@@ -11,7 +11,7 @@ import {
   PRICE_RANGES,
 } from '@/lib/constants';
 import { DEFAULT_FILTERS, type ListingFilters, activeFilterCount } from '@/lib/filters';
-import { TAIWAN_REGIONS } from '@/lib/geo';
+import { TAIWAN_REGIONS } from '@/lib/regions';
 
 type FilterSheetProps = {
   visible: boolean;
@@ -141,11 +141,11 @@ export function FilterSheet({
               />
               {TAIWAN_REGIONS.map((region) => (
                 <SelectChip
-                  key={region.name}
+                  key={region}
                   size="sm"
-                  label={region.name}
-                  isSelected={filters.region === region.name}
-                  onPress={() => onChange({ ...filters, region: region.name })}
+                  label={region}
+                  isSelected={filters.region === region}
+                  onPress={() => onChange({ ...filters, region })}
                   className="rounded-md"
                 />
               ))}

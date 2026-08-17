@@ -32,8 +32,6 @@ export type Listing = {
   logistics: string | null;
   images: string[] | null;
   meetup_location: string | null;
-  latitude: number | null;
-  longitude: number | null;
   status: ListingStatus;
   moderation_status: ModerationStatus;
   moderation_reason: string | null;
@@ -48,8 +46,6 @@ export type NewListingInput = {
   condition: ConditionCode;
   logistics: string;
   meetupLocation: string;
-  latitude: number | null;
-  longitude: number | null;
   description: string;
   images: string[];
 };
@@ -104,7 +100,7 @@ type ListingRow = Omit<Listing, 'seller' | 'price'> & {
 };
 
 const LISTING_COLUMNS =
-  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, images, meetup_location, latitude, longitude, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
+  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
 
 export type ClaimResult = {
   ok: boolean;
@@ -418,8 +414,6 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
           category: input.category,
           logistics: input.logistics,
           meetup_location: input.meetupLocation || null,
-          latitude: input.latitude,
-          longitude: input.longitude,
           images: input.images.length > 0 ? input.images : null,
           allow_negotiation: true,
         })

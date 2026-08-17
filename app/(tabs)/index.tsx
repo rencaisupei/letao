@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Button } from 'heroui-native';
 import { router } from 'expo-router';
-import { Heart, Map, SlidersHorizontal, UserPlus } from 'lucide-react-native';
+import { Heart, SlidersHorizontal, UserPlus } from 'lucide-react-native';
 
 import { FilterSheet } from '@/components/FilterSheet';
 import { ListingCard } from '@/components/ListingCard';
@@ -75,10 +75,6 @@ export default function ExploreScreen() {
               <View className="mt-3 flex-row items-center justify-between px-4">
                 <Text className="text-muted text-[11px]">共 {visibleListings.length} 件好物</Text>
                 <View className="flex-row gap-1.5">
-                  <Button size="sm" variant="tertiary" onPress={() => router.push('/map')}>
-                    <Map size={13} color={SAGE} strokeWidth={2.2} />
-                    <Button.Label>地圖</Button.Label>
-                  </Button>
                   <Button size="sm" variant="tertiary" onPress={() => router.push('/favorites')}>
                     <Heart size={13} color={SAGE} strokeWidth={2.2} />
                     <Button.Label>收藏 {favoriteCount}</Button.Label>

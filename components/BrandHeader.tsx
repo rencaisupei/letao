@@ -1,25 +1,13 @@
-import { Pressable, Text, View } from 'react-native';
-import { router } from 'expo-router';
-import { Map } from 'lucide-react-native';
+import { Text, View } from 'react-native';
 
 import { NotificationBell } from '@/components/NotificationBell';
-import { SAGE } from '@/lib/constants';
 
 /** Letao brand bar used as the custom header for every tab. */
 export function BrandHeader() {
   return (
     <View className="bg-background pt-safe border-b border-neutral-200">
       <View className="flex-row items-center px-2 py-3">
-        <View className="w-20 flex-row items-center">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="面交地圖"
-            onPress={() => router.push('/map')}
-            className="h-9 w-9 items-center justify-center"
-          >
-            <Map size={20} color={SAGE} strokeWidth={2} />
-          </Pressable>
-        </View>
+        <View className="w-20" />
 
         <View className="flex-1 items-center">
           <Text className="text-foreground text-[19px] font-bold tracking-wide">

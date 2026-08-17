@@ -6,16 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Stack } from 'expo-router';
 import { CircleAlert, CircleCheck, CircleHelp, RefreshCw } from 'lucide-react-native';
 
-import MapView, { isMapRuntimeAvailable } from '@/components/MapView';
-import type { LatLng } from '@/components/MapView.types';
 import { SAGE } from '@/lib/constants';
-import { TAIWAN_REGION_VIEW } from '@/lib/geo';
-import {
-  locationFailureMessage,
-  readLocationPermission,
-  readLocationServicesEnabled,
-  requestUserLocation,
-} from '@/lib/location';
 import { useLetaoStore } from '@/lib/store';
 import {
   type PickedPhoto,
@@ -44,13 +35,6 @@ function permissionLabel(status: string, granted: boolean): string {
 export default function DiagnosticsScreen() {
   const userId = useLetaoStore((state) => state.userId);
 
-  const [locationServices, setLocationServices] = useState<CheckState>('unknown');
-  const [locationPermission, setLocationPermission] = useState('讀取中...');
-  const [locationPermissionState, setLocationPermissionState] = useState<CheckState>('unknown');
-  const [coords, setCoords] = useState<LatLng | null>(null);
-  const [coordsNote, setCoordsNote] = useState<string | null>(null);
-  const [isLocating, setIsLocating] = useState(false);
-
   const [libraryPermission, setLibraryPermission] = useState('讀取中...');
   const [libraryState, setLibraryState] = useState<CheckState>('unknown');
   const [cameraPermission, setCameraPermission] = useState('讀取中...');
@@ -63,25 +47,15 @@ export default function DiagnosticsScreen() {
   const [uploadNote, setUploadNote] = useState('尚未測試');
   const [isUploading, setIsUploading] = useState(false);
 
-  const [tappedPoint, setTappedPoint] = useState<LatLng | null>(null);
-
-  const mapAvailable = isMapRuntimeAvailable();
-  const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-  const androidKeySet = (process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY ?? '') !== '';
   const runtimeLabel =
     RUNTIME_LABEL[Constants.executionEnvironment] ?? Constants.executionEnvironment;
 
   const refreshPermissions = useCallback(async () => {
-    const [services, location, library, camera] = await Promise.all([
-      readLocationServicesEnabled(),
-      readLocationPermission(),
+    const [library, camera] = await Promise.all([
       ImagePicker.getMediaLibraryPermissionsAsync(),
       ImagePicker.getCameraPermissionsAsync(),
     ]);
 
-    setLocationServices(services ? 'ok' : 'fail');
-    setLocationPermission(permissionLabel(location.status, location.granted));
-    setLocationPermissionState(location.granted ? 'ok' : 'unknown');
     setLibraryPermission(permissionLabel(library.status, library.granted));
     setLibraryState(library.granted ? 'ok' : 'unknown');
     setCameraPermission(permissionLabel(camera.status, camera.granted));
@@ -91,24 +65,6 @@ export default function DiagnosticsScreen() {
   useEffect(() => {
     void refreshPermissions();
   }, [refreshPermissions]);
-
-  const locate = async () => {
-    setIsLocating(true);
-    const outcome = await requestUserLocation();
-    setIsLocating(false);
-    await refreshPermissions();
-
-    if (!outcome.ok) {
-      setCoords(null);
-      setCoordsNote(locationFailureMessage(outcome.reason));
-      setLocationPermissionState(outcome.reason === 'permission' ? 'fail' : 'unknown');
-      return;
-    }
-
-    setCoords(outcome.coords);
-    setCoordsNote(outcome.isApproximate ? '使用裝置最近一次記錄的位置' : '取得即時定位');
-    setLocationPermissionState('ok');
-  };
 
   const pick = async (source: 'library' | 'camera') => {
     setIsPicking(true);
@@ -166,91 +122,6 @@ export default function DiagnosticsScreen() {
       <Section title="執行環境">
         <Row label="平台" value={`${Platform.OS} ${String(Platform.Version)}`} state="ok" />
         <Row label="執行方式" value={runtimeLabel} state="ok" />
-        <Row
-          label="Android 地圖金鑰"
-          value={
-            Platform.OS !== 'android'
-              ? '此平台不需要'
-              : isExpoGo
-                ? 'Expo Go 內建金鑰'
-                : androidKeySet
-                  ? '已設定'
-                  : '未設定（地圖會空白）'
-          }
-          state={Platform.OS !== 'android' || isExpoGo ? 'ok' : androidKeySet ? 'ok' : 'fail'}
-        />
-      </Section>
-
-      <Section title="地圖">
-        <Row
-          label="原生地圖模組"
-          value={mapAvailable ? '可以顯示地圖' : '這個版本沒有地圖模組'}
-          state={mapAvailable ? 'ok' : 'fail'}
-        />
-        <Row
-          label="點擊測試"
-          value={
-            tappedPoint
-              ? `${tappedPoint.latitude.toFixed(4)}, ${tappedPoint.longitude.toFixed(4)}`
-              : '在下方地圖點一下'
-          }
-          state={tappedPoint ? 'ok' : 'unknown'}
-        />
-        <View className="mt-2 overflow-hidden rounded-xl border border-neutral-200">
-          <MapView
-            style={{ height: 190 }}
-            initialRegion={
-              coords ? { ...coords, latitudeDelta: 0.09, longitudeDelta: 0.09 } : TAIWAN_REGION_VIEW
-            }
-            markers={
-              tappedPoint
-                ? [{ id: 'tap', coordinate: tappedPoint, title: '測試標記', color: SAGE }]
-                : []
-            }
-            showsUserLocation={coords !== null && Platform.OS !== 'web'}
-            onPress={(event) => setTappedPoint(event.coordinate)}
-          />
-        </View>
-        <Text className="text-muted mt-1.5 text-[11px] leading-4">
-          地圖要能拖曳、縮放，並在點擊處放上標記。標記沒出現代表手勢事件沒傳到原生地圖。
-        </Text>
-      </Section>
-
-      <Section title="定位">
-        <Row
-          label="定位服務"
-          value={
-            locationServices === 'ok'
-              ? '已開啟'
-              : locationServices === 'fail'
-                ? '已關閉'
-                : '讀取中...'
-          }
-          state={locationServices}
-        />
-        <Row label="App 定位權限" value={locationPermission} state={locationPermissionState} />
-        <Row
-          label="目前座標"
-          value={
-            coords
-              ? `${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`
-              : (coordsNote ?? '尚未取得')
-          }
-          state={coords ? 'ok' : coordsNote ? 'fail' : 'unknown'}
-        />
-        {coords && coordsNote ? (
-          <Text className="text-muted mt-1 text-[11px]">{coordsNote}</Text>
-        ) : null}
-        <Button
-          size="sm"
-          className="mt-2.5"
-          isDisabled={isLocating}
-          onPress={() => {
-            void locate();
-          }}
-        >
-          <Button.Label>{isLocating ? '定位中...' : '要求定位並取得座標'}</Button.Label>
-        </Button>
       </Section>
 
       <Section title="相片與相機">

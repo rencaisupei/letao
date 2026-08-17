@@ -35,19 +35,19 @@ export default function SellScreen() {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [condition, setCondition] = useState<ConditionCode>('brand_new');
   const [logistics, setLogistics] = useState(LOGISTICS_OPTIONS[0]);
-  const [meetup, setMeetup] = useState<MeetupValue>({ region: null, detail: '', coords: null });
+  const [meetup, setMeetup] = useState<MeetupValue>({ region: null, detail: '' });
   const [description, setDescription] = useState('');
   const [progress, setProgress] = useState<string | null>(null);
 
   const isSubmitting = progress !== null;
-  const needsMeetupPin = logistics === '面交';
+  const isMeetup = logistics === '面交';
 
   const resetForm = () => {
     setTitle('');
     setPrice('');
     setPhotos([]);
     setDescription('');
-    setMeetup({ region: null, detail: '', coords: null });
+    setMeetup({ region: null, detail: '' });
   };
 
   const handlePublish = async () => {
@@ -63,11 +63,11 @@ export default function SellScreen() {
       return;
     }
 
-    if (needsMeetupPin && !meetup.region) {
+    if (isMeetup && !meetup.region) {
       showAlert({
         title: '請選擇面交地區',
         tone: 'danger',
-        message: '選擇面交的商品需要指定地區，買家才能在地圖上找到交付地點。',
+        message: '選擇面交的商品需要指定地區，買家才知道要去哪裡碰面。',
       });
       return;
     }
@@ -108,8 +108,6 @@ export default function SellScreen() {
       condition,
       logistics,
       meetupLocation: composeMeetupLocation(meetup),
-      latitude: meetup.coords?.latitude ?? null,
-      longitude: meetup.coords?.longitude ?? null,
       description: description.trim(),
       images: uploaded,
     });
@@ -276,19 +274,19 @@ export default function SellScreen() {
           ))}
         </View>
 
-        {logistics === '面交' ? (
+        {isMeetup ? (
           <Text className="text-foreground mt-4 text-[13px] font-semibold">
-            面交地點（買家會看到地圖標記）
+            面交地點（買家會看到這段文字）
           </Text>
         ) : (
           <Text className="text-foreground mt-4 text-[13px] font-semibold">
-            商品所在地區（用於搜尋與地圖）
+            商品所在地區（用於搜尋與篩選）
           </Text>
         )}
         <View className="mt-2">
           <MeetupPicker
             value={meetup}
-            showMap={needsMeetupPin}
+            requiresDetail={isMeetup}
             isDisabled={isSubmitting}
             onChange={setMeetup}
           />
