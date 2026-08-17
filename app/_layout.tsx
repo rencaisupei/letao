@@ -164,6 +164,7 @@ export default function RootLayout() {
           <Stack.Screen name="chat/[id]" options={{ title: '對話' }} />
           <Stack.Screen name="favorites" options={{ title: '我的收藏' }} />
           <Stack.Screen name="orders" options={{ title: '我的交易' }} />
+          <Stack.Screen name="order/[id]" options={{ title: '交易詳情' }} />
           <Stack.Screen name="notifications" options={{ title: '通知中心' }} />
           <Stack.Screen name="account" options={{ title: '編輯個人資料' }} />
           <Stack.Screen name="diagnostics" options={{ title: '裝置檢查' }} />

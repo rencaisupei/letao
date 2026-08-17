@@ -36,6 +36,10 @@ function openTarget(item: AppNotification) {
     return;
   }
   if (item.link_type === 'order') {
+    if (item.link_id) {
+      router.push({ pathname: '/order/[id]', params: { id: item.link_id } });
+      return;
+    }
     router.push('/orders');
   }
 }

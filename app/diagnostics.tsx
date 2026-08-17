@@ -13,6 +13,7 @@ import {
   runModerationSelfTest,
 } from '@/lib/queries';
 import { type SelfTestResult, runShippingSelfTest } from '@/lib/shipping';
+import { type EzshipSelfTest, runEzshipSelfTest } from '@/lib/shipments';
 import { useLetaoStore } from '@/lib/store';
 import {
   type PickedPhoto,
@@ -58,6 +59,9 @@ export default function DiagnosticsScreen() {
 
   const [shippingTest, setShippingTest] = useState<SelfTestResult | null>(null);
   const [isTestingShipping, setIsTestingShipping] = useState(false);
+
+  const [ezship, setEzship] = useState<EzshipSelfTest | null>(null);
+  const [isTestingEzship, setIsTestingEzship] = useState(false);
 
   const runtimeLabel =
     RUNTIME_LABEL[Constants.executionEnvironment] ?? Constants.executionEnvironment;
@@ -138,6 +142,14 @@ export default function DiagnosticsScreen() {
     const outcome = await runShippingSelfTest();
     setIsTestingShipping(false);
     setShippingTest(outcome);
+  };
+
+  const testEzship = async () => {
+    if (!userId) return;
+    setIsTestingEzship(true);
+    const outcome = await runEzshipSelfTest();
+    setIsTestingEzship(false);
+    setEzship(outcome);
   };
 
   return (
@@ -292,6 +304,67 @@ export default function DiagnosticsScreen() {
         >
           <Button.Label>
             {!userId ? '需要先註冊帳號' : isTestingShipping ? '測試中...' : '測試運費試算'}
+          </Button.Label>
+        </Button>
+      </Section>
+
+      <Section title="物流出貨（ezShip）">
+        <Row
+          label="目前模式"
+          value={
+            ezship === null
+              ? '尚未測試'
+              : ezship.mode === 'live'
+                ? '正式模式（會開立真實寄件單）'
+                : '模擬模式（不會送出到 ezShip）'
+          }
+          state={ezship === null ? 'unknown' : ezship.mode === 'live' ? 'ok' : 'unknown'}
+        />
+        <Row
+          label="ezShip 帳號"
+          value={
+            ezship === null
+              ? '尚未測試'
+              : ezship.suIdPresent
+                ? ezship.accountStatus === 'ok'
+                  ? '已設定，串接權限正常'
+                  : ezship.message
+                : '尚未設定 EZSHIP_SU_ID'
+          }
+          state={
+            ezship === null
+              ? 'unknown'
+              : ezship.accountStatus === 'ok'
+                ? 'ok'
+                : ezship.suIdPresent && ezship.mode === 'live'
+                  ? 'fail'
+                  : 'unknown'
+          }
+        />
+        {ezship === null || ezship.callbackUrl === '' ? null : (
+          <View className="bg-canvas mt-2 rounded-xl px-3 py-2">
+            <Text className="text-muted text-[10px] font-semibold">
+              申請 ezShip 網站串接時要填的「回傳網址」
+            </Text>
+            <Text selectable className="text-foreground mt-1 text-[11px] leading-4">
+              {ezship.callbackUrl}
+            </Text>
+          </View>
+        )}
+        <Text className="text-muted mt-1 text-[11px] leading-4">
+          全家、萊爾富店到店與 ezShip 宅配可由系統自動取號；7-ELEVEN
+          交貨便、蝦皮、黑貓需賣家自行取號後填入單號。這個測試不會建立任何寄件單。
+        </Text>
+        <Button
+          size="sm"
+          className="mt-2.5"
+          isDisabled={isTestingEzship || !userId}
+          onPress={() => {
+            void testEzship();
+          }}
+        >
+          <Button.Label>
+            {!userId ? '需要先註冊帳號' : isTestingEzship ? '測試中...' : '測試 ezShip 連線'}
           </Button.Label>
         </Button>
       </Section>

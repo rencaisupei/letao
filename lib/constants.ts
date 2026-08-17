@@ -125,6 +125,7 @@ export const LOGISTICS_OPTIONS = [
   '萊爾富 店到店',
   '蝦皮店到店',
   '黑貓宅急便',
+  'ezShip 宅配',
   'Lalamove',
   '面交',
 ];
@@ -155,6 +156,7 @@ export const SUGGESTED_SHIPPING_FEES: Record<string, number> = {
   '萊爾富 店到店': 60,
   蝦皮店到店: 60,
   黑貓宅急便: 150,
+  'ezShip 宅配': 130,
   Lalamove: 200,
   面交: 0,
 };

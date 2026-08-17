@@ -2,7 +2,15 @@ import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Image, Text, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
-import { Leaf, MessageCircle, PackageCheck, Star, UserPlus, XCircle } from 'lucide-react-native';
+import {
+  Leaf,
+  MessageCircle,
+  PackageCheck,
+  Star,
+  Truck,
+  UserPlus,
+  XCircle,
+} from 'lucide-react-native';
 
 import { SelectChip } from '@/components/SelectChip';
 import { showAlert } from '@/lib/alert';
@@ -11,6 +19,7 @@ import { ORDER_STATUS_META, SAGE, formatShippingFee, getOrderStatus } from '@/li
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
 import { type Order, useOrderStore } from '@/lib/orderStore';
+import { SHIPMENT_STATUS_META, getShipmentStatus } from '@/lib/shipments';
 import { useLetaoStore } from '@/lib/store';
 
 type Tab = 'buying' | 'selling';
@@ -231,9 +240,15 @@ export default function OrdersScreen() {
                   {item.meetup_location ?? '台灣本島'}
                 </Text>
                 <Text className="text-muted mt-1 text-[11px] leading-4">{meta.hint}</Text>
+                {item.shipmentStatus === null ? null : (
+                  <Text className="text-sage-deep mt-1 text-[11px] leading-4 font-semibold">
+                    🚚 {SHIPMENT_STATUS_META[getShipmentStatus(item.shipmentStatus)].label}
+                    {item.trackingNo === null ? '' : ` ∙ ${item.trackingNo}`}
+                  </Text>
+                )}
               </View>
 
-              <View className="mt-2.5 flex-row gap-2">
+              <View className="mt-2.5 flex-row flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant="tertiary"
@@ -244,6 +259,15 @@ export default function OrdersScreen() {
                 >
                   <MessageCircle size={13} color={SAGE} strokeWidth={2.2} />
                   <Button.Label>私訊</Button.Label>
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="tertiary"
+                  onPress={() => router.push({ pathname: '/order/[id]', params: { id: item.id } })}
+                >
+                  <Truck size={13} color={SAGE} strokeWidth={2.2} />
+                  <Button.Label>出貨與追蹤</Button.Label>
                 </Button>
 
                 {item.status === 'pending' ? (
