@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { Redirect, Stack } from 'expo-router';
@@ -7,6 +7,7 @@ import { Leaf } from 'lucide-react-native';
 import { SelectChip } from '@/components/SelectChip';
 import { bilt } from '@/lib/bilt';
 import { showAlert } from '@/lib/alert';
+import { describeSendError, describeVerifyError } from '@/lib/authErrors';
 import { ROLE_OPTIONS, SAGE, type UserRole } from '@/lib/constants';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useLetaoStore } from '@/lib/store';
@@ -20,6 +21,15 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [isBusy, setIsBusy] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = setInterval(() => {
+      setCooldown((value) => (value <= 1 ? 0 : value - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   if (status === 'ready') {
     return <Redirect href="/(tabs)" />;
@@ -33,14 +43,21 @@ export default function SignInScreen() {
     }
 
     setIsBusy(true);
-    const { error } = await bilt.auth.signInWithOtp({ email: target });
+    const { error } = await bilt.auth.signInWithOtp({
+      email: target,
+      options: { shouldCreateUser: true },
+    });
     setIsBusy(false);
 
     if (error) {
-      showAlert({ title: '寄送失敗', tone: 'danger', message: '驗證碼沒有寄出，請稍後再試。' });
+      const info = describeSendError(error);
+      if (info.retryAfterSeconds) setCooldown(info.retryAfterSeconds);
+      showAlert({ title: info.title, tone: 'danger', message: info.message });
       return;
     }
 
+    setCode('');
+    setCooldown(60);
     setStep('code');
   };
 
@@ -61,11 +78,8 @@ export default function SignInScreen() {
     setIsBusy(false);
 
     if (error) {
-      showAlert({
-        title: '驗證碼不正確',
-        tone: 'danger',
-        message: '請確認信件中的號碼後再試一次。',
-      });
+      const info = describeVerifyError(error);
+      showAlert({ title: info.title, tone: 'danger', message: info.message });
     }
   };
 
@@ -126,12 +140,14 @@ export default function SignInScreen() {
               </Text>
               <Button
                 className="mt-4"
-                isDisabled={isBusy}
+                isDisabled={isBusy || cooldown > 0}
                 onPress={() => {
                   void sendCode();
                 }}
               >
-                <Button.Label>{isBusy ? '寄送中...' : '寄送驗證碼並註冊'}</Button.Label>
+                <Button.Label>
+                  {isBusy ? '寄送中...' : cooldown > 0 ? `請等 ${cooldown} 秒` : '寄送驗證碼並註冊'}
+                </Button.Label>
               </Button>
             </>
           ) : (
@@ -147,6 +163,9 @@ export default function SignInScreen() {
                 className="bg-canvas text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-center text-base tracking-[6px]"
               />
               <Text className="text-muted mt-2 text-[11px]">已寄送至 {email.trim()}</Text>
+              <Text className="text-muted mt-1 text-[11px] leading-4">
+                信件可能被歸到垃圾信匣，主旨會包含驗證碼。若同時寄了多封，只有最新一封有效。
+              </Text>
               <Button
                 className="mt-4"
                 isDisabled={isBusy}
@@ -155,6 +174,18 @@ export default function SignInScreen() {
                 }}
               >
                 <Button.Label>{isBusy ? '驗證中...' : '完成註冊 / 登入'}</Button.Label>
+              </Button>
+              <Button
+                variant="secondary"
+                className="mt-2"
+                isDisabled={isBusy || cooldown > 0}
+                onPress={() => {
+                  void sendCode();
+                }}
+              >
+                <Button.Label>
+                  {cooldown > 0 ? `重新寄送（${cooldown} 秒）` : '重新寄送驗證碼'}
+                </Button.Label>
               </Button>
               <Button
                 variant="tertiary"
