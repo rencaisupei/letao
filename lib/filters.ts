@@ -4,6 +4,7 @@ import {
   PRICE_RANGES,
   type SortCode,
   getCondition,
+  shippingMethods,
 } from '@/lib/constants';
 import { regionFromLocationText } from '@/lib/regions';
 import type { Listing } from '@/lib/store';
@@ -85,8 +86,9 @@ export function applyFilters(
     ) {
       return false;
     }
-    if (filters.logistics.length > 0 && !filters.logistics.includes(listing.logistics ?? '面交')) {
-      return false;
+    if (filters.logistics.length > 0) {
+      const methods = shippingMethods(listing.shipping_options);
+      if (!methods.some((method) => filters.logistics.includes(method))) return false;
     }
     if (listing.price < range.min) return false;
     if (range.max !== null && listing.price > range.max) return false;

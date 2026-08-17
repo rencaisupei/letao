@@ -7,7 +7,7 @@ import { Leaf, MessageCircle, PackageCheck, Star, UserPlus, XCircle } from 'luci
 import { SelectChip } from '@/components/SelectChip';
 import { showAlert } from '@/lib/alert';
 import { useChatStore } from '@/lib/chatStore';
-import { ORDER_STATUS_META, SAGE, getOrderStatus } from '@/lib/constants';
+import { ORDER_STATUS_META, SAGE, formatShippingFee, getOrderStatus } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
 import { type Order, useOrderStore } from '@/lib/orderStore';
@@ -213,6 +213,10 @@ export default function OrdersScreen() {
                     <Text className="text-muted text-[10px] font-medium">
                       {'  '}標價 {item.listing_price.toLocaleString('en-US')}
                     </Text>
+                  </Text>
+                  <Text className="text-foreground mt-0.5 text-[11px] font-semibold">
+                    運費 {formatShippingFee(item.shipping_fee)} ∙ 總計 NT${' '}
+                    {(item.offer_price + item.shipping_fee).toLocaleString('en-US')}
                   </Text>
                   <Text className="text-sage-deep mt-0.5 text-[11px] font-medium">
                     {isBuyer ? '賣家' : '買家'}：{item.counterpartName ?? '樂淘用戶'}

@@ -15,7 +15,7 @@ import { AlertTriangle, Flag, ShieldCheck, Sparkles } from 'lucide-react-native'
 
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { showAlert } from '@/lib/alert';
-import { SAGE, getCondition } from '@/lib/constants';
+import { SAGE, getCondition, shippingSummary } from '@/lib/constants';
 import { type AdminReport, useAdminStore } from '@/lib/adminStore';
 import { goBackOrReplace } from '@/lib/navigation';
 import { type Listing, useLetaoStore } from '@/lib/store';
@@ -391,8 +391,8 @@ function QueueCard({ listing, isBusy, onApprove, onReject }: QueueCardProps) {
         NT$ {listing.price.toLocaleString('en-US')}
       </Text>
       <Text className="text-muted mt-1 text-[11px]">
-        {listing.category ?? '未分類'} ∙ {condition.label} ∙ {listing.logistics ?? '面交'} ∙ 賣家{' '}
-        {listing.seller?.username ?? '未命名'}
+        {listing.category ?? '未分類'} ∙ {condition.label} ∙{' '}
+        {shippingSummary(listing.shipping_options)} ∙ 賣家 {listing.seller?.username ?? '未命名'}
       </Text>
 
       {listing.description ? (

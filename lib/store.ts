@@ -5,10 +5,13 @@ import { useChatStore } from '@/lib/chatStore';
 import {
   BUMP_COST,
   DEMO_LISTINGS,
+  MEETUP_METHOD,
   type ConditionCode,
   type ListingStatus,
   type ModerationStatus,
+  type ShippingOption,
   type UserRole,
+  parseShippingOptions,
 } from '@/lib/constants';
 import { demoImageUri } from '@/lib/demoImages';
 import { useNotificationStore } from '@/lib/notificationStore';
@@ -29,7 +32,10 @@ export type Listing = {
   allow_negotiation: boolean;
   condition_rating: ConditionCode;
   category: string | null;
+  /** Legacy single method, kept in sync with shipping_options[0] for old rows. */
   logistics: string | null;
+  /** Every delivery method the seller accepts, with its fee. */
+  shipping_options: ShippingOption[];
   images: string[] | null;
   meetup_location: string | null;
   status: ListingStatus;
@@ -44,7 +50,7 @@ export type NewListingInput = {
   price: number;
   category: string;
   condition: ConditionCode;
-  logistics: string;
+  shipping: ShippingOption[];
   meetupLocation: string;
   description: string;
   images: string[];
@@ -94,13 +100,14 @@ type ClaimRow = {
 };
 type OkRow = { ok: boolean };
 
-type ListingRow = Omit<Listing, 'seller' | 'price'> & {
+type ListingRow = Omit<Listing, 'seller' | 'price' | 'shipping_options'> & {
   price: number | string;
+  shipping_options: unknown;
   profiles: Seller | Seller[] | null;
 };
 
 const LISTING_COLUMNS =
-  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
+  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, shipping_options, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
 
 export type ClaimResult = {
   ok: boolean;
@@ -175,7 +182,8 @@ async function seedDemoListings(userId: string) {
     price: item.price,
     condition_rating: item.condition,
     category: item.category,
-    logistics: item.logistics,
+    logistics: item.shipping[0]?.method ?? MEETUP_METHOD,
+    shipping_options: item.shipping,
     meetup_location: item.meetup,
     images: [demoImageUri(item.imageKey)],
     allow_negotiation: true,
@@ -199,6 +207,23 @@ async function backfillDemoImages(userId: string) {
   );
 }
 
+/** Demo rows seeded before multi-method shipping only carry one migrated option. */
+async function backfillDemoShipping(userId: string) {
+  await Promise.all(
+    DEMO_LISTINGS.map((item) =>
+      bilt
+        .from('listings')
+        .update({
+          logistics: item.shipping[0]?.method ?? MEETUP_METHOD,
+          shipping_options: item.shipping,
+        })
+        .eq('seller_id', userId)
+        .eq('title', item.title)
+        .eq('moderation_source', 'seed'),
+    ),
+  );
+}
+
 function sortListings(listings: Listing[], promotedUntil: Record<string, string>): Listing[] {
   return [...listings].sort((a, b) => {
     const aPromo = promotedUntil[a.id];
@@ -214,6 +239,7 @@ export function toListing(row: ListingRow): Listing {
   return {
     ...row,
     price: Number(row.price),
+    shipping_options: parseShippingOptions(row.shipping_options, row.logistics),
     seller: toSeller(row.profiles),
   };
 }
@@ -330,7 +356,7 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
     if ((mine.data ?? []).length === 0) {
       await seedDemoListings(userId);
     } else {
-      await backfillDemoImages(userId);
+      await Promise.all([backfillDemoImages(userId), backfillDemoShipping(userId)]);
     }
 
     const [feed, favorites] = await Promise.all([loadFeed(), loadFavorites(userId)]);
@@ -412,7 +438,8 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
           price: input.price,
           condition_rating: input.condition,
           category: input.category,
-          logistics: input.logistics,
+          logistics: input.shipping[0]?.method ?? MEETUP_METHOD,
+          shipping_options: input.shipping,
           meetup_location: input.meetupLocation || null,
           images: input.images.length > 0 ? input.images : null,
           allow_negotiation: true,

@@ -8,7 +8,7 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { ListingStatusBadge } from '@/components/ListingStatusBadge';
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
-import { MINT, SAGE } from '@/lib/constants';
+import { MINT, SAGE, shippingSummary } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import type { Listing } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -98,7 +98,7 @@ export function ListingCard({
           🏷️ {listing.category ?? '未分類'}
         </Text>
         <Text className="text-sage-deep mt-0.5 text-[11px] font-medium">
-          🚚 {listing.logistics ?? '面交'}
+          🚚 {shippingSummary(listing.shipping_options)}
         </Text>
 
         <View className="mt-2 flex-row items-center justify-between border-t border-neutral-100 pt-2">

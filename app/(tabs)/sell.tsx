@@ -6,13 +6,19 @@ import { ShieldCheck, Sparkles, UserPlus } from 'lucide-react-native';
 
 import { PhotoPicker } from '@/components/PhotoPicker';
 import { MeetupPicker, type MeetupValue, composeMeetupLocation } from '@/components/MeetupPicker';
+import {
+  type ShippingDraft,
+  ShippingOptionsPicker,
+  defaultShippingDrafts,
+  normalizeShippingDrafts,
+} from '@/components/ShippingOptionsPicker';
 import { SelectChip } from '@/components/SelectChip';
 import { showAlert } from '@/lib/alert';
 import {
   CATEGORIES,
   CONDITIONS,
   type ConditionCode,
-  LOGISTICS_OPTIONS,
+  MEETUP_METHOD,
   PROHIBITED_ITEMS,
   SAGE,
   getModeration,
@@ -34,19 +40,20 @@ export default function SellScreen() {
   const [photos, setPhotos] = useState<PickedPhoto[]>([]);
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [condition, setCondition] = useState<ConditionCode>('brand_new');
-  const [logistics, setLogistics] = useState(LOGISTICS_OPTIONS[0]);
+  const [shipping, setShipping] = useState<ShippingDraft[]>(defaultShippingDrafts);
   const [meetup, setMeetup] = useState<MeetupValue>({ region: null, detail: '' });
   const [description, setDescription] = useState('');
   const [progress, setProgress] = useState<string | null>(null);
 
   const isSubmitting = progress !== null;
-  const isMeetup = logistics === '面交';
+  const isMeetup = shipping.some((item) => item.method === MEETUP_METHOD);
 
   const resetForm = () => {
     setTitle('');
     setPrice('');
     setPhotos([]);
     setDescription('');
+    setShipping(defaultShippingDrafts());
     setMeetup({ region: null, detail: '' });
   };
 
@@ -60,6 +67,12 @@ export default function SellScreen() {
         tone: 'danger',
         message: '請填寫完整的商品名稱與正確的金額。',
       });
+      return;
+    }
+
+    const normalized = normalizeShippingDrafts(shipping);
+    if (!normalized.ok) {
+      showAlert({ title: '運送設定需要調整', tone: 'danger', message: normalized.message });
       return;
     }
 
@@ -106,7 +119,7 @@ export default function SellScreen() {
       price: priceValue,
       category,
       condition,
-      logistics,
+      shipping: normalized.options,
       meetupLocation: composeMeetupLocation(meetup),
       description: description.trim(),
       images: uploaded,
@@ -260,18 +273,15 @@ export default function SellScreen() {
           ))}
         </View>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">運送與交付方式</Text>
-        <View className="mt-2 flex-row flex-wrap gap-1.5">
-          {LOGISTICS_OPTIONS.map((item) => (
-            <SelectChip
-              key={item}
-              size="sm"
-              label={item}
-              isSelected={logistics === item}
-              onPress={() => setLogistics(item)}
-              className="rounded-lg"
-            />
-          ))}
+        <Text className="text-foreground mt-4 text-[13px] font-semibold">
+          運送與交付方式（可多選，並設定每種運費）
+        </Text>
+        <View className="mt-2">
+          <ShippingOptionsPicker
+            value={shipping}
+            isDisabled={isSubmitting}
+            onChange={setShipping}
+          />
         </View>
 
         {isMeetup ? (

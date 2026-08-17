@@ -22,6 +22,7 @@ import {
   MapPin,
   MessageCircle,
   Star,
+  Truck,
 } from 'lucide-react-native';
 
 import { Avatar } from '@/components/Avatar';
@@ -33,10 +34,13 @@ import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { showAlert } from '@/lib/alert';
 import { useChatStore } from '@/lib/chatStore';
 import {
+  MEETUP_METHOD,
   MINT,
   ORDER_STATUS_META,
   REPORT_REASONS,
   SAGE,
+  cheapestShipping,
+  formatShippingFee,
   getCondition,
   getModeration,
   getOrderStatus,
@@ -72,6 +76,7 @@ export default function ListingDetailScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [offerVisible, setOfferVisible] = useState(false);
   const [offerPrice, setOfferPrice] = useState('');
+  const [offerMethod, setOfferMethod] = useState<string | null>(null);
   const [reportVisible, setReportVisible] = useState(false);
   const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
   const [reportDetail, setReportDetail] = useState('');
@@ -101,6 +106,16 @@ export default function ListingDetailScreen() {
   const minAllowed = listing ? Math.ceil(listing.price * condition.minRatio) : 0;
   const images = listing?.images ?? [];
   const heroHeight = Math.round(width * 0.92);
+
+  const shippingOptions = listing?.shipping_options ?? [];
+  const offersMeetup = shippingOptions.some((option) => option.method === MEETUP_METHOD);
+  const cheapest = cheapestShipping(shippingOptions);
+  const chosenShipping = shippingOptions.find((option) => option.method === offerMethod) ??
+    cheapest ?? { method: listing?.logistics ?? MEETUP_METHOD, fee: 0 };
+  const offerValue = Number.parseFloat(offerPrice);
+  const offerTotal = Number.isFinite(offerValue)
+    ? Math.max(offerValue, 0) + chosenShipping.fee
+    : chosenShipping.fee;
 
   const myOrder = useMemo(
     () =>
@@ -136,7 +151,7 @@ export default function ListingDetailScreen() {
     }
 
     setIsBusy(true);
-    const result = await createOrder(listing.id, offer);
+    const result = await createOrder(listing.id, offer, chosenShipping.method);
     setIsBusy(false);
     setOfferVisible(false);
 
@@ -163,6 +178,15 @@ export default function ListingDetailScreen() {
         });
         return;
       }
+      if (result.reason === 'logistics') {
+        showAlert({
+          title: '運送方式已變更',
+          tone: 'danger',
+          message: '賣家剛剛調整了這件商品的運送方式，請重新整理後再選一次。',
+        });
+        await refreshFeed();
+        return;
+      }
       showAlert({
         title: '出價沒有送出',
         tone: 'danger',
@@ -174,15 +198,17 @@ export default function ListingDetailScreen() {
     if (userId) await loadOrders(userId);
     await refreshFeed();
 
+    const method = result.logistics ?? chosenShipping.method;
+    const fee = result.shippingFee;
     const locationInfo =
-      listing.logistics === '面交'
-        ? (listing.meetup_location ?? '雙方約定之公共場所')
-        : `${listing.logistics ?? '指定物流'}（賣家設定的指定物流）`;
+      method === MEETUP_METHOD
+        ? `面交 ∙ ${listing.meetup_location ?? '雙方約定之公共場所'}`
+        : `${method} ∙ 運費 ${formatShippingFee(fee)}`;
 
     showAlert({
       title: '🤝 樂淘媒合成功！交易單已建立',
       tone: 'success',
-      message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}。\n\n安全交手節點：${locationInfo}。\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
+      message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}。\n\n運送方式：${locationInfo}\n應付總計：NT$ ${(offer + fee).toLocaleString('en-US')}（商品 ${offer.toLocaleString('en-US')} + 運費 ${fee.toLocaleString('en-US')}）\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
       confirmLabel: '前往私訊',
       dismissLabel: '稍後再說',
       onConfirm: () => {
@@ -380,11 +406,53 @@ export default function ListingDetailScreen() {
           <View className="bg-background mt-4 rounded-2xl border border-neutral-200 p-4">
             <DetailRow label="商品類別" value={`🏷️ ${listing.category ?? '未分類'}`} />
             <DetailRow label="新舊程度" value={`${condition.label} ∙ ${condition.hint}`} />
-            <DetailRow label="運送方式" value={`🚚 ${listing.logistics ?? '面交'}`} />
             <DetailRow
-              label={listing.logistics === '面交' ? '面交地點' : '所在地'}
+              label="運費"
+              value={
+                cheapest
+                  ? `${formatShippingFee(cheapest.fee)}起 ∙ ${shippingOptions.length} 種方式`
+                  : '賣家尚未設定'
+              }
+            />
+            <DetailRow
+              label={offersMeetup ? '面交地點' : '所在地'}
               value={listing.meetup_location ?? '台灣本島'}
             />
+          </View>
+
+          <Text className="text-foreground mt-4 text-[13px] font-semibold">
+            賣家提供的運送方式（買家出價時選一種）
+          </Text>
+          <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
+            {shippingOptions.length === 0 ? (
+              <Text className="text-muted text-[12px] leading-4">
+                賣家尚未設定運送方式，出價前建議先私訊確認。
+              </Text>
+            ) : (
+              shippingOptions.map((option, index) => (
+                <View
+                  key={option.method}
+                  className={`flex-row items-center justify-between py-2 ${
+                    index === 0 ? '' : 'border-t border-neutral-100'
+                  }`}
+                >
+                  <View className="flex-1 flex-row items-center gap-1.5">
+                    <Truck size={13} color={SAGE} strokeWidth={2.2} />
+                    <Text className="text-foreground text-[12px] font-medium">{option.method}</Text>
+                  </View>
+                  <Text
+                    className={`text-[12px] font-bold ${
+                      option.fee <= 0 ? 'text-sage-deep' : 'text-foreground'
+                    }`}
+                  >
+                    {formatShippingFee(option.fee)}
+                  </Text>
+                </View>
+              ))
+            )}
+            <Text className="text-muted mt-2 text-[11px] leading-4">
+              運費由賣家設定，會在出價時加到您的應付總計。
+            </Text>
           </View>
 
           <Text className="text-foreground mt-4 text-[13px] font-semibold">商品描述</Text>
@@ -397,7 +465,7 @@ export default function ListingDetailScreen() {
           {listing.meetup_location ? (
             <>
               <Text className="text-foreground mt-4 text-[13px] font-semibold">
-                {listing.logistics === '面交' ? '面交地點' : '商品所在地'}
+                {offersMeetup ? '面交地點' : '商品所在地'}
               </Text>
               <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
                 <View className="flex-row items-center gap-1.5">
@@ -407,7 +475,7 @@ export default function ListingDetailScreen() {
                   </Text>
                 </View>
                 <Text className="text-muted mt-2 text-[11px] leading-4">
-                  {listing.logistics === '面交'
+                  {offersMeetup
                     ? '碰面請選人潮多、有監視器的公共場所，並在私訊中先確認時間。'
                     : '寄送前請與賣家確認包裝方式，並保留寄件單據。'}
                 </Text>
@@ -434,6 +502,11 @@ export default function ListingDetailScreen() {
                 </View>
                 <Text className="text-foreground mt-2 text-[14px] font-bold">
                   成交價 NT$ {myOrder.offer_price.toLocaleString('en-US')}
+                </Text>
+                <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
+                  {myOrder.logistics ?? '面交'} ∙ 運費 {formatShippingFee(myOrder.shipping_fee)} ∙
+                  應付總計 NT${' '}
+                  {(myOrder.offer_price + myOrder.shipping_fee).toLocaleString('en-US')}
                 </Text>
                 <Text className="text-muted mt-1 text-[11px] leading-4">
                   {ORDER_STATUS_META[getOrderStatus(myOrder.status)].hint}
@@ -508,6 +581,11 @@ export default function ListingDetailScreen() {
                       </View>
                       <Text className="text-foreground mt-1.5 text-[14px] font-bold">
                         出價 NT$ {order.offer_price.toLocaleString('en-US')}
+                      </Text>
+                      <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
+                        買家選擇 {order.logistics ?? '面交'} ∙ 運費{' '}
+                        {formatShippingFee(order.shipping_fee)} ∙ 應收總計 NT${' '}
+                        {(order.offer_price + order.shipping_fee).toLocaleString('en-US')}
                       </Text>
                       {order.status === 'pending' ? (
                         <View className="mt-3 flex-row gap-2">
@@ -603,6 +681,7 @@ export default function ListingDetailScreen() {
               onPress={() => {
                 if (!requireAccount('出價')) return;
                 setOfferPrice('');
+                setOfferMethod(cheapest?.method ?? null);
                 setOfferVisible(true);
               }}
             >
@@ -628,41 +707,105 @@ export default function ListingDetailScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 items-center justify-center bg-black/40 px-6"
         >
-          <View className="bg-background w-full max-w-sm rounded-2xl border border-neutral-200 p-5">
-            <Text className="text-foreground text-base font-bold">出價與媒合</Text>
-            <Text className="text-muted mt-2 text-[13px]" numberOfLines={2}>
-              {listing.title}
-            </Text>
-            <Text className="text-foreground mt-1 text-sm font-bold">
-              賣家標價 NT$ {listing.price.toLocaleString('en-US')}
-            </Text>
-            <Text className="mt-1 text-[11px] font-semibold text-red-600">
-              最低可接受出價：NT$ {minAllowed.toLocaleString('en-US')}
-            </Text>
+          <View className="bg-background max-h-[86%] w-full max-w-sm rounded-2xl border border-neutral-200">
+            <ScrollView
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text className="text-foreground text-base font-bold">出價與媒合</Text>
+              <Text className="text-muted mt-2 text-[13px]" numberOfLines={2}>
+                {listing.title}
+              </Text>
+              <Text className="text-foreground mt-1 text-sm font-bold">
+                賣家標價 NT$ {listing.price.toLocaleString('en-US')}
+              </Text>
+              <Text className="mt-1 text-[11px] font-semibold text-red-600">
+                最低可接受出價：NT$ {minAllowed.toLocaleString('en-US')}
+              </Text>
 
-            <TextInput
-              value={offerPrice}
-              onChangeText={setOfferPrice}
-              keyboardType="number-pad"
-              placeholder="輸入您的出價金額"
-              placeholderTextColorClassName="accent-neutral-400"
-              className="bg-canvas text-foreground mt-4 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
-            />
+              <TextInput
+                value={offerPrice}
+                onChangeText={setOfferPrice}
+                keyboardType="number-pad"
+                placeholder="輸入您的出價金額"
+                placeholderTextColorClassName="accent-neutral-400"
+                className="bg-canvas text-foreground mt-4 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
+              />
 
-            <View className="mt-4 flex-row gap-2">
-              <Button variant="secondary" className="flex-1" onPress={() => setOfferVisible(false)}>
-                <Button.Label>取消</Button.Label>
-              </Button>
-              <Button
-                className="flex-1"
-                isDisabled={isBusy}
-                onPress={() => {
-                  void submitOffer();
-                }}
-              >
-                <Button.Label>{isBusy ? '送出中...' : '送出出價'}</Button.Label>
-              </Button>
-            </View>
+              {shippingOptions.length > 0 ? (
+                <>
+                  <Text className="text-foreground mt-4 text-[12px] font-semibold">
+                    選擇運送方式
+                  </Text>
+                  <View className="mt-2 gap-1.5">
+                    {shippingOptions.map((option) => {
+                      const isChosen = chosenShipping.method === option.method;
+                      return (
+                        <Pressable
+                          key={option.method}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: isChosen }}
+                          onPress={() => setOfferMethod(option.method)}
+                          className={`h-11 flex-row items-center justify-between rounded-xl border px-3 ${
+                            isChosen ? 'border-sage bg-mint' : 'bg-canvas border-neutral-200'
+                          }`}
+                        >
+                          <Text
+                            className={`text-[12px] ${
+                              isChosen ? 'text-sage-deep font-bold' : 'text-muted font-medium'
+                            }`}
+                          >
+                            {option.method}
+                          </Text>
+                          <Text
+                            className={`text-[12px] font-bold ${
+                              isChosen ? 'text-sage-deep' : 'text-muted'
+                            }`}
+                          >
+                            {formatShippingFee(option.fee)}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </>
+              ) : null}
+
+              <View className="bg-canvas mt-3 rounded-xl px-3 py-2.5">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-muted text-[11px]">運費（{chosenShipping.method}）</Text>
+                  <Text className="text-foreground text-[11px] font-semibold">
+                    {formatShippingFee(chosenShipping.fee)}
+                  </Text>
+                </View>
+                <View className="mt-1 flex-row items-center justify-between">
+                  <Text className="text-foreground text-[12px] font-bold">應付總計</Text>
+                  <Text className="text-foreground text-[14px] font-bold">
+                    NT$ {offerTotal.toLocaleString('en-US')}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="mt-4 flex-row gap-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onPress={() => setOfferVisible(false)}
+                >
+                  <Button.Label>取消</Button.Label>
+                </Button>
+                <Button
+                  className="flex-1"
+                  isDisabled={isBusy}
+                  onPress={() => {
+                    void submitOffer();
+                  }}
+                >
+                  <Button.Label>{isBusy ? '送出中...' : '送出出價'}</Button.Label>
+                </Button>
+              </View>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>

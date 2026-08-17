@@ -10,7 +10,10 @@ export type Order = {
   seller_id: string;
   offer_price: number;
   status: OrderStatus;
+  /** The single delivery method the buyer picked when placing the offer. */
   logistics: string | null;
+  /** Fee for that method at the time of the offer, NT$. */
+  shipping_fee: number;
   meetup_location: string | null;
   completed_at: string | null;
   created_at: string;
@@ -21,8 +24,12 @@ export type Order = {
 };
 
 export type CreateOrderResult =
-  | { ok: true; orderId: string }
-  | { ok: false; reason: 'lowball' | 'sold' | 'own' | 'unavailable' | 'error'; minPrice: number };
+  | { ok: true; orderId: string; logistics: string | null; shippingFee: number }
+  | {
+      ok: false;
+      reason: 'lowball' | 'sold' | 'own' | 'unavailable' | 'logistics' | 'error';
+      minPrice: number;
+    };
 
 type OrderRow = {
   id: string;
@@ -32,6 +39,7 @@ type OrderRow = {
   offer_price: number | string;
   status: OrderStatus;
   logistics: string | null;
+  shipping_fee: number | string | null;
   meetup_location: string | null;
   completed_at: string | null;
   created_at: string;
@@ -47,13 +55,19 @@ type CreateRow = {
   order_id: string | null;
   reason: string | null;
   min_price: number | string | null;
+  shipping_fee: number | string | null;
+  logistics: string | null;
 };
 
 type OrderState = {
   orders: Order[];
   isLoading: boolean;
   load: (userId: string) => Promise<void>;
-  createOrder: (listingId: string, offerPrice: number) => Promise<CreateOrderResult>;
+  createOrder: (
+    listingId: string,
+    offerPrice: number,
+    logistics: string,
+  ) => Promise<CreateOrderResult>;
   completeOrder: (orderId: string) => Promise<boolean>;
   cancelOrder: (orderId: string) => Promise<boolean>;
   reset: () => void;
@@ -85,7 +99,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const { data } = await bilt
       .from('orders')
       .select(
-        'id, listing_id, buyer_id, seller_id, offer_price, status, logistics, meetup_location, completed_at, created_at, listings(title, images, price)',
+        'id, listing_id, buyer_id, seller_id, offer_price, status, logistics, shipping_fee, meetup_location, completed_at, created_at, listings(title, images, price)',
       )
       .order('created_at', { ascending: false })
       .limit(200);
@@ -116,6 +130,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         offer_price: Number(row.offer_price),
         status: row.status,
         logistics: row.logistics,
+        shipping_fee: Number(row.shipping_fee ?? 0),
         meetup_location: row.meetup_location,
         completed_at: row.completed_at,
         created_at: row.created_at,
@@ -129,10 +144,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ orders, isLoading: false });
   },
 
-  createOrder: async (listingId, offerPrice) => {
+  createOrder: async (listingId, offerPrice, logistics) => {
     const { data, error } = await bilt.rpc('create_order', {
       p_listing_id: listingId,
       p_offer_price: offerPrice,
+      p_logistics: logistics,
     });
 
     if (error) return { ok: false, reason: 'error', minPrice: 0 };
@@ -141,7 +157,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     if (!row) return { ok: false, reason: 'error', minPrice: 0 };
 
     if (row.ok && row.order_id) {
-      return { ok: true, orderId: row.order_id };
+      return {
+        ok: true,
+        orderId: row.order_id,
+        logistics: row.logistics,
+        shippingFee: Number(row.shipping_fee ?? 0),
+      };
     }
 
     const reason = normalizeReason(row.reason);
@@ -151,6 +172,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     if (reason === 'sold') return { ok: false, reason: 'sold', minPrice };
     if (reason === 'own') return { ok: false, reason: 'own', minPrice };
     if (reason === 'unavailable') return { ok: false, reason: 'unavailable', minPrice };
+    if (reason === 'logistics') return { ok: false, reason: 'logistics', minPrice };
     return { ok: false, reason: 'error', minPrice };
   },
 

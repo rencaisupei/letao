@@ -101,7 +101,7 @@ export function FilterSheet({
             </View>
 
             <Text className="text-foreground mt-5 text-[13px] font-semibold">
-              運送方式（可多選）
+              運送方式（可多選，賣家有提供即符合）
             </Text>
             <View className="mt-2 flex-row flex-wrap gap-1.5">
               {LOGISTICS_OPTIONS.map((item) => (
