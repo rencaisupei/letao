@@ -7,6 +7,11 @@ import { Stack } from 'expo-router';
 import { CircleAlert, CircleCheck, CircleHelp, RefreshCw } from 'lucide-react-native';
 
 import { SAGE } from '@/lib/constants';
+import {
+  type ModerationSelfTest,
+  moderationErrorMessage,
+  runModerationSelfTest,
+} from '@/lib/queries';
 import { useLetaoStore } from '@/lib/store';
 import {
   type PickedPhoto,
@@ -46,6 +51,9 @@ export default function DiagnosticsScreen() {
   const [uploadState, setUploadState] = useState<CheckState>('unknown');
   const [uploadNote, setUploadNote] = useState('尚未測試');
   const [isUploading, setIsUploading] = useState(false);
+
+  const [moderation, setModeration] = useState<ModerationSelfTest | null>(null);
+  const [isTestingAi, setIsTestingAi] = useState(false);
 
   const runtimeLabel =
     RUNTIME_LABEL[Constants.executionEnvironment] ?? Constants.executionEnvironment;
@@ -110,6 +118,14 @@ export default function DiagnosticsScreen() {
     setIsUploading(false);
     setUploadState(outcome.ok ? 'ok' : 'fail');
     setUploadNote(outcome.detail);
+  };
+
+  const testModeration = async () => {
+    if (!userId) return;
+    setIsTestingAi(true);
+    const outcome = await runModerationSelfTest();
+    setIsTestingAi(false);
+    setModeration(outcome);
   };
 
   return (
@@ -182,6 +198,40 @@ export default function DiagnosticsScreen() {
         >
           <Button.Label>
             {!userId ? '需要先註冊帳號' : isUploading ? '上傳中...' : '執行上傳測試'}
+          </Button.Label>
+        </Button>
+      </Section>
+
+      <Section title="AI 內容審核">
+        <Row
+          label="語意審核"
+          value={
+            moderation === null
+              ? '尚未測試'
+              : moderation.ok
+                ? `已啟用（${moderation.model ?? 'OpenAI'}，${moderation.latencyMs ?? 0} ms）`
+                : moderationErrorMessage(moderation.error)
+          }
+          state={moderation === null ? 'unknown' : moderation.ok ? 'ok' : 'fail'}
+        />
+        <Row
+          label="關鍵字規則"
+          value={moderation?.ruleTokens ? `${moderation.ruleTokens} 組關鍵字` : '送出測試後顯示'}
+          state={moderation?.ruleTokens ? 'ok' : 'unknown'}
+        />
+        <Text className="text-muted mt-1 text-[11px] leading-4">
+          測試會用一件合規的範例商品呼叫審核服務，不會影響你的任何商品。
+        </Text>
+        <Button
+          size="sm"
+          className="mt-2.5"
+          isDisabled={isTestingAi || !userId}
+          onPress={() => {
+            void testModeration();
+          }}
+        >
+          <Button.Label>
+            {!userId ? '需要先註冊帳號' : isTestingAi ? '測試中...' : '測試 AI 審核'}
           </Button.Label>
         </Button>
       </Section>

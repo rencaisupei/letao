@@ -337,7 +337,7 @@ export default function ProfileScreen() {
               <ProfileLink
                 icon={<Stethoscope size={16} color={SAGE} strokeWidth={2} />}
                 label="裝置檢查"
-                value="相片 / 上傳"
+                value="相片 / 上傳 / AI 審核"
                 onPress={() => router.push('/diagnostics')}
               />
               {isAdmin ? (
