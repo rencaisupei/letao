@@ -132,11 +132,20 @@ export const LOGISTICS_OPTIONS = [
 /** The only method that never carries a shipping fee. */
 export const MEETUP_METHOD = '面交';
 
+/**
+ * How the fee for one method is decided.
+ * - `auto`: recalculated from the carrier rate table at order time, so it moves
+ *   with the package size and the buyer's destination.
+ * - `manual`: a fixed amount the seller typed in.
+ */
+export type ShippingFeeMode = 'auto' | 'manual';
+
 /** A method the seller accepts, with the fee the buyer pays for it. */
 export type ShippingOption = {
   method: string;
-  /** NT$, 0 means free shipping. */
+  /** NT$, 0 means free shipping. For `auto` this is the 本島 base fee. */
   fee: number;
+  mode: ShippingFeeMode;
 };
 
 /** Prefilled fee when the seller first ticks a method. */
@@ -186,6 +195,9 @@ export function parseShippingOptions(
       options.push({
         method,
         fee: Number.isFinite(fee) && fee > 0 ? Math.round(fee) : 0,
+        // Rows written before automatic rates existed carry no mode and must
+        // keep the fixed fee their seller typed.
+        mode: record.mode === 'auto' ? 'auto' : 'manual',
       });
     }
   }
@@ -193,8 +205,15 @@ export function parseShippingOptions(
   if (options.length > 0) return options;
 
   const fallback = fallbackMethod?.trim();
-  if (fallback) return [{ method: fallback, fee: suggestedShippingFee(fallback) }];
+  if (fallback) {
+    return [{ method: fallback, fee: suggestedShippingFee(fallback), mode: 'manual' }];
+  }
   return [];
+}
+
+/** True when at least one fee is recalculated from the carrier rate table. */
+export function hasAutoShipping(options: ShippingOption[]): boolean {
+  return options.some((option) => option.mode === 'auto' && option.method !== MEETUP_METHOD);
 }
 
 export function shippingMethods(options: ShippingOption[]): string[] {
@@ -207,14 +226,15 @@ export function cheapestShipping(options: ShippingOption[]): ShippingOption | nu
   return options.reduce((best, option) => (option.fee < best.fee ? option : best));
 }
 
-/** One-line card label, e.g. "3 種寄送 ∙ 運費 免運 起". */
+/** One-line card label, e.g. "3 種寄送 ∙ 免運起". */
 export function shippingSummary(options: ShippingOption[]): string {
   const cheapest = cheapestShipping(options);
   if (!cheapest) return '寄送方式待確認';
+  const suffix = hasAutoShipping(options) ? '（本島起）' : '';
   if (options.length === 1) {
-    return `${cheapest.method} ∙ ${formatShippingFee(cheapest.fee)}`;
+    return `${cheapest.method} ∙ ${formatShippingFee(cheapest.fee)}${suffix}`;
   }
-  return `${options.length} 種寄送 ∙ ${formatShippingFee(cheapest.fee)}起`;
+  return `${options.length} 種寄送 ∙ ${formatShippingFee(cheapest.fee)}起${suffix}`;
 }
 
 export type UserRole = 'buyer' | 'seller' | 'both';
@@ -410,6 +430,9 @@ export type DemoListing = {
   condition: ConditionCode;
   category: string;
   shipping: ShippingOption[];
+  /** Package measurements the rate engine prices on. */
+  parcel: { weightKg: number; lengthCm: number; widthCm: number; heightCm: number };
+  originRegion: string;
   meetup: string;
   description: string;
   imageKey: DemoImageKey;
@@ -422,10 +445,12 @@ export const DEMO_LISTINGS: DemoListing[] = [
     condition: 'excellent',
     category: '相機攝影',
     shipping: [
-      { method: '7-ELEVEN 交貨便', fee: 60 },
-      { method: '黑貓宅急便', fee: 150 },
-      { method: '面交', fee: 0 },
+      { method: '7-ELEVEN 交貨便', fee: 70, mode: 'auto' },
+      { method: '黑貓宅急便', fee: 150, mode: 'auto' },
+      { method: '面交', fee: 0, mode: 'auto' },
     ],
+    parcel: { weightKg: 1.8, lengthCm: 30, widthCm: 22, heightCm: 14 },
+    originRegion: '台北',
     meetup: '台北 ∙ 信義區',
     description: '功能完全正常，附原廠盒裝與兩顆電池，外觀極新便宜出清。',
     imageKey: 'camera',
@@ -436,9 +461,11 @@ export const DEMO_LISTINGS: DemoListing[] = [
     condition: 'brand_new',
     category: '潮流男裝',
     shipping: [
-      { method: '全家 店到店', fee: 60 },
-      { method: '蝦皮店到店', fee: 55 },
+      { method: '全家 店到店', fee: 70, mode: 'auto' },
+      { method: '蝦皮店到店', fee: 0, mode: 'manual' },
     ],
+    parcel: { weightKg: 0.8, lengthCm: 32, widthCm: 24, heightCm: 8 },
+    originRegion: '台中',
     meetup: '台中 ∙ 西屯區',
     description: '全新僅試穿，標牌未拆，重磅防風防潑水，服飾質感極佳。',
     imageKey: 'jacket',
@@ -449,9 +476,11 @@ export const DEMO_LISTINGS: DemoListing[] = [
     condition: 'good',
     category: '沙發家具',
     shipping: [
-      { method: '面交', fee: 0 },
-      { method: 'Lalamove', fee: 250 },
+      { method: '面交', fee: 0, mode: 'auto' },
+      { method: 'Lalamove', fee: 165, mode: 'auto' },
     ],
+    parcel: { weightKg: 4.5, lengthCm: 35, widthCm: 30, heightCm: 45 },
+    originRegion: '新北',
     meetup: '新北 ∙ 板橋區',
     description: '經典美式工業造型，金屬部分有正常使用留下的自然包漿痕跡。',
     imageKey: 'lamp',
@@ -462,10 +491,12 @@ export const DEMO_LISTINGS: DemoListing[] = [
     condition: 'brand_new',
     category: '黑膠樂器',
     shipping: [
-      { method: '蝦皮店到店', fee: 0 },
-      { method: '萊爾富 店到店', fee: 60 },
-      { method: '面交', fee: 0 },
+      { method: '蝦皮店到店', fee: 0, mode: 'manual' },
+      { method: '萊爾富 店到店', fee: 70, mode: 'auto' },
+      { method: '面交', fee: 0, mode: 'auto' },
     ],
+    parcel: { weightKg: 0.4, lengthCm: 33, widthCm: 33, heightCm: 5 },
+    originRegion: '高雄',
     meetup: '高雄 ∙ 苓雅區',
     description: '國外音樂發燒友收藏釋出，全新未拆封封膜完整。',
     imageKey: 'vinyl',

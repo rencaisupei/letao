@@ -226,7 +226,9 @@ export default function OrdersScreen() {
 
               <View className="bg-canvas mt-2.5 rounded-xl px-3 py-2">
                 <Text className="text-muted text-[11px] leading-4">
-                  🚚 {item.logistics ?? '面交'} ∙ {item.meetup_location ?? '台灣本島'}
+                  🚚 {item.logistics ?? '面交'}
+                  {item.dest_region ? ` ∙ 寄至${item.dest_region}` : ''} ∙{' '}
+                  {item.meetup_location ?? '台灣本島'}
                 </Text>
                 <Text className="text-muted mt-1 text-[11px] leading-4">{meta.hint}</Text>
               </View>

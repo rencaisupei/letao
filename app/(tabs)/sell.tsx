@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { router } from 'expo-router';
@@ -6,7 +6,9 @@ import { ShieldCheck, Sparkles, UserPlus } from 'lucide-react-native';
 
 import { PhotoPicker } from '@/components/PhotoPicker';
 import { MeetupPicker, type MeetupValue, composeMeetupLocation } from '@/components/MeetupPicker';
+import { ParcelPicker } from '@/components/ParcelPicker';
 import {
+  type QuoteMap,
   type ShippingDraft,
   ShippingOptionsPicker,
   defaultShippingDrafts,
@@ -18,11 +20,18 @@ import {
   CATEGORIES,
   CONDITIONS,
   type ConditionCode,
+  LOGISTICS_OPTIONS,
   MEETUP_METHOD,
   PROHIBITED_ITEMS,
   SAGE,
   getModeration,
 } from '@/lib/constants';
+import {
+  EMPTY_PARCEL_DRAFT,
+  type ParcelDraft,
+  parseParcelDraft,
+  quoteMethods,
+} from '@/lib/shipping';
 import {
   type PickedPhoto,
   type UploadFailureReason,
@@ -42,11 +51,56 @@ export default function SellScreen() {
   const [condition, setCondition] = useState<ConditionCode>('brand_new');
   const [shipping, setShipping] = useState<ShippingDraft[]>(defaultShippingDrafts);
   const [meetup, setMeetup] = useState<MeetupValue>({ region: null, detail: '' });
+  const [parcel, setParcel] = useState<ParcelDraft>(EMPTY_PARCEL_DRAFT);
+  const [quotes, setQuotes] = useState<QuoteMap>({});
+  const [isQuoting, setIsQuoting] = useState(false);
   const [description, setDescription] = useState('');
   const [progress, setProgress] = useState<string | null>(null);
 
   const isSubmitting = progress !== null;
   const isMeetup = shipping.some((item) => item.method === MEETUP_METHOD);
+
+  const parsedParcel = parseParcelDraft(parcel);
+  const spec = parsedParcel.ok ? parsedParcel.parcel : null;
+  const weightKg = spec?.weightKg ?? null;
+  const lengthCm = spec?.lengthCm ?? null;
+  const widthCm = spec?.widthCm ?? null;
+  const heightCm = spec?.heightCm ?? null;
+  const originRegion = meetup.region;
+  const canAutoQuote =
+    weightKg !== null && lengthCm !== null && widthCm !== null && heightCm !== null;
+
+  useEffect(() => {
+    if (weightKg === null || lengthCm === null || widthCm === null || heightCm === null) {
+      setQuotes({});
+      setIsQuoting(false);
+      return undefined;
+    }
+
+    let isStale = false;
+    setIsQuoting(true);
+
+    const timer = setTimeout(() => {
+      const run = async () => {
+        const rows = await quoteMethods(
+          LOGISTICS_OPTIONS,
+          { weightKg, lengthCm, widthCm, heightCm, originRegion },
+          null,
+        );
+        if (isStale) return;
+        const next: QuoteMap = {};
+        for (const row of rows) next[row.method] = row;
+        setQuotes(next);
+        setIsQuoting(false);
+      };
+      void run();
+    }, 450);
+
+    return () => {
+      isStale = true;
+      clearTimeout(timer);
+    };
+  }, [weightKg, lengthCm, widthCm, heightCm, originRegion]);
 
   const resetForm = () => {
     setTitle('');
@@ -55,6 +109,8 @@ export default function SellScreen() {
     setDescription('');
     setShipping(defaultShippingDrafts());
     setMeetup({ region: null, detail: '' });
+    setParcel(EMPTY_PARCEL_DRAFT);
+    setQuotes({});
   };
 
   const handlePublish = async () => {
@@ -70,7 +126,17 @@ export default function SellScreen() {
       return;
     }
 
-    const normalized = normalizeShippingDrafts(shipping);
+    if (!parsedParcel.ok) {
+      showAlert({ title: '包裝資訊需要調整', tone: 'danger', message: parsedParcel.message });
+      return;
+    }
+
+    if (isQuoting) {
+      showAlert({ title: '運費還在試算', message: '運費試算完成後就可以送出，請稍候一下。' });
+      return;
+    }
+
+    const normalized = normalizeShippingDrafts(shipping, quotes, canAutoQuote);
     if (!normalized.ok) {
       showAlert({ title: '運送設定需要調整', tone: 'danger', message: normalized.message });
       return;
@@ -120,6 +186,7 @@ export default function SellScreen() {
       category,
       condition,
       shipping: normalized.options,
+      parcel: { ...parsedParcel.parcel, originRegion },
       meetupLocation: composeMeetupLocation(meetup),
       description: description.trim(),
       images: uploaded,
@@ -273,24 +340,13 @@ export default function SellScreen() {
           ))}
         </View>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">
-          運送與交付方式（可多選，並設定每種運費）
-        </Text>
-        <View className="mt-2">
-          <ShippingOptionsPicker
-            value={shipping}
-            isDisabled={isSubmitting}
-            onChange={setShipping}
-          />
-        </View>
-
         {isMeetup ? (
           <Text className="text-foreground mt-4 text-[13px] font-semibold">
-            面交地點（買家會看到這段文字）
+            面交地點與出貨縣市（買家會看到這段文字）
           </Text>
         ) : (
           <Text className="text-foreground mt-4 text-[13px] font-semibold">
-            商品所在地區（用於搜尋與篩選）
+            商品所在地與出貨縣市（用於搜尋與運費計算）
           </Text>
         )}
         <View className="mt-2">
@@ -299,6 +355,27 @@ export default function SellScreen() {
             requiresDetail={isMeetup}
             isDisabled={isSubmitting}
             onChange={setMeetup}
+          />
+        </View>
+
+        <Text className="text-foreground mt-4 text-[13px] font-semibold">
+          包裝資訊（填了就能自動算運費）
+        </Text>
+        <View className="mt-2">
+          <ParcelPicker value={parcel} isDisabled={isSubmitting} onChange={setParcel} />
+        </View>
+
+        <Text className="text-foreground mt-4 text-[13px] font-semibold">
+          運送與交付方式（可多選，運費自動試算或自訂）
+        </Text>
+        <View className="mt-2">
+          <ShippingOptionsPicker
+            value={shipping}
+            quotes={quotes}
+            isQuoting={isQuoting}
+            canAutoQuote={canAutoQuote}
+            isDisabled={isSubmitting}
+            onChange={setShipping}
           />
         </View>
 

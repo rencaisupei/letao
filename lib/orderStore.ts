@@ -14,6 +14,8 @@ export type Order = {
   logistics: string | null;
   /** Fee for that method at the time of the offer, NT$. */
   shipping_fee: number;
+  /** City the buyer asked it to be shipped to, null for meetup / legacy rows. */
+  dest_region: string | null;
   meetup_location: string | null;
   completed_at: string | null;
   created_at: string;
@@ -27,7 +29,7 @@ export type CreateOrderResult =
   | { ok: true; orderId: string; logistics: string | null; shippingFee: number }
   | {
       ok: false;
-      reason: 'lowball' | 'sold' | 'own' | 'unavailable' | 'logistics' | 'error';
+      reason: 'lowball' | 'sold' | 'own' | 'unavailable' | 'logistics' | 'shipping' | 'error';
       minPrice: number;
     };
 
@@ -40,6 +42,7 @@ type OrderRow = {
   status: OrderStatus;
   logistics: string | null;
   shipping_fee: number | string | null;
+  dest_region: string | null;
   meetup_location: string | null;
   completed_at: string | null;
   created_at: string;
@@ -67,6 +70,7 @@ type OrderState = {
     listingId: string,
     offerPrice: number,
     logistics: string,
+    destRegion: string | null,
   ) => Promise<CreateOrderResult>;
   completeOrder: (orderId: string) => Promise<boolean>;
   cancelOrder: (orderId: string) => Promise<boolean>;
@@ -99,7 +103,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const { data } = await bilt
       .from('orders')
       .select(
-        'id, listing_id, buyer_id, seller_id, offer_price, status, logistics, shipping_fee, meetup_location, completed_at, created_at, listings(title, images, price)',
+        'id, listing_id, buyer_id, seller_id, offer_price, status, logistics, shipping_fee, dest_region, meetup_location, completed_at, created_at, listings(title, images, price)',
       )
       .order('created_at', { ascending: false })
       .limit(200);
@@ -131,6 +135,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         status: row.status,
         logistics: row.logistics,
         shipping_fee: Number(row.shipping_fee ?? 0),
+        dest_region: row.dest_region,
         meetup_location: row.meetup_location,
         completed_at: row.completed_at,
         created_at: row.created_at,
@@ -144,11 +149,12 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ orders, isLoading: false });
   },
 
-  createOrder: async (listingId, offerPrice, logistics) => {
+  createOrder: async (listingId, offerPrice, logistics, destRegion) => {
     const { data, error } = await bilt.rpc('create_order', {
       p_listing_id: listingId,
       p_offer_price: offerPrice,
       p_logistics: logistics,
+      p_dest_region: destRegion,
     });
 
     if (error) return { ok: false, reason: 'error', minPrice: 0 };
@@ -173,6 +179,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     if (reason === 'own') return { ok: false, reason: 'own', minPrice };
     if (reason === 'unavailable') return { ok: false, reason: 'unavailable', minPrice };
     if (reason === 'logistics') return { ok: false, reason: 'logistics', minPrice };
+    if (reason === 'shipping') return { ok: false, reason: 'shipping', minPrice };
     return { ok: false, reason: 'error', minPrice };
   },
 

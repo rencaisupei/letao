@@ -30,6 +30,7 @@ import { ConditionBadge } from '@/components/ConditionBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { ListingStatusBadge } from '@/components/ListingStatusBadge';
 import { ModerationBadge } from '@/components/ModerationBadge';
+import { SelectChip } from '@/components/SelectChip';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { showAlert } from '@/lib/alert';
 import { useChatStore } from '@/lib/chatStore';
@@ -44,12 +45,20 @@ import {
   getCondition,
   getModeration,
   getOrderStatus,
+  hasAutoShipping,
 } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useOrderStore } from '@/lib/orderStore';
 import { fetchListingById } from '@/lib/queries';
+import { TAIWAN_REGIONS } from '@/lib/regions';
 import { requireAccount } from '@/lib/requireAccount';
+import {
+  type ListingShippingQuote,
+  cheapestQuote,
+  quoteListingShipping,
+  sourceLabel,
+} from '@/lib/shipping';
 import { type Listing, useLetaoStore } from '@/lib/store';
 
 export default function ListingDetailScreen() {
@@ -77,6 +86,9 @@ export default function ListingDetailScreen() {
   const [offerVisible, setOfferVisible] = useState(false);
   const [offerPrice, setOfferPrice] = useState('');
   const [offerMethod, setOfferMethod] = useState<string | null>(null);
+  const [destRegion, setDestRegion] = useState<string | null>(null);
+  const [liveQuotes, setLiveQuotes] = useState<ListingShippingQuote[]>([]);
+  const [isQuoting, setIsQuoting] = useState(false);
   const [reportVisible, setReportVisible] = useState(false);
   const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
   const [reportDetail, setReportDetail] = useState('');
@@ -109,13 +121,54 @@ export default function ListingDetailScreen() {
 
   const shippingOptions = listing?.shipping_options ?? [];
   const offersMeetup = shippingOptions.some((option) => option.method === MEETUP_METHOD);
+  const isAutoPriced = hasAutoShipping(shippingOptions);
   const cheapest = cheapestShipping(shippingOptions);
-  const chosenShipping = shippingOptions.find((option) => option.method === offerMethod) ??
-    cheapest ?? { method: listing?.logistics ?? MEETUP_METHOD, fee: 0 };
+
+  const fallbackMethod = offerMethod ?? cheapest?.method ?? listing?.logistics ?? MEETUP_METHOD;
+  const fallbackFee =
+    shippingOptions.find((option) => option.method === fallbackMethod)?.fee ?? cheapest?.fee ?? 0;
+
+  const chosenQuote =
+    liveQuotes.find((quote) => quote.method === offerMethod) ?? cheapestQuote(liveQuotes);
+  const chosenMethod = chosenQuote?.method ?? fallbackMethod;
+  const chosenFee = chosenQuote?.fee ?? fallbackFee;
+  const needsRegion = chosenMethod !== MEETUP_METHOD;
+
   const offerValue = Number.parseFloat(offerPrice);
-  const offerTotal = Number.isFinite(offerValue)
-    ? Math.max(offerValue, 0) + chosenShipping.fee
-    : chosenShipping.fee;
+  const offerTotal = Number.isFinite(offerValue) ? Math.max(offerValue, 0) + chosenFee : chosenFee;
+
+  useEffect(() => {
+    if (!offerVisible || !id) return undefined;
+
+    let isStale = false;
+    setIsQuoting(true);
+
+    const run = async () => {
+      const rows = await quoteListingShipping(id, destRegion);
+      if (isStale) return;
+      setLiveQuotes(rows);
+      setIsQuoting(false);
+    };
+    void run();
+
+    return () => {
+      isStale = true;
+    };
+  }, [offerVisible, id, destRegion]);
+
+  const offerRows: ListingShippingQuote[] =
+    liveQuotes.length > 0
+      ? liveQuotes
+      : shippingOptions.map((option) => ({
+          method: option.method,
+          available: true,
+          fee: option.fee,
+          tier: null,
+          note: null,
+          source: option.mode === 'auto' ? 'rate_table' : 'seller',
+          mode: option.mode,
+          sellerFee: option.fee,
+        }));
 
   const myOrder = useMemo(
     () =>
@@ -150,8 +203,26 @@ export default function ListingDetailScreen() {
       return;
     }
 
+    if (needsRegion && !destRegion) {
+      showAlert({
+        title: '請選擇收件縣市',
+        tone: 'danger',
+        message: '運費會依收件縣市計算（離島與偏遠地區另有加價），選好之後才能送出出價。',
+      });
+      return;
+    }
+
+    if (chosenQuote && !chosenQuote.available) {
+      showAlert({
+        title: '這個方式無法配送',
+        tone: 'danger',
+        message: chosenQuote.note ?? '請改選其他運送方式。',
+      });
+      return;
+    }
+
     setIsBusy(true);
-    const result = await createOrder(listing.id, offer, chosenShipping.method);
+    const result = await createOrder(listing.id, offer, chosenMethod, destRegion);
     setIsBusy(false);
     setOfferVisible(false);
 
@@ -187,6 +258,15 @@ export default function ListingDetailScreen() {
         await refreshFeed();
         return;
       }
+      if (result.reason === 'shipping') {
+        showAlert({
+          title: '這個方式無法配送',
+          tone: 'danger',
+          message:
+            '伺服器依包裝尺寸與收件縣市重算後，這個運送方式不可用（可能超材積或不到貨），請改選其他方式。',
+        });
+        return;
+      }
       showAlert({
         title: '出價沒有送出',
         tone: 'danger',
@@ -198,12 +278,12 @@ export default function ListingDetailScreen() {
     if (userId) await loadOrders(userId);
     await refreshFeed();
 
-    const method = result.logistics ?? chosenShipping.method;
+    const method = result.logistics ?? chosenMethod;
     const fee = result.shippingFee;
     const locationInfo =
       method === MEETUP_METHOD
         ? `面交 ∙ ${listing.meetup_location ?? '雙方約定之公共場所'}`
-        : `${method} ∙ 運費 ${formatShippingFee(fee)}`;
+        : `${method} ∙ 寄至${destRegion ?? '本島'} ∙ 運費 ${formatShippingFee(fee)}`;
 
     showAlert({
       title: '🤝 樂淘媒合成功！交易單已建立',
@@ -410,12 +490,14 @@ export default function ListingDetailScreen() {
               label="運費"
               value={
                 cheapest
-                  ? `${formatShippingFee(cheapest.fee)}起 ∙ ${shippingOptions.length} 種方式`
+                  ? `${formatShippingFee(cheapest.fee)}起 ∙ ${shippingOptions.length} 種方式${
+                      isAutoPriced ? '（本島價，依收件地重算）' : ''
+                    }`
                   : '賣家尚未設定'
               }
             />
             <DetailRow
-              label={offersMeetup ? '面交地點' : '所在地'}
+              label={offersMeetup ? '面交地點' : '出貨地'}
               value={listing.meetup_location ?? '台灣本島'}
             />
           </View>
@@ -432,26 +514,36 @@ export default function ListingDetailScreen() {
               shippingOptions.map((option, index) => (
                 <View
                   key={option.method}
-                  className={`flex-row items-center justify-between py-2 ${
-                    index === 0 ? '' : 'border-t border-neutral-100'
-                  }`}
+                  className={`py-2 ${index === 0 ? '' : 'border-t border-neutral-100'}`}
                 >
-                  <View className="flex-1 flex-row items-center gap-1.5">
-                    <Truck size={13} color={SAGE} strokeWidth={2.2} />
-                    <Text className="text-foreground text-[12px] font-medium">{option.method}</Text>
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1 flex-row items-center gap-1.5">
+                      <Truck size={13} color={SAGE} strokeWidth={2.2} />
+                      <Text className="text-foreground text-[12px] font-medium">
+                        {option.method}
+                      </Text>
+                      {option.mode === 'auto' && option.method !== MEETUP_METHOD ? (
+                        <View className="bg-mint rounded px-1.5 py-0.5">
+                          <Text className="text-sage-deep text-[9px] font-bold">自動試算</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text
+                      className={`text-[12px] font-bold ${
+                        option.fee <= 0 ? 'text-sage-deep' : 'text-foreground'
+                      }`}
+                    >
+                      {formatShippingFee(option.fee)}
+                      {option.mode === 'auto' && option.method !== MEETUP_METHOD ? ' 起' : ''}
+                    </Text>
                   </View>
-                  <Text
-                    className={`text-[12px] font-bold ${
-                      option.fee <= 0 ? 'text-sage-deep' : 'text-foreground'
-                    }`}
-                  >
-                    {formatShippingFee(option.fee)}
-                  </Text>
                 </View>
               ))
             )}
             <Text className="text-muted mt-2 text-[11px] leading-4">
-              運費由賣家設定，會在出價時加到您的應付總計。
+              {isAutoPriced
+                ? '「自動試算」的運費依包裝重量、材積與收件縣市計算，出價時會即時重算並加到您的應付總計；離島與偏遠地區另有加價。'
+                : '運費由賣家自訂，會在出價時加到您的應付總計。'}
             </Text>
           </View>
 
@@ -504,8 +596,9 @@ export default function ListingDetailScreen() {
                   成交價 NT$ {myOrder.offer_price.toLocaleString('en-US')}
                 </Text>
                 <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
-                  {myOrder.logistics ?? '面交'} ∙ 運費 {formatShippingFee(myOrder.shipping_fee)} ∙
-                  應付總計 NT${' '}
+                  {myOrder.logistics ?? '面交'}
+                  {myOrder.dest_region ? ` ∙ 寄至${myOrder.dest_region}` : ''} ∙ 運費{' '}
+                  {formatShippingFee(myOrder.shipping_fee)} ∙ 應付總計 NT${' '}
                   {(myOrder.offer_price + myOrder.shipping_fee).toLocaleString('en-US')}
                 </Text>
                 <Text className="text-muted mt-1 text-[11px] leading-4">
@@ -583,7 +676,8 @@ export default function ListingDetailScreen() {
                         出價 NT$ {order.offer_price.toLocaleString('en-US')}
                       </Text>
                       <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
-                        買家選擇 {order.logistics ?? '面交'} ∙ 運費{' '}
+                        買家選擇 {order.logistics ?? '面交'}
+                        {order.dest_region ? ` ∙ 寄至${order.dest_region}` : ''} ∙ 運費{' '}
                         {formatShippingFee(order.shipping_fee)} ∙ 應收總計 NT${' '}
                         {(order.offer_price + order.shipping_fee).toLocaleString('en-US')}
                       </Text>
@@ -733,38 +827,84 @@ export default function ListingDetailScreen() {
                 className="bg-canvas text-foreground mt-4 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
               />
 
-              {shippingOptions.length > 0 ? (
+              {shippingOptions.some((option) => option.method !== MEETUP_METHOD) ? (
+                <>
+                  <Text className="text-foreground mt-4 text-[12px] font-semibold">
+                    收件縣市（決定運費）
+                  </Text>
+                  <View className="mt-2 flex-row flex-wrap gap-1.5">
+                    {TAIWAN_REGIONS.map((name) => (
+                      <SelectChip
+                        key={name}
+                        size="sm"
+                        label={name}
+                        isSelected={destRegion === name}
+                        onPress={() => setDestRegion(name)}
+                        className="rounded-md"
+                      />
+                    ))}
+                  </View>
+                  <Text className="text-muted mt-1.5 text-[11px] leading-4">
+                    澎湖／金門／連江為離島加價，花蓮／台東為偏遠加價，選好後下方運費會即時重算。
+                  </Text>
+                </>
+              ) : null}
+
+              {offerRows.length > 0 ? (
                 <>
                   <Text className="text-foreground mt-4 text-[12px] font-semibold">
                     選擇運送方式
                   </Text>
                   <View className="mt-2 gap-1.5">
-                    {shippingOptions.map((option) => {
-                      const isChosen = chosenShipping.method === option.method;
+                    {offerRows.map((option) => {
+                      const isChosen = chosenMethod === option.method;
                       return (
                         <Pressable
                           key={option.method}
                           accessibilityRole="radio"
-                          accessibilityState={{ selected: isChosen }}
-                          onPress={() => setOfferMethod(option.method)}
-                          className={`h-11 flex-row items-center justify-between rounded-xl border px-3 ${
-                            isChosen ? 'border-sage bg-mint' : 'bg-canvas border-neutral-200'
+                          accessibilityState={{ selected: isChosen, disabled: !option.available }}
+                          onPress={() => {
+                            if (!option.available) return;
+                            setOfferMethod(option.method);
+                          }}
+                          className={`rounded-xl border px-3 py-2.5 ${
+                            !option.available
+                              ? 'border-neutral-200 bg-neutral-50'
+                              : isChosen
+                                ? 'border-sage bg-mint'
+                                : 'bg-canvas border-neutral-200'
                           }`}
                         >
-                          <Text
-                            className={`text-[12px] ${
-                              isChosen ? 'text-sage-deep font-bold' : 'text-muted font-medium'
-                            }`}
-                          >
-                            {option.method}
-                          </Text>
-                          <Text
-                            className={`text-[12px] font-bold ${
-                              isChosen ? 'text-sage-deep' : 'text-muted'
-                            }`}
-                          >
-                            {formatShippingFee(option.fee)}
-                          </Text>
+                          <View className="flex-row items-center justify-between">
+                            <Text
+                              className={`flex-1 text-[12px] ${
+                                !option.available
+                                  ? 'text-muted font-medium'
+                                  : isChosen
+                                    ? 'text-sage-deep font-bold'
+                                    : 'text-muted font-medium'
+                              }`}
+                            >
+                              {option.method}
+                            </Text>
+                            <Text
+                              className={`text-[12px] font-bold ${
+                                !option.available
+                                  ? 'text-neutral-400'
+                                  : isChosen
+                                    ? 'text-sage-deep'
+                                    : 'text-muted'
+                              }`}
+                            >
+                              {option.available ? formatShippingFee(option.fee) : '無法配送'}
+                            </Text>
+                          </View>
+                          {option.note ? (
+                            <Text className="text-muted mt-1 text-[10px] leading-4">
+                              {option.available && option.tier ? `${option.tier} ∙ ` : ''}
+                              {option.note}
+                            </Text>
+                          ) : null}
                         </Pressable>
                       );
                     })}
@@ -774,10 +914,17 @@ export default function ListingDetailScreen() {
 
               <View className="bg-canvas mt-3 rounded-xl px-3 py-2.5">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-muted text-[11px]">運費（{chosenShipping.method}）</Text>
-                  <Text className="text-foreground text-[11px] font-semibold">
-                    {formatShippingFee(chosenShipping.fee)}
+                  <Text className="text-muted flex-1 text-[11px]">
+                    運費（{chosenMethod}
+                    {chosenQuote ? ` ∙ ${sourceLabel(chosenQuote.source)}` : ''}）
                   </Text>
+                  {isQuoting ? (
+                    <ActivityIndicator size="small" color={SAGE} />
+                  ) : (
+                    <Text className="text-foreground text-[11px] font-semibold">
+                      {formatShippingFee(chosenFee)}
+                    </Text>
+                  )}
                 </View>
                 <View className="mt-1 flex-row items-center justify-between">
                   <Text className="text-foreground text-[12px] font-bold">應付總計</Text>

@@ -63,8 +63,8 @@ export function MeetupPicker({
         <MapPin size={12} color={SAGE} strokeWidth={2.2} />
         <Text className="text-muted flex-1 text-[11px] leading-4">
           {requiresDetail
-            ? '面交請寫得具體一點，例如「信義區 ∙ 市政府站 2 號出口」，買家才知道要去哪裡。'
-            : '選擇地區可以讓買家用地區篩選找到你的商品。'}
+            ? '面交請寫得具體一點，例如「信義區 ∙ 市政府站 2 號出口」；這裡選的縣市同時是寄件出貨地。'
+            : '選擇縣市可以讓買家用地區篩選找到你的商品，也用來計算離島／偏遠的運費加價。'}
         </Text>
       </View>
     </View>

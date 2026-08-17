@@ -1,4 +1,4 @@
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { Check, Truck } from 'lucide-react-native';
 
 import {
@@ -6,30 +6,46 @@ import {
   MAX_SHIPPING_FEE,
   MEETUP_METHOD,
   SAGE,
+  type ShippingFeeMode,
   type ShippingOption,
   formatShippingFee,
   suggestedShippingFee,
 } from '@/lib/constants';
+import type { ShippingQuote } from '@/lib/shipping';
 import { cn } from '@/lib/utils';
 
 /** Fee is kept as raw text while the seller is typing. */
-export type ShippingDraft = { method: string; fee: string };
+export type ShippingDraft = { method: string; mode: ShippingFeeMode; fee: string };
 
 export type ShippingDraftResult =
   | { ok: true; options: ShippingOption[] }
   | { ok: false; message: string };
 
+export type QuoteMap = Record<string, ShippingQuote>;
+
 export function defaultShippingDrafts(): ShippingDraft[] {
   const method = LOGISTICS_OPTIONS[0];
-  return [{ method, fee: String(suggestedShippingFee(method)) }];
+  return [{ method, mode: 'auto', fee: String(suggestedShippingFee(method)) }];
 }
 
 export function draftsFromOptions(options: ShippingOption[]): ShippingDraft[] {
-  return options.map((option) => ({ method: option.method, fee: String(option.fee) }));
+  return options.map((option) => ({
+    method: option.method,
+    mode: option.mode,
+    fee: String(option.fee),
+  }));
 }
 
-/** Validates the typed fees and returns options ordered like LOGISTICS_OPTIONS. */
-export function normalizeShippingDrafts(drafts: ShippingDraft[]): ShippingDraftResult {
+/**
+ * Validates the drafts and returns options ordered like LOGISTICS_OPTIONS.
+ * Auto rows store the quoted 本島 base fee; the real fee is recomputed
+ * server-side when a buyer places an offer.
+ */
+export function normalizeShippingDrafts(
+  drafts: ShippingDraft[],
+  quotes: QuoteMap,
+  canAutoQuote: boolean,
+): ShippingDraftResult {
   if (drafts.length === 0) {
     return { ok: false, message: '請至少選擇一種運送方式，買家才知道要怎麼收到商品。' };
   }
@@ -41,7 +57,28 @@ export function normalizeShippingDrafts(drafts: ShippingDraft[]): ShippingDraftR
     if (!draft) continue;
 
     if (method === MEETUP_METHOD) {
-      options.push({ method, fee: 0 });
+      options.push({ method, fee: 0, mode: 'auto' });
+      continue;
+    }
+
+    if (draft.mode === 'auto') {
+      if (!canAutoQuote) {
+        return {
+          ok: false,
+          message: `「${method}」設定為自動試算，請先填寫包裝重量與長寬高，或改成自訂運費。`,
+        };
+      }
+      const quote = quotes[method];
+      if (!quote) {
+        return { ok: false, message: `「${method}」的運費還在試算，請稍候再送出。` };
+      }
+      if (!quote.available) {
+        return {
+          ok: false,
+          message: `「${method}」無法寄送這個包裝：${quote.note ?? '超過該物流的尺寸或重量限制。'}`,
+        };
+      }
+      options.push({ method, fee: quote.fee, mode: 'auto' });
       continue;
     }
 
@@ -61,7 +98,7 @@ export function normalizeShippingDrafts(drafts: ShippingDraft[]): ShippingDraftR
       };
     }
 
-    options.push({ method, fee: Math.round(fee) });
+    options.push({ method, fee: Math.round(fee), mode: 'manual' });
   }
 
   return { ok: true, options };
@@ -69,13 +106,21 @@ export function normalizeShippingDrafts(drafts: ShippingDraft[]): ShippingDraftR
 
 type ShippingOptionsPickerProps = {
   value: ShippingDraft[];
+  /** Rate-engine quotes keyed by method, for the current package. */
+  quotes: QuoteMap;
+  isQuoting?: boolean;
+  /** False until weight and all three dimensions are filled in. */
+  canAutoQuote: boolean;
   isDisabled?: boolean;
   onChange: (value: ShippingDraft[]) => void;
 };
 
-/** Multi-select delivery methods, each with the fee the buyer will pay. */
+/** Multi-select delivery methods, each auto-priced or overridden by the seller. */
 export function ShippingOptionsPicker({
   value,
+  quotes,
+  isQuoting = false,
+  canAutoQuote,
   isDisabled = false,
   onChange,
 }: ShippingOptionsPickerProps) {
@@ -86,17 +131,27 @@ export function ShippingOptionsPicker({
       onChange(value.filter((item) => item.method !== method));
       return;
     }
+
+    const quote = quotes[method];
+    const supportsAuto =
+      method === MEETUP_METHOD ||
+      (canAutoQuote && quote !== undefined && quote.source !== 'unsupported');
+
     onChange([
       ...value,
       {
         method,
-        fee: method === MEETUP_METHOD ? '0' : String(suggestedShippingFee(method)),
+        mode: supportsAuto ? 'auto' : 'manual',
+        fee:
+          method === MEETUP_METHOD
+            ? '0'
+            : String(quote?.available ? quote.fee : suggestedShippingFee(method)),
       },
     ]);
   };
 
-  const setFee = (method: string, fee: string) => {
-    onChange(value.map((item) => (item.method === method ? { ...item, fee } : item)));
+  const patch = (method: string, next: Partial<ShippingDraft>) => {
+    onChange(value.map((item) => (item.method === method ? { ...item, ...next } : item)));
   };
 
   return (
@@ -106,13 +161,20 @@ export function ShippingOptionsPicker({
           const draft = value.find((item) => item.method === method) ?? null;
           const isSelected = draft !== null;
           const isMeetup = method === MEETUP_METHOD;
+          const quote = quotes[method];
+          const isAuto = draft?.mode === 'auto';
+          const autoBlocked = isAuto && !isMeetup && quote !== undefined && !quote.available;
 
           return (
             <View
               key={method}
               className={cn(
                 'rounded-xl border px-3 py-2.5',
-                isSelected ? 'border-sage bg-mint/60' : 'bg-background border-neutral-200',
+                autoBlocked
+                  ? 'border-red-200 bg-red-50'
+                  : isSelected
+                    ? 'border-sage bg-mint/60'
+                    : 'bg-background border-neutral-200',
               )}
             >
               <View className="flex-row items-center">
@@ -143,12 +205,28 @@ export function ShippingOptionsPicker({
                 {isSelected ? (
                   isMeetup ? (
                     <Text className="text-sage-deep text-[11px] font-bold">面交不收運費</Text>
+                  ) : isAuto ? (
+                    <View className="flex-row items-center gap-1.5">
+                      {isQuoting ? (
+                        <ActivityIndicator size="small" color={SAGE} />
+                      ) : (
+                        <Text
+                          className={cn(
+                            'text-[13px] font-bold',
+                            autoBlocked ? 'text-red-700' : 'text-sage-deep',
+                          )}
+                        >
+                          {quote?.available ? formatShippingFee(quote.fee) : '無法寄送'}
+                        </Text>
+                      )}
+                      <Text className="text-muted text-[10px] font-semibold">自動</Text>
+                    </View>
                   ) : (
                     <View className="flex-row items-center gap-1.5">
                       <Text className="text-muted text-[11px] font-semibold">運費 NT$</Text>
                       <TextInput
                         value={draft.fee}
-                        onChangeText={(text) => setFee(method, text)}
+                        onChangeText={(text) => patch(method, { fee: text })}
                         editable={!isDisabled}
                         keyboardType="number-pad"
                         placeholder="0"
@@ -160,21 +238,72 @@ export function ShippingOptionsPicker({
                   )
                 ) : (
                   <Text className="text-muted text-[11px]">
-                    建議 {formatShippingFee(suggestedShippingFee(method))}
+                    {canAutoQuote && quote
+                      ? quote.available
+                        ? `試算 ${formatShippingFee(quote.fee)}`
+                        : '不支援此包裝'
+                      : `建議 ${formatShippingFee(suggestedShippingFee(method))}`}
                   </Text>
                 )}
               </View>
 
-              {isSelected && !isMeetup && draft.fee.trim() !== '0' ? (
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setFee(method, '0')}
-                  className="mt-1.5 self-start"
-                >
-                  <Text className="text-sage-deep text-[11px] font-semibold">
-                    這個方式改為免運（填 0）
-                  </Text>
-                </Pressable>
+              {isSelected && !isMeetup ? (
+                <View className="mt-1.5">
+                  {isAuto && quote?.note ? (
+                    <Text
+                      className={cn(
+                        'text-[11px] leading-4',
+                        autoBlocked ? 'font-medium text-red-700' : 'text-muted',
+                      )}
+                    >
+                      {quote.available && quote.tier ? `${quote.tier} ∙ ` : ''}
+                      {quote.note}
+                    </Text>
+                  ) : null}
+
+                  <View className="mt-1 flex-row gap-3">
+                    {isAuto ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() =>
+                          patch(method, {
+                            mode: 'manual',
+                            fee: String(
+                              quote?.available ? quote.fee : suggestedShippingFee(method),
+                            ),
+                          })
+                        }
+                      >
+                        <Text className="text-sage-deep text-[11px] font-semibold">
+                          改為自訂運費
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <>
+                        {canAutoQuote && quote && quote.source !== 'unsupported' ? (
+                          <Pressable
+                            accessibilityRole="button"
+                            onPress={() => patch(method, { mode: 'auto' })}
+                          >
+                            <Text className="text-sage-deep text-[11px] font-semibold">
+                              改用自動試算
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                        {draft.fee.trim() === '0' ? null : (
+                          <Pressable
+                            accessibilityRole="button"
+                            onPress={() => patch(method, { fee: '0' })}
+                          >
+                            <Text className="text-sage-deep text-[11px] font-semibold">
+                              改為免運（填 0）
+                            </Text>
+                          </Pressable>
+                        )}
+                      </>
+                    )}
+                  </View>
+                </View>
               ) : null}
             </View>
           );
@@ -184,7 +313,9 @@ export function ShippingOptionsPicker({
       <View className="mt-2 flex-row items-start gap-1.5">
         <Truck size={12} color={SAGE} strokeWidth={2.2} />
         <Text className="text-muted flex-1 text-[11px] leading-4">
-          可以同時提供多種方式，買家出價時會挑一種並付對應運費。已選 {value.length} 種。
+          {canAutoQuote
+            ? `自動試算的金額會依買家收件縣市在下單時重算（離島／偏遠加價）。已選 ${value.length} 種。`
+            : `填好包裝重量與尺寸後就能自動試算運費，未填時請自訂金額。已選 ${value.length} 種。`}
         </Text>
       </View>
     </View>

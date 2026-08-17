@@ -12,6 +12,7 @@ import {
   moderationErrorMessage,
   runModerationSelfTest,
 } from '@/lib/queries';
+import { type SelfTestResult, runShippingSelfTest } from '@/lib/shipping';
 import { useLetaoStore } from '@/lib/store';
 import {
   type PickedPhoto,
@@ -54,6 +55,9 @@ export default function DiagnosticsScreen() {
 
   const [moderation, setModeration] = useState<ModerationSelfTest | null>(null);
   const [isTestingAi, setIsTestingAi] = useState(false);
+
+  const [shippingTest, setShippingTest] = useState<SelfTestResult | null>(null);
+  const [isTestingShipping, setIsTestingShipping] = useState(false);
 
   const runtimeLabel =
     RUNTIME_LABEL[Constants.executionEnvironment] ?? Constants.executionEnvironment;
@@ -126,6 +130,14 @@ export default function DiagnosticsScreen() {
     const outcome = await runModerationSelfTest();
     setIsTestingAi(false);
     setModeration(outcome);
+  };
+
+  const testShipping = async () => {
+    if (!userId) return;
+    setIsTestingShipping(true);
+    const outcome = await runShippingSelfTest();
+    setIsTestingShipping(false);
+    setShippingTest(outcome);
   };
 
   return (
@@ -232,6 +244,54 @@ export default function DiagnosticsScreen() {
         >
           <Button.Label>
             {!userId ? '需要先註冊帳號' : isTestingAi ? '測試中...' : '測試 AI 審核'}
+          </Button.Label>
+        </Button>
+      </Section>
+
+      <Section title="運費試算引擎">
+        <Row
+          label="費率表"
+          value={
+            shippingTest === null
+              ? '尚未測試'
+              : shippingTest.rateTableOk
+                ? `正常（範例：黑貓 2.5kg / 40×30×20 台北→高雄 = NT$ ${shippingTest.sampleFee ?? 0}）`
+                : '無法取得費率，請稍後再試'
+          }
+          state={shippingTest === null ? 'unknown' : shippingTest.rateTableOk ? 'ok' : 'fail'}
+        />
+        <Row
+          label="級距"
+          value={shippingTest?.sampleTier ?? '送出測試後顯示'}
+          state={shippingTest?.sampleTier ? 'ok' : 'unknown'}
+        />
+        <Row
+          label="Lalamove 報價"
+          value={
+            shippingTest === null
+              ? '尚未測試'
+              : shippingTest.lalamoveConfigured
+                ? `已設定金鑰（${shippingTest.lalamoveEnv ?? 'sandbox'}）`
+                : '未設定金鑰，改用車資估算'
+          }
+          state={
+            shippingTest === null ? 'unknown' : shippingTest.lalamoveConfigured ? 'ok' : 'unknown'
+          }
+        />
+        <Text className="text-muted mt-1 text-[11px] leading-4">
+          超商店到店與黑貓宅急便的運費由費率表計算（重量、材積、離島／偏遠加價）。Lalamove
+          目前為估算，補上 LALAMOVE_API_KEY 與 LALAMOVE_API_SECRET 後才會改抓即時車資。
+        </Text>
+        <Button
+          size="sm"
+          className="mt-2.5"
+          isDisabled={isTestingShipping || !userId}
+          onPress={() => {
+            void testShipping();
+          }}
+        >
+          <Button.Label>
+            {!userId ? '需要先註冊帳號' : isTestingShipping ? '測試中...' : '測試運費試算'}
           </Button.Label>
         </Button>
       </Section>

@@ -16,6 +16,7 @@ import {
 import { demoImageUri } from '@/lib/demoImages';
 import { useNotificationStore } from '@/lib/notificationStore';
 import { useOrderStore } from '@/lib/orderStore';
+import type { ParcelSpec } from '@/lib/shipping';
 
 export type Seller = {
   username: string | null;
@@ -36,6 +37,13 @@ export type Listing = {
   logistics: string | null;
   /** Every delivery method the seller accepts, with its fee. */
   shipping_options: ShippingOption[];
+  /** Package measurements used by the carrier rate engine. */
+  parcel_weight_kg: number | null;
+  parcel_length_cm: number | null;
+  parcel_width_cm: number | null;
+  parcel_height_cm: number | null;
+  /** City the parcel ships from, used for surcharges and Lalamove distance. */
+  origin_region: string | null;
   images: string[] | null;
   meetup_location: string | null;
   status: ListingStatus;
@@ -51,6 +59,7 @@ export type NewListingInput = {
   category: string;
   condition: ConditionCode;
   shipping: ShippingOption[];
+  parcel: ParcelSpec;
   meetupLocation: string;
   description: string;
   images: string[];
@@ -100,14 +109,27 @@ type ClaimRow = {
 };
 type OkRow = { ok: boolean };
 
-type ListingRow = Omit<Listing, 'seller' | 'price' | 'shipping_options'> & {
+type ListingRow = Omit<
+  Listing,
+  | 'seller'
+  | 'price'
+  | 'shipping_options'
+  | 'parcel_weight_kg'
+  | 'parcel_length_cm'
+  | 'parcel_width_cm'
+  | 'parcel_height_cm'
+> & {
   price: number | string;
   shipping_options: unknown;
+  parcel_weight_kg: number | string | null;
+  parcel_length_cm: number | string | null;
+  parcel_width_cm: number | string | null;
+  parcel_height_cm: number | string | null;
   profiles: Seller | Seller[] | null;
 };
 
 const LISTING_COLUMNS =
-  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, shipping_options, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
+  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, shipping_options, parcel_weight_kg, parcel_length_cm, parcel_width_cm, parcel_height_cm, origin_region, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
 
 export type ClaimResult = {
   ok: boolean;
@@ -184,6 +206,11 @@ async function seedDemoListings(userId: string) {
     category: item.category,
     logistics: item.shipping[0]?.method ?? MEETUP_METHOD,
     shipping_options: item.shipping,
+    parcel_weight_kg: item.parcel.weightKg,
+    parcel_length_cm: item.parcel.lengthCm,
+    parcel_width_cm: item.parcel.widthCm,
+    parcel_height_cm: item.parcel.heightCm,
+    origin_region: item.originRegion,
     meetup_location: item.meetup,
     images: [demoImageUri(item.imageKey)],
     allow_negotiation: true,
@@ -207,7 +234,7 @@ async function backfillDemoImages(userId: string) {
   );
 }
 
-/** Demo rows seeded before multi-method shipping only carry one migrated option. */
+/** Demo rows seeded before automatic rates only carry a fixed fee. */
 async function backfillDemoShipping(userId: string) {
   await Promise.all(
     DEMO_LISTINGS.map((item) =>
@@ -216,6 +243,11 @@ async function backfillDemoShipping(userId: string) {
         .update({
           logistics: item.shipping[0]?.method ?? MEETUP_METHOD,
           shipping_options: item.shipping,
+          parcel_weight_kg: item.parcel.weightKg,
+          parcel_length_cm: item.parcel.lengthCm,
+          parcel_width_cm: item.parcel.widthCm,
+          parcel_height_cm: item.parcel.heightCm,
+          origin_region: item.originRegion,
         })
         .eq('seller_id', userId)
         .eq('title', item.title)
@@ -235,11 +267,21 @@ function sortListings(listings: Listing[], promotedUntil: Record<string, string>
   });
 }
 
+function toNumberOrNull(value: number | string | null): number | null {
+  if (value === null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export function toListing(row: ListingRow): Listing {
   return {
     ...row,
     price: Number(row.price),
     shipping_options: parseShippingOptions(row.shipping_options, row.logistics),
+    parcel_weight_kg: toNumberOrNull(row.parcel_weight_kg),
+    parcel_length_cm: toNumberOrNull(row.parcel_length_cm),
+    parcel_width_cm: toNumberOrNull(row.parcel_width_cm),
+    parcel_height_cm: toNumberOrNull(row.parcel_height_cm),
     seller: toSeller(row.profiles),
   };
 }
@@ -440,6 +482,11 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
           category: input.category,
           logistics: input.shipping[0]?.method ?? MEETUP_METHOD,
           shipping_options: input.shipping,
+          parcel_weight_kg: input.parcel.weightKg,
+          parcel_length_cm: input.parcel.lengthCm,
+          parcel_width_cm: input.parcel.widthCm,
+          parcel_height_cm: input.parcel.heightCm,
+          origin_region: input.parcel.originRegion,
           meetup_location: input.meetupLocation || null,
           images: input.images.length > 0 ? input.images : null,
           allow_negotiation: true,
