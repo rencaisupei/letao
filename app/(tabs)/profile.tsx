@@ -25,6 +25,7 @@ import {
   Pencil,
   ShieldCheck,
   Star,
+  Stethoscope,
   Trash2,
   UserPlus,
   Zap,
@@ -339,6 +340,12 @@ export default function ProfileScreen() {
                 label="我的賣家主頁與評價"
                 value={`信任度 ${trustScore}%`}
                 onPress={() => router.push({ pathname: '/seller/[id]', params: { id: userId } })}
+              />
+              <ProfileLink
+                icon={<Stethoscope size={16} color={SAGE} strokeWidth={2} />}
+                label="裝置檢查"
+                value="定位 / 地圖 / 相片"
+                onPress={() => router.push('/diagnostics')}
               />
               {isAdmin ? (
                 <ProfileLink

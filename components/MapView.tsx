@@ -77,6 +77,11 @@ function hasNativeMapView() {
   return Boolean(getViewManagerConfig('AIRMap') ?? getViewManagerConfig('AIRGoogleMap'));
 }
 
+/** True when this runtime can render a real map (native module present, or web tiles). */
+export function isMapRuntimeAvailable() {
+  return Platform.OS === 'web' || hasNativeMapView();
+}
+
 function renderMarker(
   marker: MapMarker,
   index: number,
@@ -233,17 +238,16 @@ const MapView = forwardRef<MapViewHandle, MapViewProps>(function MapView(
         <Text
           style={{
             color: '#0f172a',
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: '700',
             marginBottom: 8,
             textAlign: 'center',
           }}
         >
-          Map unavailable in this runtime
+          這個版本無法顯示地圖
         </Text>
         <Text style={{ color: '#64748b', fontSize: 13, lineHeight: 18, textAlign: 'center' }}>
-          This screen needs the native react-native-maps view. Use a development build or a runtime
-          that includes it.
+          地圖需要原生模組。請改用 Expo Go 或開發版本（dev build）開啟這個畫面。
         </Text>
       </View>
     );

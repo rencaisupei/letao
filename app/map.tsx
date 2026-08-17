@@ -2,13 +2,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { Stack, router } from 'expo-router';
-import * as Location from 'expo-location';
 import { Crosshair, Leaf, MapPin, X } from 'lucide-react-native';
 
 import MapView from '@/components/MapView';
 import type { LatLng, MapMarker } from '@/components/MapView.types';
 import { showAlert } from '@/lib/alert';
 import { MINT, SAGE } from '@/lib/constants';
+import { locationFailureMessage, requestUserLocation } from '@/lib/location';
 import { resolveListingImage } from '@/lib/demoImages';
 import { isBrowsable } from '@/lib/filters';
 import {
@@ -83,34 +83,25 @@ export default function MapScreen() {
 
   const locateMe = useCallback(async () => {
     setIsLocating(true);
-    const permission = await Location.requestForegroundPermissionsAsync();
+    const outcome = await requestUserLocation();
+    setIsLocating(false);
 
-    if (!permission.granted) {
-      setIsLocating(false);
+    if (!outcome.ok) {
       showAlert({
-        title: '沒有取得定位權限',
-        message:
-          '樂淘只用定位計算你與面交地點的距離，不會儲存位置。可以到系統設定開啟定位權限後再試。',
+        title: outcome.reason === 'permission' ? '沒有取得定位權限' : '無法取得目前位置',
+        tone: outcome.reason === 'permission' ? 'default' : 'danger',
+        message: locationFailureMessage(outcome.reason),
       });
       return;
     }
 
-    try {
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      setUserCoords({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
-    } catch {
+    setUserCoords(outcome.coords);
+
+    if (outcome.isApproximate) {
       showAlert({
-        title: '無法取得目前位置',
-        tone: 'danger',
-        message: '定位失敗，請確認裝置定位功能已開啟後再試一次。',
+        title: '使用最近一次的位置',
+        message: '目前收不到新的定位訊號，先用裝置最近一次記錄的位置估算距離。',
       });
-    } finally {
-      setIsLocating(false);
     }
   }, []);
 

@@ -18,7 +18,7 @@ import { showAlert } from '@/lib/alert';
 import { ROLE_OPTIONS, SAGE, type UserRole } from '@/lib/constants';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useLetaoStore } from '@/lib/store';
-import { pickPhotosFromLibrary, uploadAvatar } from '@/lib/uploads';
+import { pickPhotosFromLibrary, uploadAvatar, uploadFailureMessage } from '@/lib/uploads';
 
 export default function AccountScreen() {
   const userId = useLetaoStore((state) => state.userId);
@@ -54,18 +54,18 @@ export default function AccountScreen() {
     if (!photo) return;
 
     setProgress('正在上傳頭像...');
-    const url = await uploadAvatar(userId, photo);
+    const outcome = await uploadAvatar(userId, photo);
     setProgress(null);
 
-    if (!url) {
+    if (!outcome.ok) {
       showAlert({
         title: '頭像上傳失敗',
         tone: 'danger',
-        message: '請確認網路狀態後再試一次，或改用較小的圖片。',
+        message: uploadFailureMessage(outcome.reason),
       });
       return;
     }
-    setAvatarUrl(url);
+    setAvatarUrl(outcome.url);
   };
 
   const handleSave = async () => {

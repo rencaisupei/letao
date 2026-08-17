@@ -3,9 +3,17 @@ import type { ConfigContext, ExpoConfig } from '@expo/config';
 type ExpoPlugins = NonNullable<ExpoConfig['plugins']>;
 
 export default ({ config }: ConfigContext): ExpoConfig => {
+  // Android needs a Google Maps key to render tiles in a dev/production build.
+  // Expo Go ships its own key, so the map only goes blank once you build the app.
+  const androidGoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY ?? '';
+  const mapsPlugin: ExpoPlugins[number] =
+    androidGoogleMapsApiKey === ''
+      ? 'react-native-maps'
+      : ['react-native-maps', { androidGoogleMapsApiKey }];
+
   const nativePlugins: ExpoPlugins =
     process.env.EXPO_PLATFORM === 'native'
-      ? [['expo-dev-client', { launchMode: 'most-recent' }], 'react-native-maps']
+      ? [['expo-dev-client', { launchMode: 'most-recent' }], mapsPlugin]
       : [];
 
   return {

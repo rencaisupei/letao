@@ -67,6 +67,11 @@ interface GeoJsonFeature {
 
 const REGION_EPSILON = 0.000001;
 
+/** Web always renders tiles, so the map runtime is considered available. */
+export function isMapRuntimeAvailable() {
+  return true;
+}
+
 function getNumericStyleHeight(style: MapViewProps['style'], fallback = 400) {
   const flattenedStyle = StyleSheet.flatten(style);
   return typeof flattenedStyle?.height === 'number' ? flattenedStyle.height : fallback;

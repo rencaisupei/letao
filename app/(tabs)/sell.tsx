@@ -17,7 +17,12 @@ import {
   SAGE,
   getModeration,
 } from '@/lib/constants';
-import { type PickedPhoto, uploadListingPhoto } from '@/lib/uploads';
+import {
+  type PickedPhoto,
+  type UploadFailureReason,
+  uploadFailureMessage,
+  uploadListingPhoto,
+} from '@/lib/uploads';
 import { useLetaoStore } from '@/lib/store';
 
 export default function SellScreen() {
@@ -70,20 +75,29 @@ export default function SellScreen() {
     setProgress(photos.length > 0 ? '正在上傳相片...' : '正在送出商品...');
 
     const uploaded: string[] = [];
+    let lastFailure: UploadFailureReason | null = null;
     for (const [index, photo] of photos.entries()) {
       setProgress(`正在上傳相片 ${index + 1}/${photos.length}...`);
-      const url = await uploadListingPhoto(userId, photo, index);
-      if (url) uploaded.push(url);
+      const outcome = await uploadListingPhoto(userId, photo, index);
+      if (outcome.ok) uploaded.push(outcome.url);
+      else lastFailure = outcome.reason;
     }
 
-    if (photos.length > 0 && uploaded.length === 0) {
+    if (photos.length > 0 && uploaded.length === 0 && lastFailure) {
       setProgress(null);
       showAlert({
         title: '相片上傳失敗',
         tone: 'danger',
-        message: '相片沒有上傳成功，請確認網路狀態後再試一次，或先移除相片直接上架。',
+        message: `${uploadFailureMessage(lastFailure)}\n\n也可以先移除相片直接上架，之後再補圖。`,
       });
       return;
+    }
+
+    if (lastFailure && uploaded.length > 0) {
+      showAlert({
+        title: '部分相片沒有上傳',
+        message: `已成功上傳 ${uploaded.length}/${photos.length} 張。${uploadFailureMessage(lastFailure)}`,
+      });
     }
 
     setProgress('AI 正在審核內容...');
