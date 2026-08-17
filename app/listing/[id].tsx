@@ -23,6 +23,7 @@ import {
   MessageCircle,
   Star,
   Truck,
+  Wallet,
 } from 'lucide-react-native';
 
 import { Avatar } from '@/components/Avatar';
@@ -30,6 +31,7 @@ import { ConditionBadge } from '@/components/ConditionBadge';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { ListingStatusBadge } from '@/components/ListingStatusBadge';
 import { ModerationBadge } from '@/components/ModerationBadge';
+import { PaymentChoiceList } from '@/components/PaymentPicker';
 import { SelectChip } from '@/components/SelectChip';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { showAlert } from '@/lib/alert';
@@ -40,12 +42,17 @@ import {
   ORDER_STATUS_META,
   REPORT_REASONS,
   SAGE,
+  type PaymentCode,
   cheapestShipping,
   formatShippingFee,
   getCondition,
   getModeration,
   getOrderStatus,
+  getPayment,
   hasAutoShipping,
+  paymentLabel,
+  paymentSummary,
+  paymentsFor,
 } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
@@ -86,6 +93,7 @@ export default function ListingDetailScreen() {
   const [offerVisible, setOfferVisible] = useState(false);
   const [offerPrice, setOfferPrice] = useState('');
   const [offerMethod, setOfferMethod] = useState<string | null>(null);
+  const [offerPayment, setOfferPayment] = useState<PaymentCode | null>(null);
   const [destRegion, setDestRegion] = useState<string | null>(null);
   const [liveQuotes, setLiveQuotes] = useState<ListingShippingQuote[]>([]);
   const [isQuoting, setIsQuoting] = useState(false);
@@ -136,6 +144,15 @@ export default function ListingDetailScreen() {
 
   const offerValue = Number.parseFloat(offerPrice);
   const offerTotal = Number.isFinite(offerValue) ? Math.max(offerValue, 0) + chosenFee : chosenFee;
+
+  const paymentOptions = listing?.payment_methods ?? [];
+  const usablePayments = paymentsFor(paymentOptions, chosenMethod);
+  // The seller may accept cash only for meetup, so the choice always falls back
+  // to something valid for the delivery method the buyer currently has picked.
+  const chosenPayment =
+    offerPayment && usablePayments.includes(offerPayment)
+      ? offerPayment
+      : (usablePayments[0] ?? null);
 
   useEffect(() => {
     if (!offerVisible || !id) return undefined;
@@ -221,8 +238,17 @@ export default function ListingDetailScreen() {
       return;
     }
 
+    if (paymentOptions.length > 0 && !chosenPayment) {
+      showAlert({
+        title: '請選擇付款方式',
+        tone: 'danger',
+        message: `賣家設定的付款方式不適用於${chosenMethod}，請改選其他運送方式，或先私訊賣家確認。`,
+      });
+      return;
+    }
+
     setIsBusy(true);
-    const result = await createOrder(listing.id, offer, chosenMethod, destRegion);
+    const result = await createOrder(listing.id, offer, chosenMethod, destRegion, chosenPayment);
     setIsBusy(false);
     setOfferVisible(false);
 
@@ -267,6 +293,15 @@ export default function ListingDetailScreen() {
         });
         return;
       }
+      if (result.reason === 'payment') {
+        showAlert({
+          title: '付款方式已變更',
+          tone: 'danger',
+          message: '賣家剛剛調整了可接受的付款方式，請重新整理後再選一次。',
+        });
+        await refreshFeed();
+        return;
+      }
       showAlert({
         title: '出價沒有送出',
         tone: 'danger',
@@ -284,11 +319,12 @@ export default function ListingDetailScreen() {
       method === MEETUP_METHOD
         ? `面交 ∙ ${listing.meetup_location ?? '雙方約定之公共場所'}`
         : `${method} ∙ 寄至${destRegion ?? '本島'} ∙ 運費 ${formatShippingFee(fee)}`;
+    const payMeta = getPayment(result.paymentMethod);
 
     showAlert({
       title: '🤝 樂淘媒合成功！交易單已建立',
       tone: 'success',
-      message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}。\n\n運送方式：${locationInfo}\n應付總計：NT$ ${(offer + fee).toLocaleString('en-US')}（商品 ${offer.toLocaleString('en-US')} + 運費 ${fee.toLocaleString('en-US')}）\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
+      message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}。\n\n運送方式：${locationInfo}\n付款方式：${paymentLabel(result.paymentMethod)}${payMeta ? `\n${payMeta.hint}` : ''}\n應付總計：NT$ ${(offer + fee).toLocaleString('en-US')}（商品 ${offer.toLocaleString('en-US')} + 運費 ${fee.toLocaleString('en-US')}）\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
       confirmLabel: '前往私訊',
       dismissLabel: '稍後再說',
       onConfirm: () => {
@@ -500,6 +536,7 @@ export default function ListingDetailScreen() {
               label={offersMeetup ? '面交地點' : '出貨地'}
               value={listing.meetup_location ?? '台灣本島'}
             />
+            <DetailRow label="付款方式" value={paymentSummary(paymentOptions)} />
           </View>
 
           <Text className="text-foreground mt-4 text-[13px] font-semibold">
@@ -544,6 +581,46 @@ export default function ListingDetailScreen() {
               {isAutoPriced
                 ? '「自動試算」的運費依包裝重量、材積與收件縣市計算，出價時會即時重算並加到您的應付總計；離島與偏遠地區另有加價。'
                 : '運費由賣家自訂，會在出價時加到您的應付總計。'}
+            </Text>
+          </View>
+
+          <Text className="text-foreground mt-4 text-[13px] font-semibold">
+            買家的取貨與付款方式（出價時選一種）
+          </Text>
+          <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
+            {paymentOptions.length === 0 ? (
+              <Text className="text-muted text-[12px] leading-4">
+                賣家尚未設定付款方式，出價成立後請在私訊中確認怎麼付款。
+              </Text>
+            ) : (
+              paymentOptions.map((code, index) => {
+                const meta = getPayment(code);
+                if (!meta) return null;
+                return (
+                  <View
+                    key={code}
+                    className={`py-2 ${index === 0 ? '' : 'border-t border-neutral-100'}`}
+                  >
+                    <View className="flex-row items-center gap-1.5">
+                      <Wallet size={13} color={SAGE} strokeWidth={2.2} />
+                      <Text className="text-foreground flex-1 text-[12px] font-medium">
+                        {meta.emoji} {meta.label}
+                      </Text>
+                      <Text className="text-muted text-[10px] font-semibold">
+                        {meta.scope === 'meetup'
+                          ? '限面交'
+                          : meta.scope === 'shipped'
+                            ? '限寄送'
+                            : '面交／寄送皆可'}
+                      </Text>
+                    </View>
+                    <Text className="text-muted mt-1 text-[11px] leading-4">{meta.hint}</Text>
+                  </View>
+                );
+              })
+            )}
+            <Text className="text-muted mt-2 text-[11px] leading-4">
+              取貨方式就是上面選定的運送方式：超商店到店到店取貨、宅配送到指定地址、面交則由雙方碰面交付。
             </Text>
           </View>
 
@@ -600,6 +677,9 @@ export default function ListingDetailScreen() {
                   {myOrder.dest_region ? ` ∙ 寄至${myOrder.dest_region}` : ''} ∙ 運費{' '}
                   {formatShippingFee(myOrder.shipping_fee)} ∙ 應付總計 NT${' '}
                   {(myOrder.offer_price + myOrder.shipping_fee).toLocaleString('en-US')}
+                </Text>
+                <Text className="text-muted mt-0.5 text-[11px] font-medium">
+                  付款方式：{paymentLabel(myOrder.payment_method)}
                 </Text>
                 <Text className="text-muted mt-1 text-[11px] leading-4">
                   {ORDER_STATUS_META[getOrderStatus(myOrder.status)].hint}
@@ -680,6 +760,9 @@ export default function ListingDetailScreen() {
                         {order.dest_region ? ` ∙ 寄至${order.dest_region}` : ''} ∙ 運費{' '}
                         {formatShippingFee(order.shipping_fee)} ∙ 應收總計 NT${' '}
                         {(order.offer_price + order.shipping_fee).toLocaleString('en-US')}
+                      </Text>
+                      <Text className="text-muted mt-0.5 text-[11px] font-medium">
+                        付款方式：{paymentLabel(order.payment_method)}
                       </Text>
                       {order.status === 'pending' ? (
                         <View className="mt-3 flex-row gap-2">
@@ -776,6 +859,7 @@ export default function ListingDetailScreen() {
                 if (!requireAccount('出價')) return;
                 setOfferPrice('');
                 setOfferMethod(cheapest?.method ?? null);
+                setOfferPayment(null);
                 setOfferVisible(true);
               }}
             >
@@ -912,6 +996,16 @@ export default function ListingDetailScreen() {
                 </>
               ) : null}
 
+              <Text className="text-foreground mt-4 text-[12px] font-semibold">付款方式</Text>
+              <View className="mt-2">
+                <PaymentChoiceList
+                  options={paymentOptions}
+                  logistics={chosenMethod}
+                  value={chosenPayment}
+                  onChange={setOfferPayment}
+                />
+              </View>
+
               <View className="bg-canvas mt-3 rounded-xl px-3 py-2.5">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-muted flex-1 text-[11px]">
@@ -932,6 +1026,9 @@ export default function ListingDetailScreen() {
                     NT$ {offerTotal.toLocaleString('en-US')}
                   </Text>
                 </View>
+                <Text className="text-muted mt-1 text-[11px]">
+                  取貨：{chosenMethod} ∙ 付款：{paymentLabel(chosenPayment)}
+                </Text>
               </View>
 
               <View className="mt-4 flex-row gap-2">

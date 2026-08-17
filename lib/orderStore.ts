@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 import { bilt } from '@/lib/bilt';
-import type { OrderStatus } from '@/lib/constants';
+import { type OrderStatus, type PaymentCode, getPayment } from '@/lib/constants';
 
 export type Order = {
   id: string;
@@ -16,31 +16,36 @@ export type Order = {
   shipping_fee: number;
   /** City the buyer asked it to be shipped to, null for meetup / legacy rows. */
   dest_region: string | null;
+  /** How the buyer pays, chosen from the methods the seller accepts. */
+  payment_method: PaymentCode | null;
   meetup_location: string | null;
-  /** Delivery details the buyer fills in before the seller opens a shipment. */
-  recipient_name: string | null;
-  recipient_phone: string | null;
-  pickup_store_id: string | null;
-  pickup_store_name: string | null;
-  pickup_store_address: string | null;
-  ship_zip: string | null;
-  ship_address: string | null;
   completed_at: string | null;
   created_at: string;
   listing_title: string;
   listing_images: string[] | null;
   listing_price: number;
   counterpartName: string | null;
-  /** Latest non-cancelled shipment for this order, when one exists. */
-  shipmentStatus: string | null;
-  trackingNo: string | null;
 };
 
 export type CreateOrderResult =
-  | { ok: true; orderId: string; logistics: string | null; shippingFee: number }
+  | {
+      ok: true;
+      orderId: string;
+      logistics: string | null;
+      shippingFee: number;
+      paymentMethod: PaymentCode | null;
+    }
   | {
       ok: false;
-      reason: 'lowball' | 'sold' | 'own' | 'unavailable' | 'logistics' | 'shipping' | 'error';
+      reason:
+        | 'lowball'
+        | 'sold'
+        | 'own'
+        | 'unavailable'
+        | 'logistics'
+        | 'shipping'
+        | 'payment'
+        | 'error';
       minPrice: number;
     };
 
@@ -54,14 +59,8 @@ type OrderRow = {
   logistics: string | null;
   shipping_fee: number | string | null;
   dest_region: string | null;
+  payment_method: string | null;
   meetup_location: string | null;
-  recipient_name: string | null;
-  recipient_phone: string | null;
-  pickup_store_id: string | null;
-  pickup_store_name: string | null;
-  pickup_store_address: string | null;
-  ship_zip: string | null;
-  ship_address: string | null;
   completed_at: string | null;
   created_at: string;
   listings: {
@@ -78,6 +77,7 @@ type CreateRow = {
   min_price: number | string | null;
   shipping_fee: number | string | null;
   logistics: string | null;
+  payment_method: string | null;
 };
 
 type OrderState = {
@@ -89,6 +89,7 @@ type OrderState = {
     offerPrice: number,
     logistics: string,
     destRegion: string | null,
+    paymentMethod: PaymentCode | null,
   ) => Promise<CreateOrderResult>;
   completeOrder: (orderId: string) => Promise<boolean>;
   cancelOrder: (orderId: string) => Promise<boolean>;
@@ -111,6 +112,10 @@ function normalizeReason(reason: string | null): string {
   return reason ?? 'error';
 }
 
+function toPaymentCode(value: string | null): PaymentCode | null {
+  return getPayment(value)?.code ?? null;
+}
+
 export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
   isLoading: false,
@@ -121,7 +126,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const { data } = await bilt
       .from('orders')
       .select(
-        'id, listing_id, buyer_id, seller_id, offer_price, status, logistics, shipping_fee, dest_region, meetup_location, recipient_name, recipient_phone, pickup_store_id, pickup_store_name, pickup_store_address, ship_zip, ship_address, completed_at, created_at, listings(title, images, price)',
+        'id, listing_id, buyer_id, seller_id, offer_price, status, logistics, shipping_fee, dest_region, payment_method, meetup_location, completed_at, created_at, listings(title, images, price)',
       )
       .order('created_at', { ascending: false })
       .limit(200);
@@ -142,29 +147,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }
     }
 
-    // One extra round trip so the list can show delivery progress without
-    // opening every order.
-    const shipments = new Map<string, { status: string; tracking_no: string | null }>();
-    if (rows.length > 0) {
-      const { data: shipmentRows } = await bilt
-        .from('shipments')
-        .select('order_id, status, tracking_no, created_at')
-        .in(
-          'order_id',
-          rows.map((row) => row.id),
-        )
-        .neq('status', 'cancelled')
-        .order('created_at', { ascending: true });
-
-      for (const row of asRows<{
-        order_id: string;
-        status: string;
-        tracking_no: string | null;
-      }>(shipmentRows)) {
-        shipments.set(row.order_id, { status: row.status, tracking_no: row.tracking_no });
-      }
-    }
-
     const orders: Order[] = rows.map((row) => {
       const counterpartId = row.buyer_id === userId ? row.seller_id : row.buyer_id;
       return {
@@ -177,34 +159,27 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         logistics: row.logistics,
         shipping_fee: Number(row.shipping_fee ?? 0),
         dest_region: row.dest_region,
+        payment_method: toPaymentCode(row.payment_method),
         meetup_location: row.meetup_location,
-        recipient_name: row.recipient_name,
-        recipient_phone: row.recipient_phone,
-        pickup_store_id: row.pickup_store_id,
-        pickup_store_name: row.pickup_store_name,
-        pickup_store_address: row.pickup_store_address,
-        ship_zip: row.ship_zip,
-        ship_address: row.ship_address,
         completed_at: row.completed_at,
         created_at: row.created_at,
         listing_title: row.listings?.title ?? '已刪除的商品',
         listing_images: row.listings?.images ?? null,
         listing_price: Number(row.listings?.price ?? 0),
         counterpartName: names.get(counterpartId) ?? null,
-        shipmentStatus: shipments.get(row.id)?.status ?? null,
-        trackingNo: shipments.get(row.id)?.tracking_no ?? null,
       };
     });
 
     set({ orders, isLoading: false });
   },
 
-  createOrder: async (listingId, offerPrice, logistics, destRegion) => {
+  createOrder: async (listingId, offerPrice, logistics, destRegion, paymentMethod) => {
     const { data, error } = await bilt.rpc('create_order', {
       p_listing_id: listingId,
       p_offer_price: offerPrice,
       p_logistics: logistics,
       p_dest_region: destRegion,
+      p_payment_method: paymentMethod,
     });
 
     if (error) return { ok: false, reason: 'error', minPrice: 0 };
@@ -218,6 +193,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         orderId: row.order_id,
         logistics: row.logistics,
         shippingFee: Number(row.shipping_fee ?? 0),
+        paymentMethod: toPaymentCode(row.payment_method),
       };
     }
 
@@ -230,6 +206,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     if (reason === 'unavailable') return { ok: false, reason: 'unavailable', minPrice };
     if (reason === 'logistics') return { ok: false, reason: 'logistics', minPrice };
     if (reason === 'shipping') return { ok: false, reason: 'shipping', minPrice };
+    if (reason === 'payment') return { ok: false, reason: 'payment', minPrice };
     return { ok: false, reason: 'error', minPrice };
   },
 

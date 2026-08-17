@@ -15,11 +15,16 @@ import {
 import { SelectChip } from '@/components/SelectChip';
 import { showAlert } from '@/lib/alert';
 import { useChatStore } from '@/lib/chatStore';
-import { ORDER_STATUS_META, SAGE, formatShippingFee, getOrderStatus } from '@/lib/constants';
+import {
+  ORDER_STATUS_META,
+  SAGE,
+  formatShippingFee,
+  getOrderStatus,
+  paymentLabel,
+} from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
 import { type Order, useOrderStore } from '@/lib/orderStore';
-import { SHIPMENT_STATUS_META, getShipmentStatus } from '@/lib/shipments';
 import { useLetaoStore } from '@/lib/store';
 
 type Tab = 'buying' | 'selling';
@@ -239,13 +244,10 @@ export default function OrdersScreen() {
                   {item.dest_region ? ` ∙ 寄至${item.dest_region}` : ''} ∙{' '}
                   {item.meetup_location ?? '台灣本島'}
                 </Text>
+                <Text className="text-muted mt-1 text-[11px] leading-4">
+                  💳 {paymentLabel(item.payment_method)}
+                </Text>
                 <Text className="text-muted mt-1 text-[11px] leading-4">{meta.hint}</Text>
-                {item.shipmentStatus === null ? null : (
-                  <Text className="text-sage-deep mt-1 text-[11px] leading-4 font-semibold">
-                    🚚 {SHIPMENT_STATUS_META[getShipmentStatus(item.shipmentStatus)].label}
-                    {item.trackingNo === null ? '' : ` ∙ ${item.trackingNo}`}
-                  </Text>
-                )}
               </View>
 
               <View className="mt-2.5 flex-row flex-wrap gap-2">
@@ -267,7 +269,7 @@ export default function OrdersScreen() {
                   onPress={() => router.push({ pathname: '/order/[id]', params: { id: item.id } })}
                 >
                   <Truck size={13} color={SAGE} strokeWidth={2.2} />
-                  <Button.Label>出貨與追蹤</Button.Label>
+                  <Button.Label>取貨與付款</Button.Label>
                 </Button>
 
                 {item.status === 'pending' ? (

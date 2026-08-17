@@ -9,8 +9,10 @@ import {
   type ConditionCode,
   type ListingStatus,
   type ModerationStatus,
+  type PaymentCode,
   type ShippingOption,
   type UserRole,
+  parsePaymentMethods,
   parseShippingOptions,
 } from '@/lib/constants';
 import { demoImageUri } from '@/lib/demoImages';
@@ -37,6 +39,8 @@ export type Listing = {
   logistics: string | null;
   /** Every delivery method the seller accepts, with its fee. */
   shipping_options: ShippingOption[];
+  /** Payment methods the seller accepts; empty for rows created before this existed. */
+  payment_methods: PaymentCode[];
   /** Package measurements used by the carrier rate engine. */
   parcel_weight_kg: number | null;
   parcel_length_cm: number | null;
@@ -59,6 +63,7 @@ export type NewListingInput = {
   category: string;
   condition: ConditionCode;
   shipping: ShippingOption[];
+  payments: PaymentCode[];
   parcel: ParcelSpec;
   meetupLocation: string;
   description: string;
@@ -114,6 +119,7 @@ type ListingRow = Omit<
   | 'seller'
   | 'price'
   | 'shipping_options'
+  | 'payment_methods'
   | 'parcel_weight_kg'
   | 'parcel_length_cm'
   | 'parcel_width_cm'
@@ -121,6 +127,7 @@ type ListingRow = Omit<
 > & {
   price: number | string;
   shipping_options: unknown;
+  payment_methods: unknown;
   parcel_weight_kg: number | string | null;
   parcel_length_cm: number | string | null;
   parcel_width_cm: number | string | null;
@@ -129,7 +136,7 @@ type ListingRow = Omit<
 };
 
 const LISTING_COLUMNS =
-  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, shipping_options, parcel_weight_kg, parcel_length_cm, parcel_width_cm, parcel_height_cm, origin_region, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
+  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, shipping_options, payment_methods, parcel_weight_kg, parcel_length_cm, parcel_width_cm, parcel_height_cm, origin_region, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
 
 export type ClaimResult = {
   ok: boolean;
@@ -206,6 +213,7 @@ async function seedDemoListings(userId: string) {
     category: item.category,
     logistics: item.shipping[0]?.method ?? MEETUP_METHOD,
     shipping_options: item.shipping,
+    payment_methods: item.payments,
     parcel_weight_kg: item.parcel.weightKg,
     parcel_length_cm: item.parcel.lengthCm,
     parcel_width_cm: item.parcel.widthCm,
@@ -234,7 +242,7 @@ async function backfillDemoImages(userId: string) {
   );
 }
 
-/** Demo rows seeded before automatic rates only carry a fixed fee. */
+/** Demo rows seeded before automatic rates and payment choices existed. */
 async function backfillDemoShipping(userId: string) {
   await Promise.all(
     DEMO_LISTINGS.map((item) =>
@@ -243,6 +251,7 @@ async function backfillDemoShipping(userId: string) {
         .update({
           logistics: item.shipping[0]?.method ?? MEETUP_METHOD,
           shipping_options: item.shipping,
+          payment_methods: item.payments,
           parcel_weight_kg: item.parcel.weightKg,
           parcel_length_cm: item.parcel.lengthCm,
           parcel_width_cm: item.parcel.widthCm,
@@ -278,6 +287,7 @@ export function toListing(row: ListingRow): Listing {
     ...row,
     price: Number(row.price),
     shipping_options: parseShippingOptions(row.shipping_options, row.logistics),
+    payment_methods: parsePaymentMethods(row.payment_methods),
     parcel_weight_kg: toNumberOrNull(row.parcel_weight_kg),
     parcel_length_cm: toNumberOrNull(row.parcel_length_cm),
     parcel_width_cm: toNumberOrNull(row.parcel_width_cm),
@@ -482,6 +492,7 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
           category: input.category,
           logistics: input.shipping[0]?.method ?? MEETUP_METHOD,
           shipping_options: input.shipping,
+          payment_methods: input.payments,
           parcel_weight_kg: input.parcel.weightKg,
           parcel_length_cm: input.parcel.lengthCm,
           parcel_width_cm: input.parcel.widthCm,

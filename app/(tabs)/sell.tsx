@@ -7,6 +7,7 @@ import { ShieldCheck, Sparkles, UserPlus } from 'lucide-react-native';
 import { PhotoPicker } from '@/components/PhotoPicker';
 import { MeetupPicker, type MeetupValue, composeMeetupLocation } from '@/components/MeetupPicker';
 import { ParcelPicker } from '@/components/ParcelPicker';
+import { PaymentMethodsPicker } from '@/components/PaymentPicker';
 import {
   type QuoteMap,
   type ShippingDraft,
@@ -23,8 +24,11 @@ import {
   LOGISTICS_OPTIONS,
   MEETUP_METHOD,
   PROHIBITED_ITEMS,
+  type PaymentCode,
   SAGE,
   getModeration,
+  getPayment,
+  isPaymentAllowedFor,
 } from '@/lib/constants';
 import {
   EMPTY_PARCEL_DRAFT,
@@ -50,6 +54,7 @@ export default function SellScreen() {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [condition, setCondition] = useState<ConditionCode>('brand_new');
   const [shipping, setShipping] = useState<ShippingDraft[]>(defaultShippingDrafts);
+  const [payments, setPayments] = useState<PaymentCode[]>(['cod', 'transfer']);
   const [meetup, setMeetup] = useState<MeetupValue>({ region: null, detail: '' });
   const [parcel, setParcel] = useState<ParcelDraft>(EMPTY_PARCEL_DRAFT);
   const [quotes, setQuotes] = useState<QuoteMap>({});
@@ -59,6 +64,10 @@ export default function SellScreen() {
 
   const isSubmitting = progress !== null;
   const isMeetup = shipping.some((item) => item.method === MEETUP_METHOD);
+  const shippingMethodNames = shipping.map((item) => item.method);
+  const usablePayments = payments.filter((code) =>
+    shippingMethodNames.some((method) => isPaymentAllowedFor(code, method)),
+  );
 
   const parsedParcel = parseParcelDraft(parcel);
   const spec = parsedParcel.ok ? parsedParcel.parcel : null;
@@ -108,6 +117,7 @@ export default function SellScreen() {
     setPhotos([]);
     setDescription('');
     setShipping(defaultShippingDrafts());
+    setPayments(['cod', 'transfer']);
     setMeetup({ region: null, detail: '' });
     setParcel(EMPTY_PARCEL_DRAFT);
     setQuotes({});
@@ -151,6 +161,18 @@ export default function SellScreen() {
       return;
     }
 
+    if (usablePayments.length === 0) {
+      showAlert({
+        title: '請選擇付款方式',
+        tone: 'danger',
+        message:
+          payments.length === 0
+            ? '至少勾選一種付款方式，買家在出價時才知道要怎麼付款。'
+            : '目前勾選的付款方式與您提供的運送方式不相容，請重新勾選（例如面交只能收現金或行動支付）。',
+      });
+      return;
+    }
+
     setProgress(photos.length > 0 ? '正在上傳相片...' : '正在送出商品...');
 
     const uploaded: string[] = [];
@@ -186,6 +208,7 @@ export default function SellScreen() {
       category,
       condition,
       shipping: normalized.options,
+      payments: usablePayments,
       parcel: { ...parsedParcel.parcel, originRegion },
       meetupLocation: composeMeetupLocation(meetup),
       description: description.trim(),
@@ -378,6 +401,23 @@ export default function SellScreen() {
             onChange={setShipping}
           />
         </View>
+
+        <Text className="text-foreground mt-4 text-[13px] font-semibold">
+          買家的付款方式（可多選，買家出價時選一種）
+        </Text>
+        <View className="mt-2">
+          <PaymentMethodsPicker
+            value={payments}
+            methods={shippingMethodNames}
+            isDisabled={isSubmitting}
+            onChange={setPayments}
+          />
+        </View>
+        <Text className="text-muted mt-1.5 text-[11px] leading-4">
+          {usablePayments.length > 0
+            ? `商品頁會公開顯示：${usablePayments.map((code) => getPayment(code)?.label ?? code).join('、')}。`
+            : '請至少勾選一種與運送方式相容的付款方式。'}
+        </Text>
 
         <View className="bg-background mt-3 flex-row items-start gap-2 rounded-xl border border-neutral-200 p-3">
           <ShieldCheck size={14} color={SAGE} strokeWidth={2} />

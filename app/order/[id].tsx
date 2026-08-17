@@ -9,18 +9,24 @@ import {
   Star,
   Truck,
   UserPlus,
+  Wallet,
   XCircle,
 } from 'lucide-react-native';
 
-import { DeliveryInfoCard } from '@/components/DeliveryInfoCard';
-import { ShipmentCard } from '@/components/ShipmentCard';
 import { showAlert } from '@/lib/alert';
 import { useChatStore } from '@/lib/chatStore';
-import { ORDER_STATUS_META, SAGE, formatShippingFee, getOrderStatus } from '@/lib/constants';
+import {
+  ORDER_STATUS_META,
+  SAGE,
+  formatShippingFee,
+  getOrderStatus,
+  getPayment,
+  paymentLabel,
+  pickupHint,
+} from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useOrderStore } from '@/lib/orderStore';
-import { carrierFor, useShipmentStore } from '@/lib/shipments';
 import { useLetaoStore } from '@/lib/store';
 
 export default function OrderDetailScreen() {
@@ -34,8 +40,6 @@ export default function OrderDetailScreen() {
   const completeOrder = useOrderStore((state) => state.completeOrder);
   const cancelOrder = useOrderStore((state) => state.cancelOrder);
   const startConversation = useChatStore((state) => state.startConversation);
-  const byOrder = useShipmentStore((state) => state.byOrder);
-  const loadShipment = useShipmentStore((state) => state.load);
 
   const [isBusy, setIsBusy] = useState(false);
 
@@ -43,13 +47,11 @@ export default function OrderDetailScreen() {
     () => orders.find((item) => item.id === orderId) ?? null,
     [orders, orderId],
   );
-  const entry = byOrder[orderId] ?? null;
 
   const refresh = useCallback(() => {
     if (!userId || orderId === '') return;
     void loadOrders(userId);
-    void loadShipment(orderId);
-  }, [userId, orderId, loadOrders, loadShipment]);
+  }, [userId, orderId, loadOrders]);
 
   useFocusEffect(
     useCallback(() => {
@@ -91,14 +93,9 @@ export default function OrderDetailScreen() {
   }
 
   const isBuyer = order.buyer_id === userId;
-  const isSeller = order.seller_id === userId;
   const meta = ORDER_STATUS_META[getOrderStatus(order.status)];
   const source = resolveListingImage(order.listing_images?.[0]);
-  const carrier = carrierFor(order.logistics);
-  const shipment = entry?.shipment ?? null;
-  const events = entry?.events ?? [];
-  const canEditDelivery =
-    isBuyer && order.status === 'pending' && (shipment === null || shipment.status === 'cancelled');
+  const payment = getPayment(order.payment_method);
 
   const handleComplete = async () => {
     setIsBusy(true);
@@ -202,38 +199,40 @@ export default function OrderDetailScreen() {
         <View className="bg-background mt-2.5 rounded-2xl border border-neutral-200 p-3.5">
           <View className="flex-row items-center gap-1.5">
             <Truck size={14} color={SAGE} strokeWidth={2.2} />
-            <Text className="text-foreground text-[12px] font-bold">寄送方式</Text>
+            <Text className="text-foreground text-[12px] font-bold">買家的取貨方式</Text>
           </View>
           <Text className="text-foreground mt-2 text-[12px] font-semibold">
             {order.logistics ?? '面交'}
             {order.dest_region === null ? '' : ` ∙ 寄至${order.dest_region}`}
           </Text>
-          <Text className="text-muted mt-1 text-[11px] leading-4">{carrier.note}</Text>
+          <Text className="text-muted mt-1 text-[11px] leading-4">
+            {pickupHint(order.logistics)}
+          </Text>
           {order.meetup_location === null ? null : (
             <Text className="text-muted mt-1 text-[11px] leading-4">
-              出貨地：{order.meetup_location}
+              {order.logistics === '面交' ? '面交地點' : '出貨地'}：{order.meetup_location}
             </Text>
           )}
         </View>
 
-        {carrier.provider === 'none' ? null : (
-          <DeliveryInfoCard
-            key={order.id}
-            order={order}
-            carrier={carrier}
-            canEdit={canEditDelivery}
-            onSaved={refresh}
-          />
-        )}
-
-        <ShipmentCard
-          order={order}
-          shipment={shipment}
-          events={events}
-          isSeller={isSeller}
-          carrier={carrier}
-          onChanged={refresh}
-        />
+        <View className="bg-background mt-2.5 rounded-2xl border border-neutral-200 p-3.5">
+          <View className="flex-row items-center gap-1.5">
+            <Wallet size={14} color={SAGE} strokeWidth={2.2} />
+            <Text className="text-foreground text-[12px] font-bold">買家的付款方式</Text>
+          </View>
+          <Text className="text-foreground mt-2 text-[12px] font-semibold">
+            {paymentLabel(order.payment_method)}
+          </Text>
+          <Text className="text-muted mt-1 text-[11px] leading-4">
+            {payment?.hint ?? '這筆交易沒有記錄付款方式，請雙方在私訊中確認後再交付。'}
+          </Text>
+          <Text className="text-foreground mt-2 text-[11px] font-semibold">
+            {isBuyer ? '應付' : '應收'} NT${' '}
+            {(order.offer_price + order.shipping_fee).toLocaleString('en-US')}（商品{' '}
+            {order.offer_price.toLocaleString('en-US')} + 運費{' '}
+            {order.shipping_fee.toLocaleString('en-US')}）
+          </Text>
+        </View>
 
         <View className="mt-3 flex-row flex-wrap gap-2">
           <Button

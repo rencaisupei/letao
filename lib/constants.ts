@@ -125,7 +125,6 @@ export const LOGISTICS_OPTIONS = [
   '萊爾富 店到店',
   '蝦皮店到店',
   '黑貓宅急便',
-  'ezShip 宅配',
   'Lalamove',
   '面交',
 ];
@@ -156,7 +155,6 @@ export const SUGGESTED_SHIPPING_FEES: Record<string, number> = {
   '萊爾富 店到店': 60,
   蝦皮店到店: 60,
   黑貓宅急便: 150,
-  'ezShip 宅配': 130,
   Lalamove: 200,
   面交: 0,
 };
@@ -237,6 +235,104 @@ export function shippingSummary(options: ShippingOption[]): string {
     return `${cheapest.method} ∙ ${formatShippingFee(cheapest.fee)}${suffix}`;
   }
   return `${options.length} 種寄送 ∙ ${formatShippingFee(cheapest.fee)}起${suffix}`;
+}
+
+/** How the buyer pays the seller. Mirrors the DB check on listings.payment_methods. */
+export type PaymentCode = 'cod' | 'transfer' | 'mobile' | 'cash';
+
+export type PaymentMeta = {
+  code: PaymentCode;
+  emoji: string;
+  label: string;
+  hint: string;
+  /**
+   * Which delivery methods the payment fits.
+   * `shipped` excludes 面交, `meetup` is 面交 only, `any` works for both.
+   */
+  scope: 'shipped' | 'meetup' | 'any';
+};
+
+export const PAYMENT_METHODS: PaymentMeta[] = [
+  {
+    code: 'cod',
+    emoji: '📦',
+    label: '貨到付款',
+    hint: '超商或宅配代收貨款，買家取貨時付清。',
+    scope: 'shipped',
+  },
+  {
+    code: 'transfer',
+    emoji: '🏦',
+    label: '匯款／銀行轉帳',
+    hint: '買家先轉帳，賣家確認入帳後出貨。',
+    scope: 'any',
+  },
+  {
+    code: 'mobile',
+    emoji: '📱',
+    label: '行動支付',
+    hint: 'Line Pay／街口等，由賣家提供收款連結或 QR Code。',
+    scope: 'any',
+  },
+  {
+    code: 'cash',
+    emoji: '🤝',
+    label: '面交付現',
+    hint: '碰面時付現金，僅適用面交。',
+    scope: 'meetup',
+  },
+];
+
+export function getPayment(code: string | null | undefined): PaymentMeta | null {
+  return PAYMENT_METHODS.find((item) => item.code === code) ?? null;
+}
+
+/** "📦 貨到付款", or a placeholder when the order carries no choice. */
+export function paymentLabel(code: string | null | undefined): string {
+  const meta = getPayment(code);
+  return meta ? `${meta.emoji} ${meta.label}` : '待雙方確認';
+}
+
+/** Mirrors public.payment_allows() so the UI hides choices the server rejects. */
+export function isPaymentAllowedFor(code: PaymentCode, logistics: string | null): boolean {
+  const scope = getPayment(code)?.scope ?? 'any';
+  const isMeetup = (logistics ?? MEETUP_METHOD) === MEETUP_METHOD;
+  if (scope === 'meetup') return isMeetup;
+  if (scope === 'shipped') return !isMeetup;
+  return true;
+}
+
+/** Shapes an untyped `listings.payment_methods` payload, ordered like PAYMENT_METHODS. */
+export function parsePaymentMethods(value: unknown): PaymentCode[] {
+  if (!Array.isArray(value)) return [];
+  const codes = new Set(value.filter((item): item is string => typeof item === 'string'));
+  return PAYMENT_METHODS.filter((item) => codes.has(item.code)).map((item) => item.code);
+}
+
+/** The payment choices that work for one delivery method. */
+export function paymentsFor(codes: PaymentCode[], logistics: string | null): PaymentCode[] {
+  return codes.filter((code) => isPaymentAllowedFor(code, logistics));
+}
+
+/** One-line summary, e.g. "貨到付款 ∙ 匯款／銀行轉帳". */
+export function paymentSummary(codes: PaymentCode[]): string {
+  if (codes.length === 0) return '賣家尚未設定';
+  return codes.map((code) => getPayment(code)?.label ?? code).join(' ∙ ');
+}
+
+/** One-line explanation of how the buyer receives the item. */
+export function pickupHint(logistics: string | null | undefined): string {
+  const method = logistics ?? MEETUP_METHOD;
+  if (method === MEETUP_METHOD) {
+    return '面交當場點交：請約人潮多、有監視器的公共場所，並先在私訊確認時間。';
+  }
+  if (method === 'Lalamove') {
+    return '同城即時配送：請與賣家約好可收件的時間與地址。';
+  }
+  if (method.includes('宅急便') || method.includes('宅配')) {
+    return '宅配到府：請確認收件地址與可收件時間，簽收前先檢查外包裝。';
+  }
+  return '超商店到店：賣家寄出後到指定門市取貨，取貨時請當場確認商品狀況。';
 }
 
 export type UserRole = 'buyer' | 'seller' | 'both';
@@ -432,6 +528,8 @@ export type DemoListing = {
   condition: ConditionCode;
   category: string;
   shipping: ShippingOption[];
+  /** Payment choices the seller accepts. */
+  payments: PaymentCode[];
   /** Package measurements the rate engine prices on. */
   parcel: { weightKg: number; lengthCm: number; widthCm: number; heightCm: number };
   originRegion: string;
@@ -451,6 +549,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
       { method: '黑貓宅急便', fee: 150, mode: 'auto' },
       { method: '面交', fee: 0, mode: 'auto' },
     ],
+    payments: ['cod', 'transfer', 'cash'],
     parcel: { weightKg: 1.8, lengthCm: 30, widthCm: 22, heightCm: 14 },
     originRegion: '台北',
     meetup: '台北 ∙ 信義區',
@@ -466,6 +565,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
       { method: '全家 店到店', fee: 70, mode: 'auto' },
       { method: '蝦皮店到店', fee: 0, mode: 'manual' },
     ],
+    payments: ['cod', 'transfer'],
     parcel: { weightKg: 0.8, lengthCm: 32, widthCm: 24, heightCm: 8 },
     originRegion: '台中',
     meetup: '台中 ∙ 西屯區',
@@ -481,6 +581,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
       { method: '面交', fee: 0, mode: 'auto' },
       { method: 'Lalamove', fee: 165, mode: 'auto' },
     ],
+    payments: ['cash', 'transfer', 'mobile'],
     parcel: { weightKg: 4.5, lengthCm: 35, widthCm: 30, heightCm: 45 },
     originRegion: '新北',
     meetup: '新北 ∙ 板橋區',
@@ -497,6 +598,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
       { method: '萊爾富 店到店', fee: 70, mode: 'auto' },
       { method: '面交', fee: 0, mode: 'auto' },
     ],
+    payments: ['cod', 'mobile', 'cash'],
     parcel: { weightKg: 0.4, lengthCm: 33, widthCm: 33, heightCm: 5 },
     originRegion: '高雄',
     meetup: '高雄 ∙ 苓雅區',
