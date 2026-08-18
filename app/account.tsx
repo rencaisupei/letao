@@ -13,8 +13,11 @@ import { Stack, router } from 'expo-router';
 import { Camera, UserPlus } from 'lucide-react-native';
 
 import { Avatar } from '@/components/Avatar';
+import { PasswordField } from '@/components/PasswordField';
 import { SelectChip } from '@/components/SelectChip';
 import { showAlert } from '@/lib/alert';
+import { MIN_PASSWORD_LENGTH, describePasswordUpdateError } from '@/lib/authErrors';
+import { bilt } from '@/lib/bilt';
 import { ROLE_OPTIONS, SAGE, type UserRole } from '@/lib/constants';
 import { goBackOrReplace } from '@/lib/navigation';
 import { useLetaoStore } from '@/lib/store';
@@ -33,6 +36,9 @@ export default function AccountScreen() {
   const [role, setRole] = useState<UserRole>(storedRole);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(storedAvatar);
   const [progress, setProgress] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
 
   const isBusy = progress !== null;
 
@@ -96,6 +102,43 @@ export default function AccountScreen() {
       tone: 'success',
       message: '新的暱稱、頭像與身分會立刻套用到商品卡與賣家主頁。',
       onConfirm: () => goBackOrReplace('/(tabs)/profile'),
+    });
+  };
+
+  const savePassword = async () => {
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      showAlert({
+        title: '密碼太短',
+        tone: 'danger',
+        message: `請設定至少 ${MIN_PASSWORD_LENGTH} 個字的密碼，建議混合英文與數字。`,
+      });
+      return;
+    }
+    if (password !== confirmPassword) {
+      showAlert({
+        title: '兩次密碼不一致',
+        tone: 'danger',
+        message: '請確認「新密碼」與「再次輸入新密碼」相同。',
+      });
+      return;
+    }
+
+    setIsSavingPassword(true);
+    const { error } = await bilt.auth.updateUser({ password });
+    setIsSavingPassword(false);
+
+    if (error) {
+      const info = describePasswordUpdateError(error);
+      showAlert({ title: info.title, tone: 'danger', message: info.message });
+      return;
+    }
+
+    setPassword('');
+    setConfirmPassword('');
+    showAlert({
+      title: '登入密碼已設定',
+      tone: 'success',
+      message: '下次可以直接用 Email 與這組密碼登入，不用等驗證碼。',
     });
   };
 
@@ -196,6 +239,37 @@ export default function AccountScreen() {
         >
           <Button.Label>{progress ?? '儲存變更'}</Button.Label>
         </Button>
+
+        <View className="bg-background mt-6 rounded-2xl border border-neutral-200 p-5">
+          <Text className="text-foreground text-[13px] font-semibold">登入密碼</Text>
+          <Text className="text-muted mt-1 text-[11px] leading-4">
+            設定一組密碼後，下次登入輸入 Email
+            與密碼就能直接進入，不必等驗證碼。已有密碼的話這裡也可以直接換一組。
+          </Text>
+          <PasswordField
+            value={password}
+            onChangeText={setPassword}
+            isEditable={!isSavingPassword}
+            placeholder={`新密碼（至少 ${MIN_PASSWORD_LENGTH} 個字）`}
+            className="mt-3"
+          />
+          <PasswordField
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            isEditable={!isSavingPassword}
+            placeholder="再次輸入新密碼"
+          />
+          <Button
+            variant="secondary"
+            className="mt-3"
+            isDisabled={isSavingPassword}
+            onPress={() => {
+              void savePassword();
+            }}
+          >
+            <Button.Label>{isSavingPassword ? '設定中...' : '設定登入密碼'}</Button.Label>
+          </Button>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
