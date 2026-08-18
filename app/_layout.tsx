@@ -168,7 +168,6 @@ export default function RootLayout() {
           <Stack.Screen name="notifications" options={{ title: '通知中心' }} />
           <Stack.Screen name="account" options={{ title: '編輯個人資料' }} />
           <Stack.Screen name="diagnostics" options={{ title: '裝置檢查' }} />
-          <Stack.Screen name="admin/index" options={{ title: '樂淘管理平台' }} />
         </Stack>
         <AlertHost />
         <InstallPrompt />

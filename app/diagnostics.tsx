@@ -25,6 +25,8 @@ import {
 
 type CheckState = 'ok' | 'fail' | 'unknown';
 
+const ADMIN_CONSOLE_URL = `${(process.env.EXPO_PUBLIC_BILT_URL ?? '').replace(/\/+$/, '')}/functions/v1/admin-console`;
+
 const RUNTIME_LABEL: Record<string, string> = {
   [ExecutionEnvironment.StoreClient]: 'Expo Go',
   [ExecutionEnvironment.Standalone]: '正式版 / TestFlight',
@@ -150,6 +152,12 @@ export default function DiagnosticsScreen() {
       <Section title="執行環境">
         <Row label="平台" value={`${Platform.OS} ${String(Platform.Version)}`} state="ok" />
         <Row label="執行方式" value={runtimeLabel} state="ok" />
+        <Text className="text-muted mt-2 text-[11px] leading-4">
+          管理後台是獨立網頁，不在 App 內。用電腦瀏覽器開啟下面網址，以具管理員權限的帳號登入：
+        </Text>
+        <Text selectable className="text-sage-deep mt-1 text-[11px] leading-4">
+          {ADMIN_CONSOLE_URL}
+        </Text>
       </Section>
 
       <Section title="相片與相機">

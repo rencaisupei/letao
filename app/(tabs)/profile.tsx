@@ -1,12 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
   Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -64,7 +62,6 @@ export default function ProfileScreen() {
   const username = useLetaoStore((state) => state.username);
   const avatarUrl = useLetaoStore((state) => state.avatarUrl);
   const role = useLetaoStore((state) => state.role);
-  const isAdmin = useLetaoStore((state) => state.isAdmin);
   const trustScore = useLetaoStore((state) => state.trustScore);
   const verified = useLetaoStore((state) => state.verified);
   const balance = useLetaoStore((state) => state.balance);
@@ -77,7 +74,6 @@ export default function ProfileScreen() {
   const refresh = useLetaoStore((state) => state.refresh);
   const bump = useLetaoStore((state) => state.bump);
   const claimDaily = useLetaoStore((state) => state.claimDaily);
-  const claimAdminCode = useLetaoStore((state) => state.claimAdminCode);
   const setListingStatus = useLetaoStore((state) => state.setListingStatus);
   const setListingPayments = useLetaoStore((state) => state.setListingPayments);
   const setListingQuantity = useLetaoStore((state) => state.setListingQuantity);
@@ -96,9 +92,6 @@ export default function ProfileScreen() {
   const [isSavingStock, setIsSavingStock] = useState(false);
   const [isBumping, setIsBumping] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
-  const [adminModalVisible, setAdminModalVisible] = useState(false);
-  const [adminCode, setAdminCode] = useState('');
-  const [isClaimingAdmin, setIsClaimingAdmin] = useState(false);
 
   const cardWidth = width - 36;
   const favoriteCount = Object.keys(favorites).length;
@@ -295,31 +288,6 @@ export default function ProfileScreen() {
     });
   };
 
-  const handleClaimAdmin = async () => {
-    setIsClaimingAdmin(true);
-    const ok = await claimAdminCode(adminCode);
-    setIsClaimingAdmin(false);
-    setAdminModalVisible(false);
-    setAdminCode('');
-
-    if (!ok) {
-      showAlert({
-        title: '邀請碼無效',
-        tone: 'danger',
-        message: '這組邀請碼不存在或已被使用。請向平台負責人索取新的管理員邀請碼。',
-      });
-      return;
-    }
-
-    showAlert({
-      title: '已開通管理員權限',
-      tone: 'success',
-      message: '您現在可以進入管理平台審核商品與處理檢舉。',
-      confirmLabel: '進入管理平台',
-      onConfirm: () => router.push('/admin'),
-    });
-  };
-
   if (!userId) {
     return (
       <View className="bg-canvas flex-1 p-4">
@@ -368,11 +336,6 @@ export default function ProfileScreen() {
                     {username ?? '樂淘用戶'}
                   </Text>
                   {verified ? <BadgeCheck size={15} color={SAGE} strokeWidth={2} /> : null}
-                  {isAdmin ? (
-                    <View className="bg-sage ml-1 rounded px-1.5 py-0.5">
-                      <Text className="text-[9px] font-bold text-white">管理員</Text>
-                    </View>
-                  ) : null}
                 </View>
                 <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
                   {getRoleLabel(role)} ∙ 信任度 {trustScore}% ∙ 公開上架 {publicCount} 件
@@ -416,24 +379,8 @@ export default function ProfileScreen() {
                 label="裝置檢查"
                 value="相片 / 上傳 / AI 審核"
                 onPress={() => router.push('/diagnostics')}
+                isLast
               />
-              {isAdmin ? (
-                <ProfileLink
-                  icon={<ShieldCheck size={16} color={SAGE} strokeWidth={2} />}
-                  label="管理平台"
-                  value="審核與檢舉"
-                  onPress={() => router.push('/admin')}
-                  isLast
-                />
-              ) : (
-                <ProfileLink
-                  icon={<ShieldCheck size={16} color="#9CA3AF" strokeWidth={2} />}
-                  label="輸入管理員邀請碼"
-                  value="開通後台"
-                  onPress={() => setAdminModalVisible(true)}
-                  isLast
-                />
-              )}
             </View>
 
             <View className="bg-background rounded-2xl border border-neutral-200 p-4">
@@ -747,51 +694,6 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
-      </Modal>
-
-      <Modal
-        visible={adminModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setAdminModalVisible(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1 items-center justify-center bg-black/40 px-6"
-        >
-          <View className="bg-background w-full max-w-sm rounded-2xl border border-neutral-200 p-5">
-            <Text className="text-foreground text-base font-bold">管理員邀請碼</Text>
-            <Text className="text-muted mt-2 text-[12px] leading-4">
-              輸入平台核發的邀請碼即可開通管理後台。每組邀請碼只能使用一次，啟用紀錄會保存在資料庫。
-            </Text>
-            <TextInput
-              value={adminCode}
-              onChangeText={setAdminCode}
-              autoCapitalize="characters"
-              placeholder="LETAO-XXXX-XXXX"
-              placeholderTextColorClassName="accent-neutral-400"
-              className="bg-canvas text-foreground mt-3 h-11 rounded-xl border border-neutral-200 px-4 text-[13px] tracking-[1px]"
-            />
-            <View className="mt-4 flex-row gap-2">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onPress={() => setAdminModalVisible(false)}
-              >
-                <Button.Label>取消</Button.Label>
-              </Button>
-              <Button
-                className="flex-1"
-                isDisabled={isClaimingAdmin || adminCode.trim() === ''}
-                onPress={() => {
-                  void handleClaimAdmin();
-                }}
-              >
-                <Button.Label>{isClaimingAdmin ? '驗證中...' : '啟用'}</Button.Label>
-              </Button>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

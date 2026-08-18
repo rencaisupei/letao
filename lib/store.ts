@@ -106,7 +106,6 @@ export type StockResult = {
 type AccountRow = {
   username: string | null;
   role: UserRole | null;
-  is_admin: boolean | null;
   trust_score: number | null;
   verified_status: boolean | null;
   avatar_url: string | null;
@@ -130,7 +129,6 @@ type ClaimRow = {
   streak: number | null;
   next_claim_at: string | null;
 };
-type OkRow = { ok: boolean };
 type StockRow = {
   ok: boolean;
   reason: StockResult['reason'];
@@ -183,7 +181,6 @@ type LetaoState = {
   avatarUrl: string | null;
   bio: string | null;
   role: UserRole;
-  isAdmin: boolean;
   trustScore: number;
   verified: boolean;
   balance: number;
@@ -208,7 +205,6 @@ type LetaoState = {
   claimDaily: () => Promise<ClaimResult>;
   toggleFavorite: (listingId: string) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, detail: string) => Promise<boolean>;
-  claimAdminCode: (code: string) => Promise<boolean>;
   signOut: () => Promise<void>;
 };
 
@@ -383,7 +379,7 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
     const [profileResult, walletResult] = await Promise.all([
       bilt
         .from('profiles')
-        .select('username, role, is_admin, trust_score, verified_status, avatar_url, bio')
+        .select('username, role, trust_score, verified_status, avatar_url, bio')
         .eq('id', userId)
         .maybeSingle(),
       bilt
@@ -401,7 +397,6 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
       avatarUrl: account?.avatar_url ?? null,
       bio: account?.bio ?? null,
       role: account?.role ?? 'both',
-      isAdmin: account?.is_admin ?? false,
       trustScore: account?.trust_score ?? 80,
       verified: account?.verified_status ?? false,
       balance: wallet?.ecocoin_balance ?? 0,
@@ -420,7 +415,6 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
         avatarUrl: null,
         bio: null,
         role: 'both',
-        isAdmin: false,
         trustScore: 80,
         verified: false,
         balance: 0,
@@ -464,7 +458,6 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
     avatarUrl: null,
     bio: null,
     role: 'both',
-    isAdmin: false,
     trustScore: 80,
     verified: false,
     balance: 0,
@@ -810,15 +803,6 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
       return !error;
     },
 
-    claimAdminCode: async (code) => {
-      const { data, error } = await bilt.rpc('claim_admin', { p_code: code });
-      if (error) return false;
-      const row = asRow<OkRow>(data);
-      if (!row?.ok) return false;
-      set({ isAdmin: true });
-      return true;
-    },
-
     signOut: async () => {
       await bilt.auth.signOut();
       useChatStore.getState().reset();
@@ -832,7 +816,6 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
         avatarUrl: null,
         bio: null,
         role: 'both',
-        isAdmin: false,
         trustScore: 80,
         verified: false,
         balance: 0,
