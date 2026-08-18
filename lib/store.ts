@@ -5,6 +5,7 @@ import { useChatStore } from '@/lib/chatStore';
 import {
   BUMP_COST,
   DEMO_LISTINGS,
+  MAX_LISTING_QUANTITY,
   MEETUP_METHOD,
   type ConditionCode,
   type ListingStatus,
@@ -91,6 +92,17 @@ export type BumpResult =
   | { ok: true; endsAt: string; balance: number }
   | { ok: false; reason: 'insufficient' | 'active' | 'error'; balance: number };
 
+/** Outcome of a seller stock edit; numbers are the server's post-write truth. */
+export type StockResult = {
+  ok: boolean;
+  reason: 'committed' | 'missing' | 'forbidden' | 'error' | null;
+  quantity: number;
+  soldQuantity: number;
+  status: ListingStatus;
+  /** Units held by pending or completed orders — the floor for a stock cut. */
+  committed: number;
+};
+
 type AccountRow = {
   username: string | null;
   role: UserRole | null;
@@ -119,6 +131,14 @@ type ClaimRow = {
   next_claim_at: string | null;
 };
 type OkRow = { ok: boolean };
+type StockRow = {
+  ok: boolean;
+  reason: StockResult['reason'];
+  quantity: number | string | null;
+  sold_quantity: number | string | null;
+  status: ListingStatus | null;
+  committed: number | string | null;
+};
 
 type ListingRow = Omit<
   Listing,
@@ -182,6 +202,7 @@ type LetaoState = {
   updateProfile: (input: ProfileEdit) => Promise<boolean>;
   setListingStatus: (listingId: string, status: ListingStatus) => Promise<boolean>;
   setListingPayments: (listingId: string, payments: PaymentCode[]) => Promise<boolean>;
+  setListingQuantity: (listingId: string, quantity: number) => Promise<StockResult>;
   deleteListing: (listingId: string) => Promise<boolean>;
   bump: (listingId: string) => Promise<BumpResult>;
   claimDaily: () => Promise<ClaimResult>;
@@ -613,6 +634,52 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
         ),
       });
       return true;
+    },
+
+    setListingQuantity: async (listingId, quantity) => {
+      const current = get().listings.find((listing) => listing.id === listingId);
+      const fallback: StockResult = {
+        ok: false,
+        reason: 'error',
+        quantity: current?.quantity ?? 1,
+        soldQuantity: current?.sold_quantity ?? 0,
+        status: current?.status ?? 'available',
+        committed: current?.sold_quantity ?? 0,
+      };
+
+      const { data, error } = await bilt.rpc('set_listing_quantity', {
+        p_listing_id: listingId,
+        p_quantity: Math.max(1, Math.min(MAX_LISTING_QUANTITY, Math.round(quantity))),
+      });
+
+      if (error) return fallback;
+
+      const row = asRow<StockRow>(data);
+      if (!row) return fallback;
+
+      const result: StockResult = {
+        ok: row.ok,
+        reason: row.reason ?? null,
+        quantity: Math.max(1, toCount(row.quantity, fallback.quantity)),
+        soldQuantity: toCount(row.sold_quantity, fallback.soldQuantity),
+        status: row.status ?? fallback.status,
+        committed: toCount(row.committed, fallback.committed),
+      };
+
+      set({
+        listings: get().listings.map((listing) =>
+          listing.id === listingId
+            ? {
+                ...listing,
+                quantity: result.quantity,
+                sold_quantity: result.soldQuantity,
+                status: result.status,
+              }
+            : listing,
+        ),
+      });
+
+      return result;
     },
 
     deleteListing: async (listingId) => {

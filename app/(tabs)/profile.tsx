@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import {
   BadgeCheck,
   Bell,
+  Boxes,
   ChevronRight,
   Coins,
   Flame,
@@ -36,6 +37,7 @@ import { BumpFx } from '@/components/BumpFx';
 import { ListingCard } from '@/components/ListingCard';
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { PaymentMethodsSheet } from '@/components/PaymentMethodsSheet';
+import { StockSheet } from '@/components/StockSheet';
 import { showAlert } from '@/lib/alert';
 import {
   BUMP_COST,
@@ -47,6 +49,7 @@ import {
   getModeration,
   getRoleLabel,
   paymentSummary,
+  remainingQuantity,
 } from '@/lib/constants';
 import { useNotificationStore } from '@/lib/notificationStore';
 import { useOrderStore } from '@/lib/orderStore';
@@ -77,6 +80,7 @@ export default function ProfileScreen() {
   const claimAdminCode = useLetaoStore((state) => state.claimAdminCode);
   const setListingStatus = useLetaoStore((state) => state.setListingStatus);
   const setListingPayments = useLetaoStore((state) => state.setListingPayments);
+  const setListingQuantity = useLetaoStore((state) => state.setListingQuantity);
   const deleteListing = useLetaoStore((state) => state.deleteListing);
   const signOut = useLetaoStore((state) => state.signOut);
   const orders = useOrderStore((state) => state.orders);
@@ -88,6 +92,8 @@ export default function ProfileScreen() {
   const [pendingDelete, setPendingDelete] = useState<Listing | null>(null);
   const [pendingPayments, setPendingPayments] = useState<Listing | null>(null);
   const [isSavingPayments, setIsSavingPayments] = useState(false);
+  const [pendingStock, setPendingStock] = useState<Listing | null>(null);
+  const [isSavingStock, setIsSavingStock] = useState(false);
   const [isBumping, setIsBumping] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [adminModalVisible, setAdminModalVisible] = useState(false);
@@ -233,6 +239,45 @@ export default function ProfileScreen() {
       title: '付款方式已更新',
       tone: 'success',
       message: `買家在商品頁會看到：${paymentSummary(payments)}，出價時從中選一種。`,
+    });
+  };
+
+  const handleSaveQuantity = async (quantity: number) => {
+    const listing = pendingStock;
+    if (!listing) return;
+
+    setIsSavingStock(true);
+    const result = await setListingQuantity(listing.id, quantity);
+    setIsSavingStock(false);
+
+    if (!result.ok) {
+      if (result.reason === 'committed') {
+        showAlert({
+          title: '不能少於已成交的件數',
+          tone: 'danger',
+          message: `這件商品已有 ${result.committed} 件被成交或預訂，總數至少要 ${result.committed} 件。若要停售，請用「暫時下架」。`,
+        });
+        return;
+      }
+      showAlert({
+        title: '沒有更新成功',
+        tone: 'danger',
+        message: '請確認網路狀態後再試一次。',
+      });
+      return;
+    }
+
+    setPendingStock(null);
+    const remaining = remainingQuantity(result.quantity, result.soldQuantity);
+    showAlert({
+      title: '庫存已更新',
+      tone: 'success',
+      message:
+        remaining > 0
+          ? `總數 ${result.quantity} 件，買家目前可購買 ${remaining} 件。`
+          : `總數 ${result.quantity} 件已全部售出或預訂，商品標記為${
+              result.status === 'sold' ? '已售出' : '已預訂'
+            }，補貨後會自動重新開放。`,
     });
   };
 
@@ -517,6 +562,20 @@ export default function ProfileScreen() {
                       </View>
                     )}
 
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => setPendingStock(item)}
+                      className="bg-canvas flex-row items-center gap-1.5 rounded-xl px-3 py-2"
+                    >
+                      <Boxes size={13} color={SAGE} strokeWidth={2.2} />
+                      <Text className="text-muted flex-1 text-[11px]" numberOfLines={1}>
+                        庫存：剩 {remainingQuantity(item.quantity, item.sold_quantity)} /{' '}
+                        {item.quantity} 件
+                        {item.sold_quantity > 0 ? `（已成交 ${item.sold_quantity} 件）` : ''}
+                      </Text>
+                      <Text className="text-sage-deep text-[11px] font-semibold">調整</Text>
+                    </Pressable>
+
                     {item.payment_methods.length === 0 ? (
                       <Pressable
                         accessibilityRole="button"
@@ -593,6 +652,15 @@ export default function ProfileScreen() {
               />
             </BumpFx>
           );
+        }}
+      />
+
+      <StockSheet
+        listing={pendingStock}
+        isSaving={isSavingStock}
+        onCancel={() => setPendingStock(null)}
+        onSave={(quantity) => {
+          void handleSaveQuantity(quantity);
         }}
       />
 
