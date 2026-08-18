@@ -24,7 +24,7 @@ import {
 } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
-import { type Order, useOrderStore } from '@/lib/orderStore';
+import { type Order, orderTotal, useOrderStore } from '@/lib/orderStore';
 import { useLetaoStore } from '@/lib/store';
 
 type Tab = 'buying' | 'selling';
@@ -224,13 +224,14 @@ export default function OrdersScreen() {
                   </Text>
                   <Text className="text-foreground mt-1 text-[14px] font-bold">
                     成交 NT$ {item.offer_price.toLocaleString('en-US')}
+                    {item.quantity > 1 ? ` × ${item.quantity}` : ''}
                     <Text className="text-muted text-[10px] font-medium">
                       {'  '}標價 {item.listing_price.toLocaleString('en-US')}
                     </Text>
                   </Text>
                   <Text className="text-foreground mt-0.5 text-[11px] font-semibold">
                     運費 {formatShippingFee(item.shipping_fee)} ∙ 總計 NT${' '}
-                    {(item.offer_price + item.shipping_fee).toLocaleString('en-US')}
+                    {orderTotal(item).toLocaleString('en-US')}
                   </Text>
                   <Text className="text-sage-deep mt-0.5 text-[11px] font-medium">
                     {isBuyer ? '賣家' : '買家'}：{item.counterpartName ?? '樂淘用戶'}

@@ -8,7 +8,7 @@ import { FavoriteButton } from '@/components/FavoriteButton';
 import { ListingStatusBadge } from '@/components/ListingStatusBadge';
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
-import { MINT, SAGE, shippingSummary } from '@/lib/constants';
+import { MINT, SAGE, shippingSummary, stockLabel } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import type { Listing } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,7 @@ export function ListingCard({
 }: ListingCardProps) {
   const imageSource = resolveListingImage(listing.images?.[0]);
   const imageHeight = Math.round(width * 1.1);
+  const stock = stockLabel(listing.quantity, listing.sold_quantity);
 
   return (
     <Pressable
@@ -94,6 +95,11 @@ export function ListingCard({
         <Text className="text-foreground mt-1 text-[15px] font-bold">
           NT$ {listing.price.toLocaleString('en-US')}
         </Text>
+        {stock ? (
+          <View className="bg-mint mt-1 self-start rounded px-1.5 py-0.5">
+            <Text className="text-sage-deep text-[10px] font-bold">📦 {stock}</Text>
+          </View>
+        ) : null}
         <Text className="text-muted mt-1 text-[10px] font-medium">
           🏷️ {listing.category ?? '未分類'}
         </Text>

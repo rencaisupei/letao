@@ -26,7 +26,7 @@ import {
 } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
-import { useOrderStore } from '@/lib/orderStore';
+import { orderTotal, useOrderStore } from '@/lib/orderStore';
 import { useLetaoStore } from '@/lib/store';
 
 export default function OrderDetailScreen() {
@@ -182,10 +182,11 @@ export default function OrderDetailScreen() {
               </Text>
               <Text className="text-foreground mt-1 text-[14px] font-bold">
                 成交 NT$ {order.offer_price.toLocaleString('en-US')}
+                {order.quantity > 1 ? ` × ${order.quantity} 件` : ''}
               </Text>
               <Text className="text-foreground mt-0.5 text-[11px] font-semibold">
                 運費 {formatShippingFee(order.shipping_fee)} ∙ 總計 NT${' '}
-                {(order.offer_price + order.shipping_fee).toLocaleString('en-US')}
+                {orderTotal(order).toLocaleString('en-US')}
               </Text>
               <Text className="text-sage-deep mt-0.5 text-[11px] font-medium">
                 {isBuyer ? '賣家' : '買家'}：{order.counterpartName ?? '樂淘用戶'}
@@ -227,9 +228,9 @@ export default function OrderDetailScreen() {
             {payment?.hint ?? '這筆交易沒有記錄付款方式，請雙方在私訊中確認後再交付。'}
           </Text>
           <Text className="text-foreground mt-2 text-[11px] font-semibold">
-            {isBuyer ? '應付' : '應收'} NT${' '}
-            {(order.offer_price + order.shipping_fee).toLocaleString('en-US')}（商品{' '}
-            {order.offer_price.toLocaleString('en-US')} + 運費{' '}
+            {isBuyer ? '應付' : '應收'} NT$ {orderTotal(order).toLocaleString('en-US')}（商品{' '}
+            {order.offer_price.toLocaleString('en-US')}
+            {order.quantity > 1 ? ` × ${order.quantity} 件` : ''} + 運費{' '}
             {order.shipping_fee.toLocaleString('en-US')}）
           </Text>
         </View>

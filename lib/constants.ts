@@ -80,44 +80,72 @@ export function getCondition(code: string | null | undefined): ConditionMeta {
 
 export const ALL_CATEGORY = '全部';
 
-export const CATEGORIES = [
-  '時尚女裝',
-  '潮流男裝',
-  '女鞋精品',
-  '男鞋運動',
-  '包包手袋',
-  '飾品配件',
-  '手機智能',
-  '電腦平板',
-  '相機攝影',
-  '電玩電競',
-  '耳機音響',
-  '智能家電',
-  '沙發家具',
-  '廚房衛浴',
-  '生活日用',
-  '寢具織品',
-  '裝飾美學',
-  '五金工具',
-  '美妝保養',
-  '香氛香水',
-  '美髮美體',
-  '美甲美睫',
-  '保健養生',
-  '醫療護理',
-  '盲盒公仔',
-  '模型玩具',
-  '動漫周邊',
-  '黑膠樂器',
-  '明星偶像',
-  '圖書文具',
-  '戶外露營',
-  '運動健身',
-  '汽機精品',
-  '母嬰童裝',
-  '寵物用品',
-  '美食伴手',
+export type CategoryGroup = {
+  /** Short heading shown above the group. */
+  title: string;
+  emoji: string;
+  items: string[];
+};
+
+/**
+ * The 36 categories, grouped so the picker can show a handful of large targets
+ * per section instead of one dense wall of chips.
+ */
+export const CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    title: '服飾與配件',
+    emoji: '👕',
+    items: ['時尚女裝', '潮流男裝', '女鞋精品', '男鞋運動', '包包手袋', '飾品配件'],
+  },
+  {
+    title: '3C 與電子',
+    emoji: '📱',
+    items: ['手機智能', '電腦平板', '相機攝影', '電玩電競', '耳機音響', '智能家電'],
+  },
+  {
+    title: '居家與工具',
+    emoji: '🛋️',
+    items: ['沙發家具', '廚房衛浴', '生活日用', '寢具織品', '裝飾美學', '五金工具'],
+  },
+  {
+    title: '美妝與保健',
+    emoji: '💄',
+    items: ['美妝保養', '香氛香水', '美髮美體', '美甲美睫', '保健養生', '醫療護理'],
+  },
+  {
+    title: '收藏與嗜好',
+    emoji: '🎁',
+    items: ['盲盒公仔', '模型玩具', '動漫周邊', '黑膠樂器', '明星偶像', '圖書文具'],
+  },
+  {
+    title: '運動與生活',
+    emoji: '⛺',
+    items: ['戶外露營', '運動健身', '汽機精品', '母嬰童裝', '寵物用品', '美食伴手'],
+  },
 ];
+
+/** Flat list of every category, in group order. */
+export const CATEGORIES = CATEGORY_GROUPS.flatMap((group) => group.items);
+
+/** The group a category belongs to, e.g. "3C 與電子". */
+export function categoryGroupTitle(category: string | null | undefined): string | null {
+  if (!category) return null;
+  return CATEGORY_GROUPS.find((group) => group.items.includes(category))?.title ?? null;
+}
+
+/** Upper bound for listing stock, mirroring the DB check on listings.quantity. */
+export const MAX_LISTING_QUANTITY = 999;
+
+/** Units still buyable: total stock minus what pending or completed orders hold. */
+export function remainingQuantity(quantity: number, soldQuantity: number): number {
+  return Math.max(0, quantity - soldQuantity);
+}
+
+/** "剩 3 / 5 件" for multi-unit listings, null for a single item. */
+export function stockLabel(quantity: number, soldQuantity: number): string | null {
+  if (quantity <= 1) return null;
+  return `剩 ${remainingQuantity(quantity, soldQuantity)} / ${quantity} 件`;
+}
 
 export const LOGISTICS_OPTIONS = [
   '7-ELEVEN 交貨便',
@@ -527,6 +555,8 @@ export type DemoListing = {
   price: number;
   condition: ConditionCode;
   category: string;
+  /** Units in stock. */
+  quantity: number;
   shipping: ShippingOption[];
   /** Payment choices the seller accepts. */
   payments: PaymentCode[];
@@ -544,6 +574,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: 14500,
     condition: 'excellent',
     category: '相機攝影',
+    quantity: 1,
     shipping: [
       { method: '7-ELEVEN 交貨便', fee: 70, mode: 'auto' },
       { method: '黑貓宅急便', fee: 150, mode: 'auto' },
@@ -561,6 +592,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: 2380,
     condition: 'brand_new',
     category: '潮流男裝',
+    quantity: 3,
     shipping: [
       { method: '全家 店到店', fee: 70, mode: 'auto' },
       { method: '蝦皮店到店', fee: 0, mode: 'manual' },
@@ -577,6 +609,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: 3200,
     condition: 'good',
     category: '沙發家具',
+    quantity: 1,
     shipping: [
       { method: '面交', fee: 0, mode: 'auto' },
       { method: 'Lalamove', fee: 165, mode: 'auto' },
@@ -593,6 +626,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: 1800,
     condition: 'brand_new',
     category: '黑膠樂器',
+    quantity: 2,
     shipping: [
       { method: '蝦皮店到店', fee: 0, mode: 'manual' },
       { method: '萊爾富 店到店', fee: 70, mode: 'auto' },

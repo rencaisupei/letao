@@ -9,6 +9,8 @@ export type Order = {
   buyer_id: string;
   seller_id: string;
   offer_price: number;
+  /** Units ordered. offer_price is per unit. */
+  quantity: number;
   status: OrderStatus;
   /** The single delivery method the buyer picked when placing the offer. */
   logistics: string | null;
@@ -34,12 +36,14 @@ export type CreateOrderResult =
       logistics: string | null;
       shippingFee: number;
       paymentMethod: PaymentCode | null;
+      quantity: number;
     }
   | {
       ok: false;
       reason:
         | 'lowball'
         | 'sold'
+        | 'stock'
         | 'own'
         | 'unavailable'
         | 'logistics'
@@ -47,6 +51,8 @@ export type CreateOrderResult =
         | 'payment'
         | 'error';
       minPrice: number;
+      /** Units still buyable, from the server's own count. */
+      remaining: number;
     };
 
 type OrderRow = {
@@ -55,6 +61,7 @@ type OrderRow = {
   buyer_id: string;
   seller_id: string;
   offer_price: number | string;
+  quantity: number | string | null;
   status: OrderStatus;
   logistics: string | null;
   shipping_fee: number | string | null;
@@ -78,6 +85,8 @@ type CreateRow = {
   shipping_fee: number | string | null;
   logistics: string | null;
   payment_method: string | null;
+  quantity: number | string | null;
+  remaining: number | string | null;
 };
 
 type OrderState = {
@@ -90,6 +99,7 @@ type OrderState = {
     logistics: string,
     destRegion: string | null,
     paymentMethod: PaymentCode | null,
+    quantity: number,
   ) => Promise<CreateOrderResult>;
   completeOrder: (orderId: string) => Promise<boolean>;
   cancelOrder: (orderId: string) => Promise<boolean>;
@@ -126,7 +136,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const { data } = await bilt
       .from('orders')
       .select(
-        'id, listing_id, buyer_id, seller_id, offer_price, status, logistics, shipping_fee, dest_region, payment_method, meetup_location, completed_at, created_at, listings(title, images, price)',
+        'id, listing_id, buyer_id, seller_id, offer_price, quantity, status, logistics, shipping_fee, dest_region, payment_method, meetup_location, completed_at, created_at, listings(title, images, price)',
       )
       .order('created_at', { ascending: false })
       .limit(200);
@@ -155,6 +165,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         buyer_id: row.buyer_id,
         seller_id: row.seller_id,
         offer_price: Number(row.offer_price),
+        quantity: Math.max(1, Math.round(Number(row.quantity ?? 1)) || 1),
         status: row.status,
         logistics: row.logistics,
         shipping_fee: Number(row.shipping_fee ?? 0),
@@ -173,19 +184,20 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     set({ orders, isLoading: false });
   },
 
-  createOrder: async (listingId, offerPrice, logistics, destRegion, paymentMethod) => {
+  createOrder: async (listingId, offerPrice, logistics, destRegion, paymentMethod, quantity) => {
     const { data, error } = await bilt.rpc('create_order', {
       p_listing_id: listingId,
       p_offer_price: offerPrice,
       p_logistics: logistics,
       p_dest_region: destRegion,
       p_payment_method: paymentMethod,
+      p_quantity: quantity,
     });
 
-    if (error) return { ok: false, reason: 'error', minPrice: 0 };
+    if (error) return { ok: false, reason: 'error', minPrice: 0, remaining: 0 };
 
     const row = asRow<CreateRow>(data);
-    if (!row) return { ok: false, reason: 'error', minPrice: 0 };
+    if (!row) return { ok: false, reason: 'error', minPrice: 0, remaining: 0 };
 
     if (row.ok && row.order_id) {
       return {
@@ -194,20 +206,24 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         logistics: row.logistics,
         shippingFee: Number(row.shipping_fee ?? 0),
         paymentMethod: toPaymentCode(row.payment_method),
+        quantity: Math.max(1, Math.round(Number(row.quantity ?? 1)) || 1),
       };
     }
 
     const reason = normalizeReason(row.reason);
     const minPrice = Number(row.min_price ?? 0);
+    const remaining = Math.max(0, Math.round(Number(row.remaining ?? 0)) || 0);
+    const failure = { minPrice, remaining };
 
-    if (reason === 'lowball') return { ok: false, reason: 'lowball', minPrice };
-    if (reason === 'sold') return { ok: false, reason: 'sold', minPrice };
-    if (reason === 'own') return { ok: false, reason: 'own', minPrice };
-    if (reason === 'unavailable') return { ok: false, reason: 'unavailable', minPrice };
-    if (reason === 'logistics') return { ok: false, reason: 'logistics', minPrice };
-    if (reason === 'shipping') return { ok: false, reason: 'shipping', minPrice };
-    if (reason === 'payment') return { ok: false, reason: 'payment', minPrice };
-    return { ok: false, reason: 'error', minPrice };
+    if (reason === 'lowball') return { ok: false, reason: 'lowball', ...failure };
+    if (reason === 'sold') return { ok: false, reason: 'sold', ...failure };
+    if (reason === 'stock') return { ok: false, reason: 'stock', ...failure };
+    if (reason === 'own') return { ok: false, reason: 'own', ...failure };
+    if (reason === 'unavailable') return { ok: false, reason: 'unavailable', ...failure };
+    if (reason === 'logistics') return { ok: false, reason: 'logistics', ...failure };
+    if (reason === 'shipping') return { ok: false, reason: 'shipping', ...failure };
+    if (reason === 'payment') return { ok: false, reason: 'payment', ...failure };
+    return { ok: false, reason: 'error', ...failure };
   },
 
   completeOrder: async (orderId) => {
@@ -242,6 +258,11 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   reset: () => set({ orders: [] }),
 }));
+
+/** Amount the buyer pays: unit price × units + one shipping fee. */
+export function orderTotal(order: Order): number {
+  return order.offer_price * order.quantity + order.shipping_fee;
+}
 
 /** True when the signed-in buyer already completed a deal with this seller. */
 export function hasCompletedDealWith(orders: Order[], sellerId: string, userId: string): boolean {

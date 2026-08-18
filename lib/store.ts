@@ -51,6 +51,10 @@ export type Listing = {
   images: string[] | null;
   meetup_location: string | null;
   status: ListingStatus;
+  /** Units the seller listed. 1 for a single item. */
+  quantity: number;
+  /** Units already held by pending or completed orders. Server-owned. */
+  sold_quantity: number;
   moderation_status: ModerationStatus;
   moderation_reason: string | null;
   created_at: string;
@@ -62,6 +66,8 @@ export type NewListingInput = {
   price: number;
   category: string;
   condition: ConditionCode;
+  /** Units in stock, at least 1. */
+  quantity: number;
   shipping: ShippingOption[];
   payments: PaymentCode[];
   parcel: ParcelSpec;
@@ -124,6 +130,8 @@ type ListingRow = Omit<
   | 'parcel_length_cm'
   | 'parcel_width_cm'
   | 'parcel_height_cm'
+  | 'quantity'
+  | 'sold_quantity'
 > & {
   price: number | string;
   shipping_options: unknown;
@@ -132,11 +140,13 @@ type ListingRow = Omit<
   parcel_length_cm: number | string | null;
   parcel_width_cm: number | string | null;
   parcel_height_cm: number | string | null;
+  quantity: number | string | null;
+  sold_quantity: number | string | null;
   profiles: Seller | Seller[] | null;
 };
 
 const LISTING_COLUMNS =
-  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, shipping_options, payment_methods, parcel_weight_kg, parcel_length_cm, parcel_width_cm, parcel_height_cm, origin_region, images, meetup_location, status, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
+  'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, shipping_options, payment_methods, parcel_weight_kg, parcel_length_cm, parcel_width_cm, parcel_height_cm, origin_region, images, meetup_location, status, quantity, sold_quantity, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
 
 export type ClaimResult = {
   ok: boolean;
@@ -212,6 +222,7 @@ async function seedDemoListings(userId: string) {
     price: item.price,
     condition_rating: item.condition,
     category: item.category,
+    quantity: item.quantity,
     logistics: item.shipping[0]?.method ?? MEETUP_METHOD,
     shipping_options: item.shipping,
     payment_methods: item.payments,
@@ -253,6 +264,7 @@ async function backfillDemoShipping(userId: string) {
           logistics: item.shipping[0]?.method ?? MEETUP_METHOD,
           shipping_options: item.shipping,
           payment_methods: item.payments,
+          quantity: item.quantity,
           parcel_weight_kg: item.parcel.weightKg,
           parcel_length_cm: item.parcel.lengthCm,
           parcel_width_cm: item.parcel.widthCm,
@@ -283,6 +295,12 @@ function toNumberOrNull(value: number | string | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/** Integer columns arrive as numbers or strings; legacy rows may be missing. */
+function toCount(value: number | string | null | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : fallback;
+}
+
 export function toListing(row: ListingRow): Listing {
   return {
     ...row,
@@ -293,6 +311,8 @@ export function toListing(row: ListingRow): Listing {
     parcel_length_cm: toNumberOrNull(row.parcel_length_cm),
     parcel_width_cm: toNumberOrNull(row.parcel_width_cm),
     parcel_height_cm: toNumberOrNull(row.parcel_height_cm),
+    quantity: Math.max(1, toCount(row.quantity, 1)),
+    sold_quantity: toCount(row.sold_quantity, 0),
     seller: toSeller(row.profiles),
   };
 }
@@ -491,6 +511,7 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
           price: input.price,
           condition_rating: input.condition,
           category: input.category,
+          quantity: input.quantity,
           logistics: input.shipping[0]?.method ?? MEETUP_METHOD,
           shipping_options: input.shipping,
           payment_methods: input.payments,

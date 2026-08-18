@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { ShieldCheck, Sparkles, UserPlus } from 'lucide-react-native';
 
 import { PhotoPicker } from '@/components/PhotoPicker';
+import { CategoryPicker } from '@/components/CategoryPicker';
+import { QuantityStepper } from '@/components/QuantityStepper';
 import { MeetupPicker, type MeetupValue, composeMeetupLocation } from '@/components/MeetupPicker';
 import { ParcelPicker } from '@/components/ParcelPicker';
 import { PaymentMethodsPicker } from '@/components/PaymentPicker';
@@ -22,6 +24,7 @@ import {
   CONDITIONS,
   type ConditionCode,
   LOGISTICS_OPTIONS,
+  MAX_LISTING_QUANTITY,
   MEETUP_METHOD,
   PROHIBITED_ITEMS,
   type PaymentCode,
@@ -52,6 +55,7 @@ export default function SellScreen() {
   const [price, setPrice] = useState('');
   const [photos, setPhotos] = useState<PickedPhoto[]>([]);
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const [quantity, setQuantity] = useState(1);
   const [condition, setCondition] = useState<ConditionCode>('brand_new');
   const [shipping, setShipping] = useState<ShippingDraft[]>(defaultShippingDrafts);
   const [payments, setPayments] = useState<PaymentCode[]>(['cod', 'transfer']);
@@ -116,6 +120,7 @@ export default function SellScreen() {
     setPrice('');
     setPhotos([]);
     setDescription('');
+    setQuantity(1);
     setShipping(defaultShippingDrafts());
     setPayments(['cod', 'transfer']);
     setMeetup({ region: null, detail: '' });
@@ -207,6 +212,7 @@ export default function SellScreen() {
       price: priceValue,
       category,
       condition,
+      quantity,
       shipping: normalized.options,
       payments: usablePayments,
       parcel: { ...parsedParcel.parcel, originRegion },
@@ -334,21 +340,27 @@ export default function SellScreen() {
           className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
         />
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">
-          商品類別（請點擊勾選一項）
-        </Text>
-        <View className="mt-2 flex-row flex-wrap gap-1.5">
-          {CATEGORIES.map((item) => (
-            <SelectChip
-              key={item}
-              size="sm"
-              label={item}
-              isSelected={category === item}
-              onPress={() => setCategory(item)}
-              className="w-[23%] rounded-md"
-            />
-          ))}
-        </View>
+        <Text className="text-foreground mt-4 text-[13px] font-semibold">商品數量（庫存）</Text>
+        <QuantityStepper
+          value={quantity}
+          onChange={setQuantity}
+          max={MAX_LISTING_QUANTITY}
+          isDisabled={isSubmitting}
+          className="mt-2"
+          hint={
+            quantity > 1
+              ? `同款商品 ${quantity} 件。買家每成立一筆交易就扣掉對應數量，全部售完會自動標記為已預訂或已售出。運費以一次寄送計算。`
+              : '只有一件的話保持 1。多件同款商品可以直接填數量，不必重複上架。'
+          }
+        />
+
+        <Text className="text-foreground mt-4 text-[13px] font-semibold">商品類別</Text>
+        <CategoryPicker
+          value={category}
+          onChange={setCategory}
+          isDisabled={isSubmitting}
+          className="mt-2"
+        />
 
         <Text className="text-foreground mt-4 text-[13px] font-semibold">商品狀況（新舊程度）</Text>
         <View className="mt-2 gap-1.5">

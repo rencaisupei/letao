@@ -33,6 +33,7 @@ import { ListingStatusBadge } from '@/components/ListingStatusBadge';
 import { ModerationBadge } from '@/components/ModerationBadge';
 import { PaymentChoiceList } from '@/components/PaymentPicker';
 import { PaymentMethodsSheet } from '@/components/PaymentMethodsSheet';
+import { QuantityStepper } from '@/components/QuantityStepper';
 import { SelectChip } from '@/components/SelectChip';
 import { LinearGradient } from '@/components/ui/primitives/LinearGradient';
 import { showAlert } from '@/lib/alert';
@@ -54,10 +55,12 @@ import {
   paymentLabel,
   paymentSummary,
   paymentsFor,
+  remainingQuantity,
+  stockLabel,
 } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
-import { useOrderStore } from '@/lib/orderStore';
+import { orderTotal, useOrderStore } from '@/lib/orderStore';
 import { fetchListingById } from '@/lib/queries';
 import { TAIWAN_REGIONS } from '@/lib/regions';
 import { requireAccount } from '@/lib/requireAccount';
@@ -94,6 +97,7 @@ export default function ListingDetailScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [offerVisible, setOfferVisible] = useState(false);
   const [offerPrice, setOfferPrice] = useState('');
+  const [offerQuantity, setOfferQuantity] = useState(1);
   const [offerMethod, setOfferMethod] = useState<string | null>(null);
   const [offerPayment, setOfferPayment] = useState<PaymentCode | null>(null);
   const [destRegion, setDestRegion] = useState<string | null>(null);
@@ -131,6 +135,12 @@ export default function ListingDetailScreen() {
   const images = listing?.images ?? [];
   const heroHeight = Math.round(width * 0.92);
 
+  const totalStock = listing?.quantity ?? 1;
+  const remaining = listing ? remainingQuantity(listing.quantity, listing.sold_quantity) : 0;
+  const isMultiStock = totalStock > 1;
+  const isSoldOut = remaining <= 0 || listing?.status === 'sold';
+  const maxOrderable = Math.max(1, remaining);
+
   const shippingOptions = listing?.shipping_options ?? [];
   const offersMeetup = shippingOptions.some((option) => option.method === MEETUP_METHOD);
   const isAutoPriced = hasAutoShipping(shippingOptions);
@@ -147,7 +157,10 @@ export default function ListingDetailScreen() {
   const needsRegion = chosenMethod !== MEETUP_METHOD;
 
   const offerValue = Number.parseFloat(offerPrice);
-  const offerTotal = Number.isFinite(offerValue) ? Math.max(offerValue, 0) + chosenFee : chosenFee;
+  const offerUnits = Math.min(Math.max(offerQuantity, 1), maxOrderable);
+  const offerTotal = Number.isFinite(offerValue)
+    ? Math.max(offerValue, 0) * offerUnits + chosenFee
+    : chosenFee;
 
   const paymentOptions = listing?.payment_methods ?? [];
   const usablePayments = paymentsFor(paymentOptions, chosenMethod);
@@ -251,8 +264,23 @@ export default function ListingDetailScreen() {
       return;
     }
 
+    if (remaining <= 0) {
+      showAlert({
+        title: '這件商品已售完',
+        message: '目前庫存都被其他買家訂走了，可以私訊賣家問問還會不會補貨。',
+      });
+      return;
+    }
+
     setIsBusy(true);
-    const result = await createOrder(listing.id, offer, chosenMethod, destRegion, chosenPayment);
+    const result = await createOrder(
+      listing.id,
+      offer,
+      chosenMethod,
+      destRegion,
+      chosenPayment,
+      offerUnits,
+    );
     setIsBusy(false);
     setOfferVisible(false);
 
@@ -270,6 +298,20 @@ export default function ListingDetailScreen() {
           title: '商品已完成交易',
           message: '這件商品已經售出，看看其他相似的好物吧。',
         });
+        await refreshFeed();
+        return;
+      }
+      if (result.reason === 'stock') {
+        showAlert({
+          title: '數量不夠了',
+          tone: 'danger',
+          message:
+            result.remaining > 0
+              ? `其他買家剛剛訂走了一部分，目前只剩 ${result.remaining} 件。請調整數量後再送出。`
+              : '這件商品的庫存剛剛被訂完了，可以私訊賣家問問補貨。',
+        });
+        setOfferQuantity(Math.max(1, result.remaining));
+        await refreshFeed();
         return;
       }
       if (result.reason === 'unavailable') {
@@ -319,6 +361,7 @@ export default function ListingDetailScreen() {
 
     const method = result.logistics ?? chosenMethod;
     const fee = result.shippingFee;
+    const units = result.quantity;
     const locationInfo =
       method === MEETUP_METHOD
         ? `面交 ∙ ${listing.meetup_location ?? '雙方約定之公共場所'}`
@@ -328,7 +371,7 @@ export default function ListingDetailScreen() {
     showAlert({
       title: '🤝 樂淘媒合成功！交易單已建立',
       tone: 'success',
-      message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}。\n\n運送方式：${locationInfo}\n付款方式：${paymentLabel(result.paymentMethod)}${payMeta ? `\n${payMeta.hint}` : ''}\n應付總計：NT$ ${(offer + fee).toLocaleString('en-US')}（商品 ${offer.toLocaleString('en-US')} + 運費 ${fee.toLocaleString('en-US')}）\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
+      message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}${units > 1 ? ` × ${units} 件` : ''}。\n\n運送方式：${locationInfo}\n付款方式：${paymentLabel(result.paymentMethod)}${payMeta ? `\n${payMeta.hint}` : ''}\n應付總計：NT$ ${(offer * units + fee).toLocaleString('en-US')}（商品 ${offer.toLocaleString('en-US')}${units > 1 ? ` × ${units}` : ''} + 運費 ${fee.toLocaleString('en-US')}）\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
       confirmLabel: '前往私訊',
       dismissLabel: '稍後再說',
       onConfirm: () => {
@@ -547,10 +590,32 @@ export default function ListingDetailScreen() {
             最低可接受出價 NT$ {minAllowed.toLocaleString('en-US')}（{condition.label} ∙{' '}
             {Math.round(condition.minRatio * 100)}%）
           </Text>
+          {isMultiStock ? (
+            <View className="mt-2 flex-row items-center gap-1.5">
+              <View className={`rounded-md px-2 py-1 ${isSoldOut ? 'bg-neutral-200' : 'bg-mint'}`}>
+                <Text
+                  className={`text-[11px] font-bold ${
+                    isSoldOut ? 'text-neutral-600' : 'text-sage-deep'
+                  }`}
+                >
+                  {isSoldOut ? '庫存已售完' : `${stockLabel(totalStock, listing.sold_quantity)}`}
+                </Text>
+              </View>
+              <Text className="text-muted text-[11px]">同款商品可一次購買多件</Text>
+            </View>
+          ) : null}
 
           <View className="bg-background mt-4 rounded-2xl border border-neutral-200 p-4">
             <DetailRow label="商品類別" value={`🏷️ ${listing.category ?? '未分類'}`} />
             <DetailRow label="新舊程度" value={`${condition.label} ∙ ${condition.hint}`} />
+            <DetailRow
+              label="商品數量"
+              value={
+                isMultiStock
+                  ? `${remaining} 件可購買（總數 ${totalStock} 件，已成交 ${listing.sold_quantity} 件）`
+                  : '單件商品（僅 1 件）'
+              }
+            />
             <DetailRow
               label="運費"
               value={
@@ -714,12 +779,13 @@ export default function ListingDetailScreen() {
                 </View>
                 <Text className="text-foreground mt-2 text-[14px] font-bold">
                   成交價 NT$ {myOrder.offer_price.toLocaleString('en-US')}
+                  {myOrder.quantity > 1 ? ` × ${myOrder.quantity} 件` : ''}
                 </Text>
                 <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
                   {myOrder.logistics ?? '面交'}
                   {myOrder.dest_region ? ` ∙ 寄至${myOrder.dest_region}` : ''} ∙ 運費{' '}
                   {formatShippingFee(myOrder.shipping_fee)} ∙ 應付總計 NT${' '}
-                  {(myOrder.offer_price + myOrder.shipping_fee).toLocaleString('en-US')}
+                  {orderTotal(myOrder).toLocaleString('en-US')}
                 </Text>
                 <Text className="text-muted mt-0.5 text-[11px] font-medium">
                   付款方式：{paymentLabel(myOrder.payment_method)}
@@ -797,12 +863,13 @@ export default function ListingDetailScreen() {
                       </View>
                       <Text className="text-foreground mt-1.5 text-[14px] font-bold">
                         出價 NT$ {order.offer_price.toLocaleString('en-US')}
+                        {order.quantity > 1 ? ` × ${order.quantity} 件` : ''}
                       </Text>
                       <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
                         買家選擇 {order.logistics ?? '面交'}
                         {order.dest_region ? ` ∙ 寄至${order.dest_region}` : ''} ∙ 運費{' '}
                         {formatShippingFee(order.shipping_fee)} ∙ 應收總計 NT${' '}
-                        {(order.offer_price + order.shipping_fee).toLocaleString('en-US')}
+                        {orderTotal(order).toLocaleString('en-US')}
                       </Text>
                       <Text className="text-muted mt-0.5 text-[11px] font-medium">
                         付款方式：{paymentLabel(order.payment_method)}
@@ -897,21 +964,18 @@ export default function ListingDetailScreen() {
             </Button>
             <Button
               className="flex-1"
-              isDisabled={listing.status === 'sold' || myOrder?.status === 'pending'}
+              isDisabled={isSoldOut || myOrder?.status === 'pending'}
               onPress={() => {
                 if (!requireAccount('出價')) return;
                 setOfferPrice('');
+                setOfferQuantity(1);
                 setOfferMethod(cheapest?.method ?? null);
                 setOfferPayment(null);
                 setOfferVisible(true);
               }}
             >
               <Button.Label>
-                {listing.status === 'sold'
-                  ? '已售出'
-                  : myOrder?.status === 'pending'
-                    ? '交易進行中'
-                    : '出價與媒合'}
+                {isSoldOut ? '已售完' : myOrder?.status === 'pending' ? '交易進行中' : '出價與媒合'}
               </Button.Label>
             </Button>
           </View>
@@ -952,17 +1016,32 @@ export default function ListingDetailScreen() {
               </Text>
               <Text className="mt-1 text-[11px] font-semibold text-red-600">
                 最低可接受出價：NT$ {minAllowed.toLocaleString('en-US')}
+                {isMultiStock ? '（每件）' : ''}
               </Text>
 
               <TextInput
                 value={offerPrice}
                 onChangeText={setOfferPrice}
                 keyboardType="number-pad"
-                placeholder="輸入您的出價金額"
+                placeholder={isMultiStock ? '輸入每件的出價金額' : '輸入您的出價金額'}
                 placeholderTextColorClassName="accent-neutral-400"
                 className="bg-canvas text-foreground mt-4 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
               />
 
+              {isMultiStock ? (
+                <>
+                  <Text className="text-foreground mt-4 text-[12px] font-semibold">
+                    購買數量（剩 {remaining} 件）
+                  </Text>
+                  <QuantityStepper
+                    value={offerUnits}
+                    onChange={setOfferQuantity}
+                    max={maxOrderable}
+                    className="mt-2"
+                    hint="出價金額是單件價格，運費以一次寄送計算。"
+                  />
+                </>
+              ) : null}
               {shippingOptions.some((option) => option.method !== MEETUP_METHOD) ? (
                 <>
                   <Text className="text-foreground mt-4 text-[12px] font-semibold">
@@ -1059,6 +1138,16 @@ export default function ListingDetailScreen() {
               </View>
 
               <View className="bg-canvas mt-3 rounded-xl px-3 py-2.5">
+                {isMultiStock ? (
+                  <View className="mb-1 flex-row items-center justify-between">
+                    <Text className="text-muted flex-1 text-[11px]">商品（{offerUnits} 件）</Text>
+                    <Text className="text-foreground text-[11px] font-semibold">
+                      {Number.isFinite(offerValue)
+                        ? `NT$ ${(Math.max(offerValue, 0) * offerUnits).toLocaleString('en-US')}`
+                        : '請先輸入出價'}
+                    </Text>
+                  </View>
+                ) : null}
                 <View className="flex-row items-center justify-between">
                   <Text className="text-muted flex-1 text-[11px]">
                     運費（{chosenMethod}
@@ -1080,6 +1169,7 @@ export default function ListingDetailScreen() {
                 </View>
                 <Text className="text-muted mt-1 text-[11px]">
                   取貨：{chosenMethod} ∙ 付款：{paymentLabel(chosenPayment)}
+                  {isMultiStock ? ` ∙ 數量 ${offerUnits} 件` : ''}
                 </Text>
               </View>
 

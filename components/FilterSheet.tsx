@@ -2,14 +2,9 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { X } from 'lucide-react-native';
 
+import { InlineCategorySelect } from '@/components/CategoryPicker';
 import { SelectChip } from '@/components/SelectChip';
-import {
-  ALL_CATEGORY,
-  CATEGORIES,
-  CONDITIONS,
-  LOGISTICS_OPTIONS,
-  PRICE_RANGES,
-} from '@/lib/constants';
+import { ALL_CATEGORY, CONDITIONS, LOGISTICS_OPTIONS, PRICE_RANGES } from '@/lib/constants';
 import { DEFAULT_FILTERS, type ListingFilters, activeFilterCount } from '@/lib/filters';
 import { TAIWAN_REGIONS } from '@/lib/regions';
 
@@ -72,18 +67,22 @@ export function FilterSheet({
             showsVerticalScrollIndicator={false}
           >
             <Text className="text-foreground text-[13px] font-semibold">商品類別</Text>
-            <View className="mt-2 flex-row flex-wrap gap-1.5">
-              {[ALL_CATEGORY, ...CATEGORIES].map((item) => (
-                <SelectChip
-                  key={item}
-                  size="sm"
-                  label={item}
-                  isSelected={filters.category === item}
-                  onPress={() => onChange({ ...filters, category: item })}
-                  className="rounded-md"
-                />
-              ))}
+            <View className="mt-2">
+              <InlineCategorySelect
+                value={filters.category}
+                includeAll
+                onChange={(category) => onChange({ ...filters, category })}
+              />
             </View>
+            {filters.category === ALL_CATEGORY ? null : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onChange({ ...filters, category: ALL_CATEGORY })}
+                className="mt-1.5 self-start py-1"
+              >
+                <Text className="text-sage-deep text-[11px] font-semibold">清除類別條件</Text>
+              </Pressable>
+            )}
 
             <Text className="text-foreground mt-5 text-[13px] font-semibold">
               商品狀況（可多選）
