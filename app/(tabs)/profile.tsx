@@ -668,37 +668,42 @@ export default function ProfileScreen() {
         onRequestClose={() => setPendingBump(null)}
       >
         <View className="flex-1 items-center justify-center bg-black/40 px-6">
-          <View className="bg-background w-full max-w-sm rounded-2xl border border-neutral-200 p-5">
-            <View className="flex-row items-center gap-2">
-              <Zap size={18} color={SAGE} strokeWidth={2} />
-              <Text className="text-foreground text-base font-bold">提升商品排名</Text>
-            </View>
-            <Text className="text-muted mt-3 text-[13px] leading-5" numberOfLines={2}>
-              「{pendingBump?.title}」將被推上探索首頁最前排，持續 {BUMP_DURATION_LABEL}。
-            </Text>
-            <View className="bg-canvas mt-3 flex-row items-center justify-between rounded-xl px-3 py-2">
-              <Text className="text-muted text-[12px]">本次花費</Text>
-              <Text className="text-foreground text-[13px] font-bold">{BUMP_COST} EcoCoins</Text>
-            </View>
-            <View className="bg-canvas mt-1.5 flex-row items-center justify-between rounded-xl px-3 py-2">
-              <Text className="text-muted text-[12px]">目前餘額</Text>
-              <Text className="text-foreground text-[13px] font-bold">{balance} EcoCoins</Text>
-            </View>
+          <View className="bg-background max-h-[86%] w-full max-w-sm rounded-2xl border border-neutral-200">
+            <ScrollView
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View className="flex-row items-center gap-2">
+                <Zap size={18} color={SAGE} strokeWidth={2} />
+                <Text className="text-foreground text-base font-bold">提升商品排名</Text>
+              </View>
+              <Text className="text-muted mt-3 text-[13px] leading-5">
+                「{pendingBump?.title}」將被推上探索首頁最前排，持續 {BUMP_DURATION_LABEL}。
+              </Text>
+              <View className="bg-canvas mt-3 flex-row items-center justify-between rounded-xl px-3 py-2">
+                <Text className="text-muted text-[12px]">本次花費</Text>
+                <Text className="text-foreground text-[13px] font-bold">{BUMP_COST} EcoCoins</Text>
+              </View>
+              <View className="bg-canvas mt-1.5 flex-row items-center justify-between rounded-xl px-3 py-2">
+                <Text className="text-muted text-[12px]">目前餘額</Text>
+                <Text className="text-foreground text-[13px] font-bold">{balance} EcoCoins</Text>
+              </View>
 
-            <View className="mt-4 flex-row gap-2">
-              <Button variant="secondary" className="flex-1" onPress={() => setPendingBump(null)}>
-                <Button.Label>取消</Button.Label>
-              </Button>
-              <Button
-                className="flex-1"
-                isDisabled={isBumping}
-                onPress={() => {
-                  void handleConfirmBump();
-                }}
-              >
-                <Button.Label>{isBumping ? '處理中...' : '確認扣款並置頂'}</Button.Label>
-              </Button>
-            </View>
+              <View className="mt-4 flex-row gap-2">
+                <Button variant="secondary" className="flex-1" onPress={() => setPendingBump(null)}>
+                  <Button.Label>取消</Button.Label>
+                </Button>
+                <Button
+                  className="flex-1"
+                  isDisabled={isBumping}
+                  onPress={() => {
+                    void handleConfirmBump();
+                  }}
+                >
+                  <Button.Label>{isBumping ? '處理中...' : '確認扣款並置頂'}</Button.Label>
+                </Button>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -710,29 +715,38 @@ export default function ProfileScreen() {
         onRequestClose={() => setPendingDelete(null)}
       >
         <View className="flex-1 items-center justify-center bg-black/40 px-6">
-          <View className="bg-background w-full max-w-sm rounded-2xl border border-neutral-200 p-5">
-            <View className="flex-row items-center gap-2">
-              <Trash2 size={18} color="#B91C1C" strokeWidth={2} />
-              <Text className="text-foreground text-base font-bold">刪除商品</Text>
-            </View>
-            <Text className="text-muted mt-3 text-[13px] leading-5">
-              確定要刪除「{pendingDelete?.title}
-              」嗎？商品、收藏與交易紀錄都會一併移除，這個動作無法復原。若只是想暫時停售，選擇「暫時下架」就好。
-            </Text>
-            <View className="mt-4 flex-row gap-2">
-              <Button variant="secondary" className="flex-1" onPress={() => setPendingDelete(null)}>
-                <Button.Label>保留商品</Button.Label>
-              </Button>
-              <Button
-                variant="danger"
-                className="flex-1"
-                onPress={() => {
-                  void handleConfirmDelete();
-                }}
-              >
-                <Button.Label>確認刪除</Button.Label>
-              </Button>
-            </View>
+          <View className="bg-background max-h-[86%] w-full max-w-sm rounded-2xl border border-neutral-200">
+            <ScrollView
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View className="flex-row items-center gap-2">
+                <Trash2 size={18} color="#B91C1C" strokeWidth={2} />
+                <Text className="text-foreground text-base font-bold">刪除商品</Text>
+              </View>
+              <Text className="text-muted mt-3 text-[13px] leading-5">
+                確定要刪除「{pendingDelete?.title}
+                」嗎？商品、收藏與交易紀錄都會一併移除，這個動作無法復原。若只是想暫時停售，選擇「暫時下架」就好。
+              </Text>
+              <View className="mt-4 flex-row gap-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onPress={() => setPendingDelete(null)}
+                >
+                  <Button.Label>保留商品</Button.Label>
+                </Button>
+                <Button
+                  variant="danger"
+                  className="flex-1"
+                  onPress={() => {
+                    void handleConfirmDelete();
+                  }}
+                >
+                  <Button.Label>確認刪除</Button.Label>
+                </Button>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>

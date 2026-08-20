@@ -1206,64 +1206,72 @@ export default function ListingDetailScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 items-center justify-center bg-black/40 px-6"
         >
-          <View className="bg-background w-full max-w-sm rounded-2xl border border-neutral-200 p-5">
-            <Text className="text-foreground text-base font-bold">檢舉商品</Text>
-            <Text className="text-muted mt-2 text-[12px] leading-4">
-              檢舉會直接進入管理員後台的待處理清單，並保留你的帳號紀錄。
-            </Text>
+          <View className="bg-background max-h-[86%] w-full max-w-sm rounded-2xl border border-neutral-200">
+            <ScrollView
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text className="text-foreground text-base font-bold">檢舉商品</Text>
+              <Text className="text-muted mt-2 text-[12px] leading-4">
+                檢舉會直接進入管理員後台的待處理清單，並保留你的帳號紀錄。
+              </Text>
 
-            <View className="mt-3 gap-1.5">
-              {REPORT_REASONS.map((reason) => (
-                <Pressable
-                  key={reason}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: reportReason === reason }}
-                  onPress={() => setReportReason(reason)}
-                  className={`h-10 justify-center rounded-xl border px-3 ${
-                    reportReason === reason ? 'border-sage bg-mint' : 'bg-canvas border-neutral-200'
-                  }`}
-                >
-                  <Text
-                    className={`text-[12px] ${
+              <View className="mt-3 gap-1.5">
+                {REPORT_REASONS.map((reason) => (
+                  <Pressable
+                    key={reason}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: reportReason === reason }}
+                    onPress={() => setReportReason(reason)}
+                    className={`min-h-10 justify-center rounded-xl border px-3 py-2 ${
                       reportReason === reason
-                        ? 'text-sage-deep font-bold'
-                        : 'text-muted font-medium'
+                        ? 'border-sage bg-mint'
+                        : 'bg-canvas border-neutral-200'
                     }`}
                   >
-                    {reason}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+                    <Text
+                      className={`text-[12px] ${
+                        reportReason === reason
+                          ? 'text-sage-deep font-bold'
+                          : 'text-muted font-medium'
+                      }`}
+                    >
+                      {reason}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
 
-            <TextInput
-              value={reportDetail}
-              onChangeText={setReportDetail}
-              multiline
-              textAlignVertical="top"
-              placeholder="補充說明（選填）"
-              placeholderTextColorClassName="accent-neutral-400"
-              className="bg-canvas text-foreground mt-3 h-20 rounded-xl border border-neutral-200 px-3 pt-2.5 text-[13px]"
-            />
+              <TextInput
+                value={reportDetail}
+                onChangeText={setReportDetail}
+                multiline
+                textAlignVertical="top"
+                placeholder="補充說明（選填）"
+                placeholderTextColorClassName="accent-neutral-400"
+                className="bg-canvas text-foreground mt-3 h-20 rounded-xl border border-neutral-200 px-3 pt-2.5 text-[13px]"
+              />
 
-            <View className="mt-4 flex-row gap-2">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onPress={() => setReportVisible(false)}
-              >
-                <Button.Label>取消</Button.Label>
-              </Button>
-              <Button
-                className="flex-1"
-                isDisabled={isBusy}
-                onPress={() => {
-                  void submitReport();
-                }}
-              >
-                <Button.Label>送出檢舉</Button.Label>
-              </Button>
-            </View>
+              <View className="mt-4 flex-row gap-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onPress={() => setReportVisible(false)}
+                >
+                  <Button.Label>取消</Button.Label>
+                </Button>
+                <Button
+                  className="flex-1"
+                  isDisabled={isBusy}
+                  onPress={() => {
+                    void submitReport();
+                  }}
+                >
+                  <Button.Label>送出檢舉</Button.Label>
+                </Button>
+              </View>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>

@@ -144,7 +144,11 @@ export default function AccountScreen() {
 
   if (!userId) {
     return (
-      <View className="bg-canvas flex-1 p-4">
+      <ScrollView
+        className="bg-canvas flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         <Stack.Screen options={{ title: '編輯個人資料' }} />
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={30} color={SAGE} strokeWidth={1.6} />
@@ -153,7 +157,7 @@ export default function AccountScreen() {
             <Button.Label>註冊 / 登入</Button.Label>
           </Button>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Image, Text, View } from 'react-native';
+import { FlatList, Image, ScrollView, Text, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import {
@@ -134,7 +134,11 @@ export default function OrdersScreen() {
 
   if (!userId) {
     return (
-      <View className="bg-canvas flex-1 p-4">
+      <ScrollView
+        className="bg-canvas flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         <Stack.Screen options={{ title: '我的交易' }} />
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={30} color={SAGE} strokeWidth={1.6} />
@@ -146,7 +150,7 @@ export default function OrdersScreen() {
             <Button.Label>註冊 / 登入</Button.Label>
           </Button>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 

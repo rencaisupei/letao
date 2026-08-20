@@ -61,7 +61,11 @@ export default function OrderDetailScreen() {
 
   if (!userId) {
     return (
-      <View className="bg-canvas flex-1 p-4">
+      <ScrollView
+        className="bg-canvas flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         <Stack.Screen options={{ title: '交易詳情' }} />
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={30} color={SAGE} strokeWidth={1.6} />
@@ -70,13 +74,17 @@ export default function OrderDetailScreen() {
             <Button.Label>註冊 / 登入</Button.Label>
           </Button>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
   if (!order) {
     return (
-      <View className="bg-canvas flex-1 p-4">
+      <ScrollView
+        className="bg-canvas flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         <Stack.Screen options={{ title: '交易詳情' }} />
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <PackageSearch size={30} color={SAGE} strokeWidth={1.6} />
@@ -88,7 +96,7 @@ export default function OrderDetailScreen() {
             <Button.Label>回到我的交易</Button.Label>
           </Button>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 

@@ -254,45 +254,55 @@ export default function SellerScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 items-center justify-center bg-black/40 px-6"
         >
-          <View className="bg-background w-full max-w-sm rounded-2xl border border-neutral-200 p-5">
-            <Text className="text-foreground text-base font-bold">
-              評價 {profile?.username ?? '這位賣家'}
-            </Text>
-            <Text className="text-muted mt-2 text-[12px] leading-4">
-              星數會直接換算成這位賣家的信任度，請依實際交易體驗評分。
-            </Text>
-
-            <View className="bg-canvas mt-3 items-center rounded-xl py-4">
-              <StarRating value={rating} size={30} onChange={setRating} />
-              <Text className="text-foreground mt-2 text-[12px] font-semibold">
-                {rating} 顆星 ∙ 信任度 {rating * 20}%
+          <View className="bg-background max-h-[86%] w-full max-w-sm rounded-2xl border border-neutral-200">
+            <ScrollView
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text className="text-foreground text-base font-bold">
+                評價 {profile?.username ?? '這位賣家'}
               </Text>
-            </View>
+              <Text className="text-muted mt-2 text-[12px] leading-4">
+                星數會直接換算成這位賣家的信任度，請依實際交易體驗評分。
+              </Text>
 
-            <TextInput
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              textAlignVertical="top"
-              placeholder="寫下交易過程、包裝或溝通狀況（選填）"
-              placeholderTextColorClassName="accent-neutral-400"
-              className="bg-canvas text-foreground mt-3 h-20 rounded-xl border border-neutral-200 px-3 pt-2.5 text-[13px]"
-            />
+              <View className="bg-canvas mt-3 items-center rounded-xl py-4">
+                <StarRating value={rating} size={30} onChange={setRating} />
+                <Text className="text-foreground mt-2 text-[12px] font-semibold">
+                  {rating} 顆星 ∙ 信任度 {rating * 20}%
+                </Text>
+              </View>
 
-            <View className="mt-4 flex-row gap-2">
-              <Button variant="secondary" className="flex-1" onPress={() => setFormVisible(false)}>
-                <Button.Label>取消</Button.Label>
-              </Button>
-              <Button
-                className="flex-1"
-                isDisabled={isBusy}
-                onPress={() => {
-                  void handleSubmit();
-                }}
-              >
-                <Button.Label>{isBusy ? '送出中...' : '送出評價'}</Button.Label>
-              </Button>
-            </View>
+              <TextInput
+                value={comment}
+                onChangeText={setComment}
+                multiline
+                textAlignVertical="top"
+                placeholder="寫下交易過程、包裝或溝通狀況（選填）"
+                placeholderTextColorClassName="accent-neutral-400"
+                className="bg-canvas text-foreground mt-3 h-20 rounded-xl border border-neutral-200 px-3 pt-2.5 text-[13px]"
+              />
+
+              <View className="mt-4 flex-row gap-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onPress={() => setFormVisible(false)}
+                >
+                  <Button.Label>取消</Button.Label>
+                </Button>
+                <Button
+                  className="flex-1"
+                  isDisabled={isBusy}
+                  onPress={() => {
+                    void handleSubmit();
+                  }}
+                >
+                  <Button.Label>{isBusy ? '送出中...' : '送出評價'}</Button.Label>
+                </Button>
+              </View>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
