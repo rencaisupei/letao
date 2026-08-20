@@ -10,6 +10,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
 import { useEffect } from 'react';
 import * as DevClient from 'expo-dev-client';
@@ -152,6 +153,10 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <HeroUINativeProvider>
+        {/* App-wide: the canvas is always light, so status bar content stays dark on
+            every screen (tabs, stack screens and native modals alike). */}
+        {/* eslint-disable-next-line react/style-prop-object -- expo-status-bar's `style` prop is a string enum ("dark"/"light"/"auto"), not a React Native style object */}
+        <StatusBar style="dark" />
         <Stack
           screenOptions={{
             headerStyle: { backgroundColor: '#FFFFFF' },
