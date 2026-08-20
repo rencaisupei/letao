@@ -1,22 +1,50 @@
 import { Image, Text, View } from 'react-native';
 
-import brandEmblem from '@/assets/brand-emblem.png';
+import brandArtwork from '@/assets/brand-logo-full.png';
 import { NotificationBell } from '@/components/NotificationBell';
 
 const BRAND_LABEL = '易拍通 YI PAI TONG，易拍即通 · 成交輕鬆';
 
 /**
- * Circular gold phoenix emblem. Artwork carries no wording, so screens are
- * expected to pair it with the wordmark below (see BrandLockup).
+ * The supplied artwork is a portrait composition: gavel + circular phoenix
+ * emblem on top, then the 易拍通 / YI PAI TONG wordmark underneath. Screens pair
+ * a live wordmark with the emblem, so BrandMark crops the artwork down to the
+ * emblem band (fractions of the artwork height) and clips it to a circle.
  */
+const EMBLEM_TOP = 0.02;
+const EMBLEM_BOTTOM = 0.66;
+const FALLBACK_ASPECT = 479 / 359;
+
+const artworkSource = Image.resolveAssetSource(brandArtwork);
+const ARTWORK_ASPECT =
+  artworkSource?.width && artworkSource?.height
+    ? artworkSource.height / artworkSource.width
+    : FALLBACK_ASPECT;
+
 export function BrandMark({ size = 44 }: { size?: number }) {
+  // Height of the emblem band, expressed in multiples of the artwork width.
+  const bandHeight = (EMBLEM_BOTTOM - EMBLEM_TOP) * ARTWORK_ASPECT;
+  const imageWidth = size / bandHeight;
+  const imageHeight = imageWidth * ARTWORK_ASPECT;
+
   return (
-    <Image
-      source={brandEmblem}
+    <View
+      className="overflow-hidden border border-neutral-200 bg-white"
       style={{ width: size, height: size, borderRadius: size / 2 }}
-      resizeMode="contain"
-      accessibilityLabel={BRAND_LABEL}
-    />
+    >
+      <Image
+        source={brandArtwork}
+        style={{
+          position: 'absolute',
+          width: imageWidth,
+          height: imageHeight,
+          left: (size - imageWidth) / 2,
+          top: -EMBLEM_TOP * imageHeight,
+        }}
+        resizeMode="cover"
+        accessibilityLabel={BRAND_LABEL}
+      />
+    </View>
   );
 }
 
