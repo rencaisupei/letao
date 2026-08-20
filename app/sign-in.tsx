@@ -332,15 +332,7 @@ export default function SignInScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="items-center">
-          <View className="bg-background h-16 w-16 items-center justify-center rounded-2xl border border-neutral-200">
-            <BrandMark size={38} />
-          </View>
-          <Text className="text-foreground mt-4 text-[22px] font-extrabold tracking-[1px]">
-            易拍通 YI PAI TONG
-          </Text>
-          <Text className="text-muted mt-1 text-[11px] font-semibold tracking-[3px]">
-            易 拍 即 通 ∙ 成 交 輕 鬆
-          </Text>
+          <BrandMark size={150} />
         </View>
 
         <View className="bg-background mt-8 rounded-2xl border border-neutral-200 p-5">
