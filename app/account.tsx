@@ -1,13 +1,8 @@
 import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
+import { screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router } from 'expo-router';
 import { Camera, UserPlus } from 'lucide-react-native';
@@ -146,7 +141,7 @@ export default function AccountScreen() {
     return (
       <ScrollView
         className="bg-canvas flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         showsVerticalScrollIndicator={false}
       >
         <Stack.Screen options={{ title: '編輯個人資料' }} />
@@ -169,11 +164,11 @@ export default function AccountScreen() {
       <Stack.Screen options={{ title: '編輯個人資料' }} />
 
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="bg-background items-center rounded-2xl border border-neutral-200 p-5">
+        <View className="bg-background items-center rounded-2xl border border-neutral-200 p-4">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="更換頭像"
@@ -187,10 +182,10 @@ export default function AccountScreen() {
               <Camera size={13} color="#FFFFFF" strokeWidth={2.2} />
             </View>
           </Pressable>
-          <Text className="text-muted mt-3 text-[11px]">點頭像可從相簿更換</Text>
+          <Text className="text-muted text-2xs mt-3">點頭像可從相簿更換</Text>
         </View>
 
-        <Text className="text-foreground mt-5 text-[13px] font-semibold">暱稱</Text>
+        <Text className="text-foreground mt-5 text-sm font-semibold">暱稱</Text>
         <TextInput
           value={username}
           onChangeText={setUsername}
@@ -198,10 +193,10 @@ export default function AccountScreen() {
           editable={!isBusy}
           placeholder="顯示在商品卡與評價上的名稱"
           placeholderTextColorClassName="accent-neutral-400"
-          className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
+          className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
         />
 
-        <Text className="text-foreground mt-5 text-[13px] font-semibold">個人簡介</Text>
+        <Text className="text-foreground mt-5 text-sm font-semibold">個人簡介</Text>
         <TextInput
           value={bio}
           onChangeText={setBio}
@@ -211,11 +206,11 @@ export default function AccountScreen() {
           editable={!isBusy}
           placeholder="介紹一下你常釋出的品類、回覆時間或面交習慣（選填）"
           placeholderTextColorClassName="accent-neutral-400"
-          className="bg-background text-foreground mt-2 h-24 rounded-xl border border-neutral-200 px-4 pt-3 text-[13px]"
+          className="bg-background text-foreground mt-2 min-h-24 rounded-xl border border-neutral-200 px-4 pt-3 text-sm"
         />
-        <Text className="text-muted mt-1 text-right text-[10px]">{bio.length} / 200</Text>
+        <Text className="text-muted text-2xs mt-1 text-right">{bio.length} / 200</Text>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">我的身分</Text>
+        <Text className="text-foreground mt-4 text-sm font-semibold">我的身分</Text>
         <View className="mt-2 gap-1.5">
           {ROLE_OPTIONS.map((option) => (
             <SelectChip
@@ -223,13 +218,13 @@ export default function AccountScreen() {
               label={`${option.label} ｜ ${option.hint}`}
               isSelected={role === option.code}
               onPress={() => setRole(option.code)}
-              className="h-11 w-full items-start justify-center rounded-xl px-4"
+              className="min-h-11 w-full items-start justify-center rounded-xl px-4"
             />
           ))}
         </View>
 
-        <View className="bg-mint mt-4 rounded-xl p-3.5">
-          <Text className="text-sage-deep text-[11px] leading-4">
+        <View className="bg-mint mt-4 rounded-xl p-4">
+          <Text className="text-sage-deep text-2xs leading-4">
             信任度、驗證標章與管理員權限由平台依評價與審核紀錄決定，無法自行修改。
           </Text>
         </View>
@@ -244,9 +239,9 @@ export default function AccountScreen() {
           <Button.Label>{progress ?? '儲存變更'}</Button.Label>
         </Button>
 
-        <View className="bg-background mt-6 rounded-2xl border border-neutral-200 p-5">
-          <Text className="text-foreground text-[13px] font-semibold">登入密碼</Text>
-          <Text className="text-muted mt-1 text-[11px] leading-4">
+        <View className="bg-background mt-6 rounded-2xl border border-neutral-200 p-4">
+          <Text className="text-foreground text-sm font-semibold">登入密碼</Text>
+          <Text className="text-muted text-2xs mt-1 leading-4">
             設定一組密碼後，下次登入輸入 Email
             與密碼就能直接進入，不必等驗證碼。已有密碼的話這裡也可以直接換一組。
           </Text>

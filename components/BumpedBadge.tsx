@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Text } from 'react-native';
+import { Zap } from 'lucide-react-native';
 import {
   Easing,
   useAnimatedStyle,
@@ -10,10 +10,11 @@ import {
 } from 'react-native-reanimated';
 
 import { AnimatedView } from '@/components/ui/primitives/AnimatedView';
+import { Text } from '@/components/ui/primitives/Text';
 import { SAGE } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
-/** Glowing "⚡ 已置頂" badge with a soft opacity pulse. */
+/** Glowing "已置頂" badge with a soft opacity pulse. */
 export function BumpedBadge({ className }: { className?: string }) {
   const pulse = useSharedValue(1);
 
@@ -41,9 +42,10 @@ export function BumpedBadge({ className }: { className?: string }) {
           shadowOffset: { width: 0, height: 0 },
         },
       ]}
-      className={cn('bg-sage rounded-md px-2 py-1', className)}
+      className={cn('bg-sage flex-row items-center gap-1 rounded-md px-2 py-1', className)}
     >
-      <Text className="text-[10px] font-bold text-white">⚡ 已置頂</Text>
+      <Zap size={11} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
+      <Text className="text-2xs font-bold text-white">已置頂</Text>
     </AnimatedView>
   );
 }

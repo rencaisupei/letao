@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ChevronRight, Send, ShieldCheck } from 'lucide-react-native';
 
+import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { SAGE } from '@/lib/constants';
+import { SCREEN_PADDING } from '@/lib/layout';
 import { type Message, useChatStore } from '@/lib/chatStore';
 import { useAppStore } from '@/lib/store';
 
@@ -104,10 +98,10 @@ export default function ConversationScreen() {
           className="bg-background flex-row items-center border-b border-neutral-200 px-4 py-2.5"
         >
           <View className="flex-1">
-            <Text numberOfLines={1} className="text-foreground text-[12px] font-semibold">
+            <Text numberOfLines={1} className="text-foreground text-xs font-semibold">
               {conversation.listing_title}
             </Text>
-            <Text className="text-sage-deep mt-0.5 text-[11px] font-bold">
+            <Text className="text-sage-deep text-2xs mt-0.5 font-bold">
               NT$ {Number(conversation.listing_price).toLocaleString('en-US')}
             </Text>
           </View>
@@ -119,18 +113,18 @@ export default function ConversationScreen() {
         ref={listRef}
         data={messages}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 14, gap: 8, paddingBottom: 20 }}
+        contentContainerStyle={{ padding: SCREEN_PADDING, gap: 8, paddingBottom: 20 }}
         ListHeaderComponent={
-          <View className="bg-mint mb-2 flex-row items-start gap-2 rounded-xl p-3">
+          <View className="bg-mint mb-2 flex-row items-start gap-2 rounded-xl p-3.5">
             <ShieldCheck size={15} color={SAGE} strokeWidth={2} />
-            <Text className="text-sage-deep flex-1 text-[11px] leading-4">
+            <Text className="text-sage-deep text-2xs flex-1 leading-4">
               易拍通安全提醒：請勿在對話中提供銀行帳號、驗證碼或私人證件。面交請約在人潮眾多、設有監視器的公共場所。
             </Text>
           </View>
         }
         ListEmptyComponent={
           <View className="items-center px-6 py-10">
-            <Text className="text-muted text-center text-[13px] leading-5">
+            <Text className="text-muted text-center text-sm leading-5">
               還沒有訊息。可以先問商品狀況、可否面交，或確認運送方式。
             </Text>
           </View>
@@ -144,13 +138,11 @@ export default function ConversationScreen() {
                   isMine ? 'bg-sage' : 'bg-background border border-neutral-200'
                 }`}
               >
-                <Text
-                  className={`text-[13px] leading-5 ${isMine ? 'text-white' : 'text-foreground'}`}
-                >
+                <Text className={`text-sm leading-5 ${isMine ? 'text-white' : 'text-foreground'}`}>
                   {item.body}
                 </Text>
               </View>
-              <Text className="text-muted mt-1 text-[10px]">
+              <Text className="text-muted text-2xs mt-1">
                 {item.pending ? '傳送中...' : timeLabel(item.created_at)}
               </Text>
             </View>
@@ -158,14 +150,14 @@ export default function ConversationScreen() {
         }}
       />
 
-      <View className="bg-background pb-safe-offset-2.5 flex-row items-end gap-2 border-t border-neutral-200 px-3 pt-2.5">
+      <View className="bg-background pb-safe-offset-2.5 flex-row items-end gap-2 border-t border-neutral-200 px-4 pt-2.5">
         <TextInput
           value={draft}
           onChangeText={setDraft}
           multiline
           placeholder="輸入訊息..."
           placeholderTextColorClassName="accent-neutral-400"
-          className="bg-canvas text-foreground max-h-24 min-h-11 flex-1 rounded-2xl border border-neutral-200 px-4 py-2.5 text-[13px]"
+          className="bg-canvas text-foreground max-h-24 min-h-11 flex-1 rounded-2xl border border-neutral-200 px-4 py-2.5 text-sm"
         />
         <Button
           size="sm"

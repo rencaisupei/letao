@@ -7,11 +7,11 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { Button } from 'heroui-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
@@ -369,7 +369,7 @@ export default function ListingDetailScreen() {
     const payMeta = getPayment(result.paymentMethod);
 
     showAlert({
-      title: '🤝 易拍通媒合成功！交易單已建立',
+      title: '易拍通媒合成功！交易單已建立',
       tone: 'success',
       message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}${units > 1 ? ` × ${units} 件` : ''}。\n\n運送方式：${locationInfo}\n付款方式：${paymentLabel(result.paymentMethod)}${payMeta ? `\n${payMeta.hint}` : ''}\n應付總計：NT$ ${(offer * units + fee).toLocaleString('en-US')}（商品 ${offer.toLocaleString('en-US')}${units > 1 ? ` × ${units}` : ''} + 運費 ${fee.toLocaleString('en-US')}）\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
       confirmLabel: '前往私訊',
@@ -495,7 +495,7 @@ export default function ListingDetailScreen() {
           <ActivityIndicator color={SAGE} />
         ) : (
           <>
-            <Text className="text-muted text-center text-[13px]">
+            <Text className="text-muted text-center text-sm">
               找不到這件商品，可能已下架或未通過審核。
             </Text>
             <Button className="mt-4" onPress={() => goBackOrReplace('/')}>
@@ -549,7 +549,7 @@ export default function ListingDetailScreen() {
               className="items-center justify-center"
             >
               <Leaf size={40} color={SAGE} strokeWidth={1.5} />
-              <Text className="text-sage-deep mt-2 text-[12px] font-semibold">
+              <Text className="text-sage-deep mt-2 text-xs font-semibold">
                 {listing.category ?? '易拍通好物'}
               </Text>
             </LinearGradient>
@@ -562,31 +562,29 @@ export default function ListingDetailScreen() {
           <FavoriteButton listingId={listing.id} size={20} className="absolute top-2.5 right-3" />
           {images.length > 1 ? (
             <View className="absolute right-3 bottom-3 rounded-md bg-black/50 px-2 py-1">
-              <Text className="text-[10px] font-bold text-white">
-                左右滑動 ∙ {images.length} 張
-              </Text>
+              <Text className="text-2xs font-bold text-white">左右滑動 ∙ {images.length} 張</Text>
             </View>
           ) : null}
         </View>
 
         <View className="px-4 pt-4">
           {listing.moderation_status !== 'approved' ? (
-            <View className="bg-background mb-3 rounded-xl border border-neutral-200 p-3.5">
+            <View className="bg-background mb-3 rounded-xl border border-neutral-200 p-4">
               <ModerationBadge status={listing.moderation_status} className="self-start" />
-              <Text className="text-muted mt-2 text-[12px] leading-4">{moderation.hint}</Text>
+              <Text className="text-muted mt-2 text-xs leading-4">{moderation.hint}</Text>
               {listing.moderation_reason ? (
-                <Text className="mt-1.5 text-[12px] leading-4 font-medium text-red-700">
+                <Text className="mt-1.5 text-xs leading-4 font-medium text-red-700">
                   審核備註：{listing.moderation_reason}
                 </Text>
               ) : null}
             </View>
           ) : null}
 
-          <Text className="text-foreground text-[17px] leading-6 font-bold">{listing.title}</Text>
+          <Text className="text-foreground text-lg leading-6 font-bold">{listing.title}</Text>
           <Text className="text-foreground mt-2 text-2xl font-bold">
             NT$ {listing.price.toLocaleString('en-US')}
           </Text>
-          <Text className="mt-1 text-[11px] font-semibold text-red-600">
+          <Text className="text-2xs mt-1 font-semibold text-red-600">
             最低可接受出價 NT$ {minAllowed.toLocaleString('en-US')}（{condition.label} ∙{' '}
             {Math.round(condition.minRatio * 100)}%）
           </Text>
@@ -594,19 +592,19 @@ export default function ListingDetailScreen() {
             <View className="mt-2 flex-row items-center gap-1.5">
               <View className={`rounded-md px-2 py-1 ${isSoldOut ? 'bg-neutral-200' : 'bg-mint'}`}>
                 <Text
-                  className={`text-[11px] font-bold ${
+                  className={`text-2xs font-bold ${
                     isSoldOut ? 'text-neutral-600' : 'text-sage-deep'
                   }`}
                 >
                   {isSoldOut ? '庫存已售完' : `${stockLabel(totalStock, listing.sold_quantity)}`}
                 </Text>
               </View>
-              <Text className="text-muted text-[11px]">同款商品可一次購買多件</Text>
+              <Text className="text-muted text-2xs">同款商品可一次購買多件</Text>
             </View>
           ) : null}
 
           <View className="bg-background mt-4 rounded-2xl border border-neutral-200 p-4">
-            <DetailRow label="商品類別" value={`🏷️ ${listing.category ?? '未分類'}`} />
+            <DetailRow label="商品類別" value={listing.category ?? '未分類'} />
             <DetailRow label="新舊程度" value={`${condition.label} ∙ ${condition.hint}`} />
             <DetailRow
               label="商品數量"
@@ -633,12 +631,12 @@ export default function ListingDetailScreen() {
             <DetailRow label="付款方式" value={paymentSummary(paymentOptions)} />
           </View>
 
-          <Text className="text-foreground mt-4 text-[13px] font-semibold">
+          <Text className="text-foreground mt-4 text-sm font-semibold">
             賣家提供的運送方式（買家出價時選一種）
           </Text>
           <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
             {shippingOptions.length === 0 ? (
-              <Text className="text-muted text-[12px] leading-4">
+              <Text className="text-muted text-xs leading-4">
                 賣家尚未設定運送方式，出價前建議先私訊確認。
               </Text>
             ) : (
@@ -650,17 +648,15 @@ export default function ListingDetailScreen() {
                   <View className="flex-row items-center justify-between">
                     <View className="flex-1 flex-row items-center gap-1.5">
                       <Truck size={13} color={SAGE} strokeWidth={2.2} />
-                      <Text className="text-foreground text-[12px] font-medium">
-                        {option.method}
-                      </Text>
+                      <Text className="text-foreground text-xs font-medium">{option.method}</Text>
                       {option.mode === 'auto' && option.method !== MEETUP_METHOD ? (
                         <View className="bg-mint rounded px-1.5 py-0.5">
-                          <Text className="text-sage-deep text-[9px] font-bold">自動試算</Text>
+                          <Text className="text-sage-deep text-2xs font-bold">自動試算</Text>
                         </View>
                       ) : null}
                     </View>
                     <Text
-                      className={`text-[12px] font-bold ${
+                      className={`text-xs font-bold ${
                         option.fee <= 0 ? 'text-sage-deep' : 'text-foreground'
                       }`}
                     >
@@ -671,19 +667,19 @@ export default function ListingDetailScreen() {
                 </View>
               ))
             )}
-            <Text className="text-muted mt-2 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-2 leading-4">
               {isAutoPriced
                 ? '「自動試算」的運費依包裝重量、材積與收件縣市計算，出價時會即時重算並加到您的應付總計；離島與偏遠地區另有加價。'
                 : '運費由賣家自訂，會在出價時加到您的應付總計。'}
             </Text>
           </View>
 
-          <Text className="text-foreground mt-4 text-[13px] font-semibold">
+          <Text className="text-foreground mt-4 text-sm font-semibold">
             買家的取貨與付款方式（出價時選一種）
           </Text>
           <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
             {paymentOptions.length === 0 ? (
-              <Text className="text-muted text-[12px] leading-4">
+              <Text className="text-muted text-xs leading-4">
                 {isMine
                   ? '您還沒設定付款方式，買家出價後只能在私訊中另外確認怎麼付款。'
                   : '賣家尚未設定付款方式，出價成立後請在私訊中確認怎麼付款。'}
@@ -699,10 +695,10 @@ export default function ListingDetailScreen() {
                   >
                     <View className="flex-row items-center gap-1.5">
                       <Wallet size={13} color={SAGE} strokeWidth={2.2} />
-                      <Text className="text-foreground flex-1 text-[12px] font-medium">
+                      <Text className="text-foreground flex-1 text-xs font-medium">
                         {meta.emoji} {meta.label}
                       </Text>
-                      <Text className="text-muted text-[10px] font-semibold">
+                      <Text className="text-muted text-2xs font-semibold">
                         {meta.scope === 'meetup'
                           ? '限面交'
                           : meta.scope === 'shipped'
@@ -710,12 +706,12 @@ export default function ListingDetailScreen() {
                             : '面交／寄送皆可'}
                       </Text>
                     </View>
-                    <Text className="text-muted mt-1 text-[11px] leading-4">{meta.hint}</Text>
+                    <Text className="text-muted text-2xs mt-1 leading-4">{meta.hint}</Text>
                   </View>
                 );
               })
             )}
-            <Text className="text-muted mt-2 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-2 leading-4">
               取貨方式就是上面選定的運送方式：超商店到店到店取貨、宅配送到指定地址、面交則由雙方碰面交付。
             </Text>
             {isMine ? (
@@ -732,26 +728,26 @@ export default function ListingDetailScreen() {
             ) : null}
           </View>
 
-          <Text className="text-foreground mt-4 text-[13px] font-semibold">商品描述</Text>
+          <Text className="text-foreground mt-4 text-sm font-semibold">商品描述</Text>
           <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
-            <Text className="text-muted text-[13px] leading-5">
+            <Text className="text-muted text-sm leading-5">
               {listing.description ?? '賣家沒有填寫描述，可以直接私訊詢問細節。'}
             </Text>
           </View>
 
           {listing.meetup_location ? (
             <>
-              <Text className="text-foreground mt-4 text-[13px] font-semibold">
+              <Text className="text-foreground mt-4 text-sm font-semibold">
                 {offersMeetup ? '面交地點' : '商品所在地'}
               </Text>
               <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
                 <View className="flex-row items-center gap-1.5">
                   <MapPin size={13} color={SAGE} strokeWidth={2.2} />
-                  <Text className="text-foreground flex-1 text-[13px] font-medium">
+                  <Text className="text-foreground flex-1 text-sm font-medium">
                     {listing.meetup_location}
                   </Text>
                 </View>
-                <Text className="text-muted mt-2 text-[11px] leading-4">
+                <Text className="text-muted text-2xs mt-2 leading-4">
                   {offersMeetup
                     ? '碰面請選人潮多、有監視器的公共場所，並在私訊中先確認時間。'
                     : '寄送前請與賣家確認包裝方式，並保留寄件單據。'}
@@ -762,7 +758,7 @@ export default function ListingDetailScreen() {
 
           {myOrder ? (
             <>
-              <Text className="text-foreground mt-4 text-[13px] font-semibold">我的交易</Text>
+              <Text className="text-foreground mt-4 text-sm font-semibold">我的交易</Text>
               <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
                 <View
                   className={`self-start rounded-md px-1.5 py-0.5 ${
@@ -770,27 +766,27 @@ export default function ListingDetailScreen() {
                   }`}
                 >
                   <Text
-                    className={`text-[9px] font-bold ${
+                    className={`text-2xs font-bold ${
                       ORDER_STATUS_META[getOrderStatus(myOrder.status)].textClass
                     }`}
                   >
                     {ORDER_STATUS_META[getOrderStatus(myOrder.status)].label}
                   </Text>
                 </View>
-                <Text className="text-foreground mt-2 text-[14px] font-bold">
+                <Text className="text-foreground mt-2 text-sm font-bold">
                   成交價 NT$ {myOrder.offer_price.toLocaleString('en-US')}
                   {myOrder.quantity > 1 ? ` × ${myOrder.quantity} 件` : ''}
                 </Text>
-                <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
+                <Text className="text-sage-deep text-2xs mt-0.5 font-semibold">
                   {myOrder.logistics ?? '面交'}
                   {myOrder.dest_region ? ` ∙ 寄至${myOrder.dest_region}` : ''} ∙ 運費{' '}
                   {formatShippingFee(myOrder.shipping_fee)} ∙ 應付總計 NT${' '}
                   {orderTotal(myOrder).toLocaleString('en-US')}
                 </Text>
-                <Text className="text-muted mt-0.5 text-[11px] font-medium">
+                <Text className="text-muted text-2xs mt-0.5 font-medium">
                   付款方式：{paymentLabel(myOrder.payment_method)}
                 </Text>
-                <Text className="text-muted mt-1 text-[11px] leading-4">
+                <Text className="text-muted text-2xs mt-1 leading-4">
                   {ORDER_STATUS_META[getOrderStatus(myOrder.status)].hint}
                 </Text>
 
@@ -840,7 +836,7 @@ export default function ListingDetailScreen() {
 
           {incomingOrders.length > 0 ? (
             <>
-              <Text className="text-foreground mt-4 text-[13px] font-semibold">
+              <Text className="text-foreground mt-4 text-sm font-semibold">
                 買家出價（{incomingOrders.length}）
               </Text>
               <View className="mt-2 gap-2">
@@ -852,26 +848,26 @@ export default function ListingDetailScreen() {
                       className="bg-background rounded-2xl border border-neutral-200 p-4"
                     >
                       <View className="flex-row items-center justify-between">
-                        <Text className="text-foreground text-[13px] font-bold">
+                        <Text className="text-foreground text-sm font-bold">
                           {order.counterpartName ?? '易拍通買家'}
                         </Text>
                         <View className={`rounded-md px-1.5 py-0.5 ${meta.bgClass}`}>
-                          <Text className={`text-[9px] font-bold ${meta.textClass}`}>
+                          <Text className={`text-2xs font-bold ${meta.textClass}`}>
                             {meta.label}
                           </Text>
                         </View>
                       </View>
-                      <Text className="text-foreground mt-1.5 text-[14px] font-bold">
+                      <Text className="text-foreground mt-1.5 text-sm font-bold">
                         出價 NT$ {order.offer_price.toLocaleString('en-US')}
                         {order.quantity > 1 ? ` × ${order.quantity} 件` : ''}
                       </Text>
-                      <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
+                      <Text className="text-sage-deep text-2xs mt-0.5 font-semibold">
                         買家選擇 {order.logistics ?? '面交'}
                         {order.dest_region ? ` ∙ 寄至${order.dest_region}` : ''} ∙ 運費{' '}
                         {formatShippingFee(order.shipping_fee)} ∙ 應收總計 NT${' '}
                         {orderTotal(order).toLocaleString('en-US')}
                       </Text>
-                      <Text className="text-muted mt-0.5 text-[11px] font-medium">
+                      <Text className="text-muted text-2xs mt-0.5 font-medium">
                         付款方式：{paymentLabel(order.payment_method)}
                       </Text>
                       {order.status === 'pending' ? (
@@ -905,7 +901,7 @@ export default function ListingDetailScreen() {
             </>
           ) : null}
 
-          <Text className="text-foreground mt-4 text-[13px] font-semibold">賣家資訊</Text>
+          <Text className="text-foreground mt-4 text-sm font-semibold">賣家資訊</Text>
           <Pressable
             accessibilityRole="button"
             onPress={() =>
@@ -916,14 +912,14 @@ export default function ListingDetailScreen() {
             <Avatar name={listing.seller?.username} size={44} />
             <View className="ml-3 flex-1">
               <View className="flex-row items-center gap-1">
-                <Text className="text-foreground text-[14px] font-bold">
+                <Text className="text-foreground text-sm font-bold">
                   {listing.seller?.username ?? '易拍通賣家'}
                 </Text>
                 {listing.seller?.verified_status ? (
                   <BadgeCheck size={14} color={SAGE} strokeWidth={2} />
                 ) : null}
               </View>
-              <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
+              <Text className="text-sage-deep text-2xs mt-0.5 font-semibold">
                 信任度 {listing.seller?.trust_score ?? 80}% ∙ 查看評價與其他商品
               </Text>
             </View>
@@ -939,7 +935,7 @@ export default function ListingDetailScreen() {
             className="mt-4 flex-row items-center justify-center gap-1.5 py-2"
           >
             <Flag size={13} color="#9CA3AF" strokeWidth={2} />
-            <Text className="text-muted text-[12px] font-medium">檢舉這件商品給管理員</Text>
+            <Text className="text-muted text-xs font-medium">檢舉這件商品給管理員</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -1008,13 +1004,13 @@ export default function ListingDetailScreen() {
               keyboardShouldPersistTaps="handled"
             >
               <Text className="text-foreground text-base font-bold">出價與媒合</Text>
-              <Text className="text-muted mt-2 text-[13px]" numberOfLines={2}>
+              <Text className="text-muted mt-2 text-sm" numberOfLines={2}>
                 {listing.title}
               </Text>
               <Text className="text-foreground mt-1 text-sm font-bold">
                 賣家標價 NT$ {listing.price.toLocaleString('en-US')}
               </Text>
-              <Text className="mt-1 text-[11px] font-semibold text-red-600">
+              <Text className="text-2xs mt-1 font-semibold text-red-600">
                 最低可接受出價：NT$ {minAllowed.toLocaleString('en-US')}
                 {isMultiStock ? '（每件）' : ''}
               </Text>
@@ -1030,7 +1026,7 @@ export default function ListingDetailScreen() {
 
               {isMultiStock ? (
                 <>
-                  <Text className="text-foreground mt-4 text-[12px] font-semibold">
+                  <Text className="text-foreground mt-4 text-xs font-semibold">
                     購買數量（剩 {remaining} 件）
                   </Text>
                   <QuantityStepper
@@ -1044,7 +1040,7 @@ export default function ListingDetailScreen() {
               ) : null}
               {shippingOptions.some((option) => option.method !== MEETUP_METHOD) ? (
                 <>
-                  <Text className="text-foreground mt-4 text-[12px] font-semibold">
+                  <Text className="text-foreground mt-4 text-xs font-semibold">
                     收件縣市（決定運費）
                   </Text>
                   <View className="mt-2 flex-row flex-wrap gap-1.5">
@@ -1059,7 +1055,7 @@ export default function ListingDetailScreen() {
                       />
                     ))}
                   </View>
-                  <Text className="text-muted mt-1.5 text-[11px] leading-4">
+                  <Text className="text-muted text-2xs mt-1.5 leading-4">
                     澎湖／金門／連江為離島加價，花蓮／台東為偏遠加價，選好後下方運費會即時重算。
                   </Text>
                 </>
@@ -1067,9 +1063,7 @@ export default function ListingDetailScreen() {
 
               {offerRows.length > 0 ? (
                 <>
-                  <Text className="text-foreground mt-4 text-[12px] font-semibold">
-                    選擇運送方式
-                  </Text>
+                  <Text className="text-foreground mt-4 text-xs font-semibold">選擇運送方式</Text>
                   <View className="mt-2 gap-1.5">
                     {offerRows.map((option) => {
                       const isChosen = chosenMethod === option.method;
@@ -1092,7 +1086,7 @@ export default function ListingDetailScreen() {
                         >
                           <View className="flex-row items-center justify-between">
                             <Text
-                              className={`flex-1 text-[12px] ${
+                              className={`flex-1 text-xs ${
                                 !option.available
                                   ? 'text-muted font-medium'
                                   : isChosen
@@ -1103,7 +1097,7 @@ export default function ListingDetailScreen() {
                               {option.method}
                             </Text>
                             <Text
-                              className={`text-[12px] font-bold ${
+                              className={`text-xs font-bold ${
                                 !option.available
                                   ? 'text-neutral-400'
                                   : isChosen
@@ -1115,7 +1109,7 @@ export default function ListingDetailScreen() {
                             </Text>
                           </View>
                           {option.note ? (
-                            <Text className="text-muted mt-1 text-[10px] leading-4">
+                            <Text className="text-muted text-2xs mt-1 leading-4">
                               {option.available && option.tier ? `${option.tier} ∙ ` : ''}
                               {option.note}
                             </Text>
@@ -1127,7 +1121,7 @@ export default function ListingDetailScreen() {
                 </>
               ) : null}
 
-              <Text className="text-foreground mt-4 text-[12px] font-semibold">付款方式</Text>
+              <Text className="text-foreground mt-4 text-xs font-semibold">付款方式</Text>
               <View className="mt-2">
                 <PaymentChoiceList
                   options={paymentOptions}
@@ -1140,8 +1134,8 @@ export default function ListingDetailScreen() {
               <View className="bg-canvas mt-3 rounded-xl px-3 py-2.5">
                 {isMultiStock ? (
                   <View className="mb-1 flex-row items-center justify-between">
-                    <Text className="text-muted flex-1 text-[11px]">商品（{offerUnits} 件）</Text>
-                    <Text className="text-foreground text-[11px] font-semibold">
+                    <Text className="text-muted text-2xs flex-1">商品（{offerUnits} 件）</Text>
+                    <Text className="text-foreground text-2xs font-semibold">
                       {Number.isFinite(offerValue)
                         ? `NT$ ${(Math.max(offerValue, 0) * offerUnits).toLocaleString('en-US')}`
                         : '請先輸入出價'}
@@ -1149,25 +1143,25 @@ export default function ListingDetailScreen() {
                   </View>
                 ) : null}
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-muted flex-1 text-[11px]">
+                  <Text className="text-muted text-2xs flex-1">
                     運費（{chosenMethod}
                     {chosenQuote ? ` ∙ ${sourceLabel(chosenQuote.source)}` : ''}）
                   </Text>
                   {isQuoting ? (
                     <ActivityIndicator size="small" color={SAGE} />
                   ) : (
-                    <Text className="text-foreground text-[11px] font-semibold">
+                    <Text className="text-foreground text-2xs font-semibold">
                       {formatShippingFee(chosenFee)}
                     </Text>
                   )}
                 </View>
                 <View className="mt-1 flex-row items-center justify-between">
-                  <Text className="text-foreground text-[12px] font-bold">應付總計</Text>
-                  <Text className="text-foreground text-[14px] font-bold">
+                  <Text className="text-foreground text-xs font-bold">應付總計</Text>
+                  <Text className="text-foreground text-sm font-bold">
                     NT$ {offerTotal.toLocaleString('en-US')}
                   </Text>
                 </View>
-                <Text className="text-muted mt-1 text-[11px]">
+                <Text className="text-muted text-2xs mt-1">
                   取貨：{chosenMethod} ∙ 付款：{paymentLabel(chosenPayment)}
                   {isMultiStock ? ` ∙ 數量 ${offerUnits} 件` : ''}
                 </Text>
@@ -1213,7 +1207,7 @@ export default function ListingDetailScreen() {
               keyboardShouldPersistTaps="handled"
             >
               <Text className="text-foreground text-base font-bold">檢舉商品</Text>
-              <Text className="text-muted mt-2 text-[12px] leading-4">
+              <Text className="text-muted mt-2 text-xs leading-4">
                 檢舉會直接進入管理員後台的待處理清單，並保留你的帳號紀錄。
               </Text>
 
@@ -1224,14 +1218,14 @@ export default function ListingDetailScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ selected: reportReason === reason }}
                     onPress={() => setReportReason(reason)}
-                    className={`min-h-10 justify-center rounded-xl border px-3 py-2 ${
+                    className={`min-h-11 justify-center rounded-xl border px-3.5 py-2.5 ${
                       reportReason === reason
                         ? 'border-sage bg-mint'
                         : 'bg-canvas border-neutral-200'
                     }`}
                   >
                     <Text
-                      className={`text-[12px] ${
+                      className={`text-xs ${
                         reportReason === reason
                           ? 'text-sage-deep font-bold'
                           : 'text-muted font-medium'
@@ -1250,7 +1244,7 @@ export default function ListingDetailScreen() {
                 textAlignVertical="top"
                 placeholder="補充說明（選填）"
                 placeholderTextColorClassName="accent-neutral-400"
-                className="bg-canvas text-foreground mt-3 h-20 rounded-xl border border-neutral-200 px-3 pt-2.5 text-[13px]"
+                className="bg-canvas text-foreground mt-3 h-20 rounded-xl border border-neutral-200 px-3 pt-2.5 text-sm"
               />
 
               <View className="mt-4 flex-row gap-2">
@@ -1282,10 +1276,8 @@ export default function ListingDetailScreen() {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-start justify-between py-1.5">
-      <Text className="text-muted text-[12px]">{label}</Text>
-      <Text className="text-foreground ml-4 flex-1 text-right text-[12px] font-medium">
-        {value}
-      </Text>
+      <Text className="text-muted text-xs">{label}</Text>
+      <Text className="text-foreground ml-4 flex-1 text-right text-xs font-medium">{value}</Text>
     </View>
   );
 }

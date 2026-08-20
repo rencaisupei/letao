@@ -1,13 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Linking, Platform, ScrollView, View } from 'react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
+import { screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import {
@@ -168,27 +163,27 @@ export default function ContactScreen() {
       <Stack.Screen options={{ title: '聯絡我們' }} />
 
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View className="bg-background rounded-2xl border border-neutral-200 p-5">
+        <View className="bg-background rounded-2xl border border-neutral-200 p-4">
           <View className="flex-row items-center gap-2">
             <MessageSquare size={18} color={SAGE} strokeWidth={2} />
             <Text className="text-foreground text-base font-bold">需要協助嗎</Text>
           </View>
-          <Text className="text-muted mt-2 text-[12px] leading-5">
+          <Text className="text-muted mt-2 text-xs leading-5">
             帳號、上架審核、交易糾紛、付款或安全問題都可以在這裡回報。請盡量附上商品名稱與發生時間，客服會直接看到您的訊息。
           </Text>
-          <View className="bg-mint mt-3 rounded-xl p-3.5">
+          <View className="bg-mint mt-3 rounded-xl p-4">
             <View className="flex-row items-center gap-1.5">
               <Mail size={14} color={SAGE} strokeWidth={2.2} />
-              <Text className="text-sage-deep text-[12px] font-bold">客服信箱</Text>
+              <Text className="text-sage-deep text-xs font-bold">客服信箱</Text>
             </View>
-            <Text selectable className="text-sage-deep mt-1 text-[12px] font-semibold">
+            <Text selectable className="text-sage-deep mt-1 text-xs font-semibold">
               {SUPPORT_EMAIL}
             </Text>
-            <Text className="text-sage-deep/90 mt-1 text-[11px] leading-4">
+            <Text className="text-sage-deep/90 text-2xs mt-1 leading-4">
               服務時間為週一至週五 10:00–18:00（台灣時間），我們會依來信順序回覆。
             </Text>
             <Button size="sm" variant="secondary" className="mt-2.5 self-start" onPress={openMail}>
@@ -196,12 +191,12 @@ export default function ContactScreen() {
             </Button>
           </View>
 
-          <View className="bg-canvas mt-3 rounded-xl p-3.5">
+          <View className="bg-canvas mt-3 rounded-xl p-4">
             <View className="flex-row items-center gap-1.5">
               <CircleHelp size={14} color={SAGE} strokeWidth={2.2} />
-              <Text className="text-foreground text-[12px] font-bold">先看看常見問題</Text>
+              <Text className="text-foreground text-xs font-bold">先看看常見問題</Text>
             </View>
-            <Text className="text-muted mt-1 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-1 leading-4">
               運費怎麼算、可以用哪些付款方式、對方不出貨怎麼辦，這些都已經有現成答案，通常比等回信更快。
             </Text>
             <Button
@@ -216,10 +211,10 @@ export default function ContactScreen() {
         </View>
 
         {userId ? (
-          <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-5">
-            <Text className="text-foreground text-[13px] font-bold">用站內表單聯絡</Text>
+          <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
+            <Text className="text-foreground text-sm font-bold">用站內表單聯絡</Text>
 
-            <Text className="text-foreground mt-4 text-[12px] font-semibold">問題類型</Text>
+            <Text className="text-foreground mt-4 text-xs font-semibold">問題類型</Text>
             <View className="mt-2 flex-row flex-wrap gap-1.5">
               {SUPPORT_CATEGORIES.map((option) => (
                 <SelectChip
@@ -232,7 +227,7 @@ export default function ContactScreen() {
               ))}
             </View>
 
-            <Text className="text-foreground mt-4 text-[12px] font-semibold">主旨</Text>
+            <Text className="text-foreground mt-4 text-xs font-semibold">主旨</Text>
             <TextInput
               value={subject}
               onChangeText={setSubject}
@@ -240,10 +235,10 @@ export default function ContactScreen() {
               editable={!isSending}
               placeholder="一句話描述問題"
               placeholderTextColorClassName="accent-neutral-400"
-              className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
+              className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
             />
 
-            <Text className="text-foreground mt-4 text-[12px] font-semibold">問題描述</Text>
+            <Text className="text-foreground mt-4 text-xs font-semibold">問題描述</Text>
             <TextInput
               value={message}
               onChangeText={setMessage}
@@ -253,13 +248,13 @@ export default function ContactScreen() {
               editable={!isSending}
               placeholder="發生了什麼、涉及哪件商品或訂單、您已經試過什麼"
               placeholderTextColorClassName="accent-neutral-400"
-              className="bg-background text-foreground mt-2 h-32 rounded-xl border border-neutral-200 px-4 pt-3 text-[13px]"
+              className="bg-background text-foreground mt-2 min-h-32 rounded-xl border border-neutral-200 px-4 pt-3 text-sm"
             />
-            <Text className="text-muted mt-1 text-right text-[10px]">
+            <Text className="text-muted text-2xs mt-1 text-right">
               {message.trim().length} / {MESSAGE_MAX_LENGTH}
             </Text>
 
-            <Text className="text-foreground mt-3 text-[12px] font-semibold">回覆信箱</Text>
+            <Text className="text-foreground mt-3 text-xs font-semibold">回覆信箱</Text>
             <TextInput
               value={replyEmail}
               onChangeText={setReplyEmail}
@@ -268,9 +263,9 @@ export default function ContactScreen() {
               editable={!isSending}
               placeholder="you@example.com"
               placeholderTextColorClassName="accent-neutral-400"
-              className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
+              className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
             />
-            <Text className="text-muted mt-1 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-1 leading-4">
               預設是您的帳號信箱，可以改成其他常看的信箱。客服也會同時發送站內通知。
             </Text>
 
@@ -287,8 +282,8 @@ export default function ContactScreen() {
         ) : (
           <View className="bg-background mt-3 items-center rounded-2xl border border-neutral-200 px-6 py-8">
             <UserPlus size={28} color={SAGE} strokeWidth={1.6} />
-            <Text className="text-foreground mt-3 text-[14px] font-bold">登入後可使用站內表單</Text>
-            <Text className="text-muted mt-2 text-center text-[12px] leading-5">
+            <Text className="text-foreground mt-3 text-sm font-bold">登入後可使用站內表單</Text>
+            <Text className="text-muted mt-2 text-center text-xs leading-5">
               站內表單會帶上您的帳號，客服才能查到相關的商品與訂單。尚未登入也可以直接寄電子郵件給我們。
             </Text>
             <Button className="mt-4" onPress={() => router.push('/sign-in')}>
@@ -299,7 +294,7 @@ export default function ContactScreen() {
 
         {history.length > 0 ? (
           <View className="mt-5">
-            <Text className="text-foreground text-[13px] font-semibold">我的來信紀錄</Text>
+            <Text className="text-foreground text-sm font-semibold">我的來信紀錄</Text>
             {history.map((item) => (
               <View
                 key={item.id}
@@ -312,27 +307,23 @@ export default function ContactScreen() {
                     <Clock size={13} color="#B45309" strokeWidth={2.2} />
                   )}
                   <Text
-                    className={`text-[11px] font-bold ${
+                    className={`text-2xs font-bold ${
                       item.status === 'resolved' ? 'text-sage-deep' : 'text-amber-700'
                     }`}
                   >
                     {SUPPORT_STATUS_LABEL[item.status]}
                   </Text>
-                  <Text className="text-muted flex-1 text-right text-[10px]">
+                  <Text className="text-muted text-2xs flex-1 text-right">
                     {formatDate(item.created_at)}
                   </Text>
                 </View>
-                <Text className="text-foreground mt-1.5 text-[13px] font-semibold">
-                  {item.subject}
-                </Text>
-                <Text className="text-muted mt-0.5 text-[11px]">
-                  {categoryLabel(item.category)}
-                </Text>
-                <Text className="text-muted mt-1.5 text-[12px] leading-5">{item.message}</Text>
+                <Text className="text-foreground mt-1.5 text-sm font-semibold">{item.subject}</Text>
+                <Text className="text-muted text-2xs mt-0.5">{categoryLabel(item.category)}</Text>
+                <Text className="text-muted mt-1.5 text-xs leading-5">{item.message}</Text>
                 {item.admin_reply ? (
                   <View className="bg-mint mt-2.5 rounded-xl p-3">
-                    <Text className="text-sage-deep text-[11px] font-bold">客服回覆</Text>
-                    <Text className="text-sage-deep/90 mt-1 text-[12px] leading-5">
+                    <Text className="text-sage-deep text-2xs font-bold">客服回覆</Text>
+                    <Text className="text-sage-deep/90 mt-1 text-xs leading-5">
                       {item.admin_reply}
                     </Text>
                   </View>
@@ -345,14 +336,12 @@ export default function ContactScreen() {
         <View className="bg-background mt-5 rounded-2xl border border-neutral-200 p-4">
           <View className="flex-row items-center gap-2">
             <ShieldCheck size={15} color={SAGE} strokeWidth={2} />
-            <Text className="text-foreground flex-1 text-[12px] font-semibold">
-              您的資料怎麼被使用
-            </Text>
+            <Text className="text-foreground flex-1 text-xs font-semibold">您的資料怎麼被使用</Text>
             <Button size="sm" variant="tertiary" onPress={() => router.push('/privacy')}>
               <Button.Label>隱私權政策</Button.Label>
             </Button>
           </View>
-          <Text className="text-muted mt-2 text-[11px] leading-4">
+          <Text className="text-muted text-2xs mt-2 leading-4">
             客服來信只有管理員看得到，內容會與您的帳號綁定以便查詢交易紀錄，處理完成後保留於客服紀錄中。
           </Text>
         </View>

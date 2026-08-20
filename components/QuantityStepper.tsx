@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { Minus, Plus } from 'lucide-react-native';
 
 import { cn } from '@/lib/utils';
@@ -59,7 +61,7 @@ export function QuantityStepper({
           editable={!isDisabled}
           selectTextOnFocus
           textAlign="center"
-          className="text-foreground h-10 flex-1 text-[15px] font-bold"
+          className="text-foreground h-11 flex-1 text-base font-bold"
         />
 
         <StepButton
@@ -70,7 +72,7 @@ export function QuantityStepper({
           <Plus size={16} color={value >= max ? '#D1D5DB' : '#374151'} strokeWidth={2.6} />
         </StepButton>
       </View>
-      {hint ? <Text className="text-muted mt-1.5 text-[11px] leading-4">{hint}</Text> : null}
+      {hint ? <Text className="text-muted text-2xs mt-1.5">{hint}</Text> : null}
     </View>
   );
 }
@@ -94,7 +96,7 @@ function StepButton({
       disabled={isDisabled}
       onPress={onPress}
       className={cn(
-        'h-10 w-11 items-center justify-center rounded-lg border',
+        'h-11 w-11 items-center justify-center rounded-lg border',
         isDisabled ? 'border-neutral-100 bg-neutral-50' : 'bg-canvas border-neutral-200',
       )}
     >

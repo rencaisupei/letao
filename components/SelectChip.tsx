@@ -1,5 +1,6 @@
-import { Pressable, Text } from 'react-native';
+import { Pressable } from 'react-native';
 
+import { Text } from '@/components/ui/primitives/Text';
 import { cn } from '@/lib/utils';
 
 type SelectChipProps = {
@@ -24,7 +25,9 @@ export function SelectChip({
       onPress={onPress}
       className={cn(
         'items-center justify-center rounded-full border',
-        size === 'md' ? 'px-4 py-2' : 'px-3 py-1.5',
+        // min-h keeps the pill from clipping its label when the phone font
+        // size setting scales the text up.
+        size === 'md' ? 'min-h-9 px-4 py-2' : 'min-h-8 px-3 py-1.5',
         isSelected ? 'border-sage bg-sage' : 'bg-background border-neutral-200',
         className,
       )}
@@ -32,7 +35,7 @@ export function SelectChip({
       <Text
         numberOfLines={1}
         className={cn(
-          size === 'md' ? 'text-xs' : 'text-[11px]',
+          size === 'md' ? 'text-xs' : 'text-2xs',
           isSelected ? 'font-bold text-white' : 'text-muted font-medium',
         )}
       >

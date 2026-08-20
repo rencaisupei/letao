@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { Button } from 'heroui-native';
 
 import { PaymentMethodsPicker } from '@/components/PaymentPicker';
@@ -57,10 +59,10 @@ export function PaymentMethodsSheet({
         <View className="bg-background max-h-[86%] w-full max-w-sm rounded-2xl border border-neutral-200">
           <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
             <Text className="text-foreground text-base font-bold">設定付款方式</Text>
-            <Text className="text-muted mt-1.5 text-[12px]" numberOfLines={2}>
+            <Text className="text-muted mt-1.5 text-xs" numberOfLines={2}>
               {listing?.title ?? ''}
             </Text>
-            <Text className="text-muted mt-2 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-2 leading-4">
               這件商品的運送方式：{methods.length > 0 ? methods.join('、') : '尚未設定'}
               。付款方式必須與運送方式相容，不相容的選項會自動變灰。
             </Text>
@@ -74,7 +76,7 @@ export function PaymentMethodsSheet({
               />
             </View>
 
-            <Text className="text-muted mt-2 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-2 leading-4">
               {usable.length > 0
                 ? `商品頁會公開顯示：${usable.map((code) => getPayment(code)?.label ?? code).join('、')}。`
                 : '請至少勾選一種與運送方式相容的付款方式。'}

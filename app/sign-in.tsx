@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
+import { SCREEN_BOTTOM_PADDING, SCREEN_PADDING } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Redirect, Stack } from 'expo-router';
 
@@ -34,9 +37,7 @@ const MODE_TITLE: Record<Mode, string> = {
 
 function FieldLabel({ children, className }: { children: string; className?: string }) {
   return (
-    <Text className={`text-foreground text-[13px] font-semibold ${className ?? ''}`}>
-      {children}
-    </Text>
+    <Text className={`text-foreground text-sm font-semibold ${className ?? ''}`}>{children}</Text>
   );
 }
 
@@ -296,7 +297,7 @@ export default function SignInScreen() {
         keyboardType="email-address"
         placeholder="you@example.com"
         placeholderTextColorClassName="accent-neutral-400"
-        className="bg-canvas text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
+        className="bg-canvas text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
       />
     </>
   );
@@ -313,8 +314,8 @@ export default function SignInScreen() {
         placeholderTextColorClassName="accent-neutral-400"
         className="bg-canvas text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-center text-base tracking-[6px]"
       />
-      <Text className="text-muted mt-2 text-[11px]">已寄送至 {email.trim()}</Text>
-      <Text className="text-muted mt-1 text-[11px] leading-4">
+      <Text className="text-muted text-2xs mt-2">已寄送至 {email.trim()}</Text>
+      <Text className="text-muted text-2xs mt-1 leading-4">
         信件可能被歸到垃圾信匣，主旨會包含驗證碼。若同時寄了多封，只有最新一封有效。
       </Text>
     </>
@@ -327,7 +328,12 @@ export default function SignInScreen() {
     >
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          padding: SCREEN_PADDING,
+          paddingBottom: SCREEN_BOTTOM_PADDING,
+        }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -335,12 +341,12 @@ export default function SignInScreen() {
           <BrandLockup layout="stacked" />
         </View>
 
-        <View className="bg-background mt-8 rounded-2xl border border-neutral-200 p-5">
-          <Text className="text-foreground text-[15px] font-bold">{MODE_TITLE[mode]}</Text>
+        <View className="bg-background mt-8 rounded-2xl border border-neutral-200 p-4">
+          <Text className="text-foreground text-base font-bold">{MODE_TITLE[mode]}</Text>
 
           {mode === 'password' ? (
             <>
-              <Text className="text-muted mt-1 text-[11px] leading-4">
+              <Text className="text-muted text-2xs mt-1 leading-4">
                 已經有帳號就直接輸入 Email 與密碼，不用等驗證碼。
               </Text>
               <View className="mt-4">{emailField}</View>
@@ -369,7 +375,7 @@ export default function SignInScreen() {
           {mode === 'signup' ? (
             stage === 'input' ? (
               <>
-                <Text className="text-muted mt-1 text-[11px] leading-4">
+                <Text className="text-muted text-2xs mt-1 leading-4">
                   設定一組密碼，之後就能直接登入。首次註冊仍需一次 Email 驗證碼確認信箱。
                 </Text>
 
@@ -381,11 +387,11 @@ export default function SignInScreen() {
                       label={`${option.label} ｜ ${option.hint}`}
                       isSelected={role === option.code}
                       onPress={() => setRole(option.code)}
-                      className="h-11 w-full items-start justify-center rounded-xl px-4"
+                      className="min-h-11 w-full items-start justify-center rounded-xl px-4"
                     />
                   ))}
                 </View>
-                <Text className="text-muted mt-2 text-[11px] leading-4">
+                <Text className="text-muted text-2xs mt-2 leading-4">
                   買家與賣家共用同一組帳號，之後可以隨時切換身分使用全部功能。
                 </Text>
 
@@ -402,7 +408,7 @@ export default function SignInScreen() {
                   onChangeText={setConfirmPassword}
                   placeholder="再輸入一次"
                 />
-                <Text className="text-muted mt-2 text-[11px] leading-4">
+                <Text className="text-muted text-2xs mt-2 leading-4">
                   驗證完成即開通帳號，並自動建立 EcoCoins 錢包。
                 </Text>
                 <Button
@@ -419,7 +425,7 @@ export default function SignInScreen() {
               </>
             ) : (
               <>
-                <Text className="text-muted mt-1 text-[11px] leading-4">
+                <Text className="text-muted text-2xs mt-1 leading-4">
                   最後一步：輸入信件中的驗證碼，密碼就會生效。
                 </Text>
                 <View className="mt-4">{codeField}</View>
@@ -454,7 +460,7 @@ export default function SignInScreen() {
           {mode === 'code' ? (
             stage === 'input' ? (
               <>
-                <Text className="text-muted mt-1 text-[11px] leading-4">
+                <Text className="text-muted text-2xs mt-1 leading-4">
                   不想記密碼就用這個方式，驗證碼會寄到你的信箱。沒有帳號也會直接建立。
                 </Text>
 
@@ -466,7 +472,7 @@ export default function SignInScreen() {
                       label={`${option.label} ｜ ${option.hint}`}
                       isSelected={role === option.code}
                       onPress={() => setRole(option.code)}
-                      className="h-11 w-full items-start justify-center rounded-xl px-4"
+                      className="min-h-11 w-full items-start justify-center rounded-xl px-4"
                     />
                   ))}
                 </View>
@@ -521,7 +527,7 @@ export default function SignInScreen() {
           {mode === 'reset' ? (
             stage === 'input' ? (
               <>
-                <Text className="text-muted mt-1 text-[11px] leading-4">
+                <Text className="text-muted text-2xs mt-1 leading-4">
                   輸入註冊時的
                   Email，我們會寄一組驗證碼讓你設定新密碼。之前用驗證碼註冊、還沒有密碼的帳號也可以用這個方式設定。
                 </Text>

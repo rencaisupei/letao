@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { Switch } from 'heroui-native';
 import { BellRing } from 'lucide-react-native';
 
@@ -99,8 +101,8 @@ export function PushToggle() {
       <View className="flex-row items-center">
         <BellRing size={18} color={SAGE} strokeWidth={1.8} />
         <View className="ml-2.5 flex-1">
-          <Text className="text-foreground text-[13px] font-bold">推播通知</Text>
-          <Text className="text-muted mt-0.5 text-[11px]">所有新訊息都會主動提醒</Text>
+          <Text className="text-foreground text-sm font-bold">推播通知</Text>
+          <Text className="text-muted text-2xs mt-0.5">所有新訊息都會主動提醒</Text>
         </View>
         <Switch
           isSelected={enabled}
@@ -108,7 +110,7 @@ export function PushToggle() {
           onSelectedChange={onChange}
         />
       </View>
-      <Text className="text-muted mt-2 text-[11px] leading-4">
+      <Text className="text-muted text-2xs mt-2 leading-4">
         {describe(mode, enabled, permission)}
       </Text>
     </View>

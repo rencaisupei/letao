@@ -1,4 +1,6 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { Star } from 'lucide-react-native';
 
 import { cn } from '@/lib/utils';
@@ -46,7 +48,7 @@ export function StarRating({ value, size = 16, onChange, label, className }: Sta
           />
         ),
       )}
-      {label ? <Text className="text-muted ml-1 text-[11px] font-medium">{label}</Text> : null}
+      {label ? <Text className="text-muted text-2xs ml-1 font-medium">{label}</Text> : null}
     </View>
   );
 }

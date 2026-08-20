@@ -1,4 +1,7 @@
-import { Linking, ScrollView, Text, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
+import { screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router } from 'expo-router';
 import { Lock, Mail, ShieldCheck } from 'lucide-react-native';
@@ -116,20 +119,20 @@ export default function PrivacyScreen() {
   return (
     <ScrollView
       className="bg-canvas flex-1"
-      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      contentContainerStyle={screenContent}
       showsVerticalScrollIndicator={false}
     >
       <Stack.Screen options={{ title: '隱私權政策' }} />
 
-      <View className="bg-background rounded-2xl border border-neutral-200 p-5">
+      <View className="bg-background rounded-2xl border border-neutral-200 p-4">
         <View className="flex-row items-center gap-2">
           <ShieldCheck size={18} color={SAGE} strokeWidth={2} />
           <Text className="text-foreground text-base font-bold">易拍通隱私權政策</Text>
         </View>
-        <Text className="text-muted mt-2 text-[12px] leading-5">
+        <Text className="text-muted mt-2 text-xs leading-5">
           本政策說明易拍通如何蒐集、使用與保護您的個人資料。註冊帳號或使用本平台服務，即表示您已閱讀並同意本政策。
         </Text>
-        <Text className="text-sage-deep mt-3 text-[11px] font-semibold">
+        <Text className="text-sage-deep text-2xs mt-3 font-semibold">
           生效日期：{POLICY_UPDATED_AT}
         </Text>
       </View>
@@ -137,32 +140,32 @@ export default function PrivacyScreen() {
       {SECTIONS.map((section) => (
         <View
           key={section.title}
-          className="bg-background mt-3 rounded-2xl border border-neutral-200 p-5"
+          className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4"
         >
-          <Text className="text-foreground text-[13px] font-bold">{section.title}</Text>
+          <Text className="text-foreground text-sm font-bold">{section.title}</Text>
           {section.paragraphs.map((paragraph) => (
-            <Text key={paragraph} className="text-muted mt-2 text-[12px] leading-5">
+            <Text key={paragraph} className="text-muted mt-2 text-xs leading-5">
               {paragraph}
             </Text>
           ))}
           {section.bullets?.map((bullet) => (
             <View key={bullet} className="mt-2 flex-row">
-              <Text className="text-sage-deep mr-2 text-[12px] leading-5">•</Text>
-              <Text className="text-muted flex-1 text-[12px] leading-5">{bullet}</Text>
+              <Text className="text-sage-deep mr-2 text-xs leading-5">•</Text>
+              <Text className="text-muted flex-1 text-xs leading-5">{bullet}</Text>
             </View>
           ))}
         </View>
       ))}
 
-      <View className="bg-mint mt-3 rounded-2xl p-5">
+      <View className="bg-mint mt-3 rounded-2xl p-4">
         <View className="flex-row items-center gap-2">
           <Mail size={16} color={SAGE} strokeWidth={2} />
-          <Text className="text-sage-deep text-[13px] font-bold">個資相關請求與聯絡方式</Text>
+          <Text className="text-sage-deep text-sm font-bold">個資相關請求與聯絡方式</Text>
         </View>
-        <Text className="text-sage-deep/90 mt-2 text-[12px] leading-5">
+        <Text className="text-sage-deep/90 mt-2 text-xs leading-5">
           查詢、更正或刪除個人資料，以及任何隱私相關問題，都可以透過站內表單或電子郵件與我們聯絡。
         </Text>
-        <Text selectable className="text-sage-deep mt-2 text-[12px] font-semibold">
+        <Text selectable className="text-sage-deep mt-2 text-xs font-semibold">
           {SUPPORT_EMAIL}
         </Text>
         <View className="mt-3 flex-row gap-2">
@@ -177,7 +180,7 @@ export default function PrivacyScreen() {
 
       <View className="mt-3 flex-row items-center justify-center gap-1.5">
         <Lock size={12} color="#9CA3AF" strokeWidth={2} />
-        <Text className="text-muted text-[11px]">連線與資料儲存皆採加密傳輸</Text>
+        <Text className="text-muted text-2xs">連線與資料儲存皆採加密傳輸</Text>
       </View>
     </ScrollView>
   );

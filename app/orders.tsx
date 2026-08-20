@@ -1,8 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Image, ScrollView, Text, View } from 'react-native';
+import { FlatList, Image, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
+import { listContent, screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import {
+  CreditCard,
   Leaf,
   MessageCircle,
   PackageCheck,
@@ -136,14 +140,14 @@ export default function OrdersScreen() {
     return (
       <ScrollView
         className="bg-canvas flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         showsVerticalScrollIndicator={false}
       >
         <Stack.Screen options={{ title: '我的交易' }} />
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={30} color={SAGE} strokeWidth={1.6} />
           <Text className="text-foreground mt-4 text-base font-bold">交易紀錄需要註冊帳號</Text>
-          <Text className="text-muted mt-2 text-center text-[13px] leading-5">
+          <Text className="text-muted mt-2 text-center text-sm leading-5">
             出價媒合成功後會產生交易單，完成後才能互相評價。
           </Text>
           <Button className="mt-4" onPress={() => router.push('/sign-in')}>
@@ -163,7 +167,7 @@ export default function OrdersScreen() {
         keyExtractor={(item) => item.id}
         refreshing={isLoading}
         onRefresh={refresh}
-        contentContainerStyle={{ padding: 12, gap: 10, paddingBottom: 32 }}
+        contentContainerStyle={listContent}
         ListHeaderComponent={
           <View>
             <View className="flex-row gap-1.5">
@@ -180,19 +184,19 @@ export default function OrdersScreen() {
                 className="flex-1 rounded-xl"
               />
             </View>
-            <Text className="text-muted mt-2.5 px-1 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-2.5 px-1 leading-4">
               目前有 {pendingCount}{' '}
               筆待完成交付的交易。交付完成後，雙方任一方都可以標記完成，之後買家就能評價賣家。
             </Text>
           </View>
         }
         ListEmptyComponent={
-          <View className="items-center px-8 py-14">
+          <View className="items-center px-6 py-14">
             <PackageCheck size={30} color={SAGE} strokeWidth={1.6} />
             <Text className="text-foreground mt-4 text-base font-bold">
               {tab === 'buying' ? '還沒有出價成功的交易' : '還沒有收到成交的出價'}
             </Text>
-            <Text className="text-muted mt-2 text-center text-[13px] leading-5">
+            <Text className="text-muted mt-2 text-center text-sm leading-5">
               {tab === 'buying'
                 ? '在商品詳情頁按「出價與媒合」，出價達到門檻就會建立交易單。'
                 : '買家出價達到防砍價門檻後，交易單就會出現在這裡。'}
@@ -220,39 +224,49 @@ export default function OrdersScreen() {
                 </View>
 
                 <View className="ml-3 flex-1">
-                  <View className={`self-start rounded-md px-1.5 py-0.5 ${meta.bgClass}`}>
-                    <Text className={`text-[9px] font-bold ${meta.textClass}`}>{meta.label}</Text>
+                  <View className={`self-start rounded-md px-2 py-1 ${meta.bgClass}`}>
+                    <Text className={`text-2xs font-bold ${meta.textClass}`}>{meta.label}</Text>
                   </View>
-                  <Text numberOfLines={1} className="text-foreground mt-1.5 text-[13px] font-bold">
+                  <Text numberOfLines={1} className="text-foreground mt-1.5 text-sm font-bold">
                     {item.listing_title}
                   </Text>
-                  <Text className="text-foreground mt-1 text-[14px] font-bold">
+                  <Text className="text-foreground mt-1 text-sm font-bold">
                     成交 NT$ {item.offer_price.toLocaleString('en-US')}
                     {item.quantity > 1 ? ` × ${item.quantity}` : ''}
-                    <Text className="text-muted text-[10px] font-medium">
+                    <Text className="text-muted text-2xs font-medium">
                       {'  '}標價 {item.listing_price.toLocaleString('en-US')}
                     </Text>
                   </Text>
-                  <Text className="text-foreground mt-0.5 text-[11px] font-semibold">
+                  <Text className="text-foreground text-2xs mt-0.5 font-semibold">
                     運費 {formatShippingFee(item.shipping_fee)} ∙ 總計 NT${' '}
                     {orderTotal(item).toLocaleString('en-US')}
                   </Text>
-                  <Text className="text-sage-deep mt-0.5 text-[11px] font-medium">
+                  <Text className="text-sage-deep text-2xs mt-0.5 font-medium">
                     {isBuyer ? '賣家' : '買家'}：{item.counterpartName ?? '易拍通用戶'}
                   </Text>
                 </View>
               </View>
 
-              <View className="bg-canvas mt-2.5 rounded-xl px-3 py-2">
-                <Text className="text-muted text-[11px] leading-4">
-                  🚚 {item.logistics ?? '面交'}
-                  {item.dest_region ? ` ∙ 寄至${item.dest_region}` : ''} ∙{' '}
-                  {item.meetup_location ?? '台灣本島'}
-                </Text>
-                <Text className="text-muted mt-1 text-[11px] leading-4">
-                  💳 {paymentLabel(item.payment_method)}
-                </Text>
-                <Text className="text-muted mt-1 text-[11px] leading-4">{meta.hint}</Text>
+              <View className="bg-canvas mt-2.5 gap-1 rounded-xl px-3.5 py-2.5">
+                <View className="flex-row items-start gap-1.5">
+                  <View className="mt-0.5">
+                    <Truck size={12} color="#9CA3AF" strokeWidth={2.2} />
+                  </View>
+                  <Text className="text-muted text-2xs flex-1 leading-4">
+                    {item.logistics ?? '面交'}
+                    {item.dest_region ? ` ∙ 寄至${item.dest_region}` : ''} ∙{' '}
+                    {item.meetup_location ?? '台灣本島'}
+                  </Text>
+                </View>
+                <View className="flex-row items-start gap-1.5">
+                  <View className="mt-0.5">
+                    <CreditCard size={12} color="#9CA3AF" strokeWidth={2.2} />
+                  </View>
+                  <Text className="text-muted text-2xs flex-1 leading-4">
+                    {paymentLabel(item.payment_method)}
+                  </Text>
+                </View>
+                <Text className="text-muted text-2xs leading-4">{meta.hint}</Text>
               </View>
 
               <View className="mt-2.5 flex-row flex-wrap gap-2">

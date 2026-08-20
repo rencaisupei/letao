@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { FlatList, ScrollView, View, useWindowDimensions } from 'react-native';
 import { Button } from 'heroui-native';
 import { router } from 'expo-router';
 import { Heart, SlidersHorizontal, UserPlus } from 'lucide-react-native';
@@ -7,11 +7,17 @@ import { Heart, SlidersHorizontal, UserPlus } from 'lucide-react-native';
 import { FilterSheet } from '@/components/FilterSheet';
 import { ListingCard } from '@/components/ListingCard';
 import { SelectChip } from '@/components/SelectChip';
+import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { ALL_CATEGORY, CATEGORIES, SAGE, SORT_OPTIONS } from '@/lib/constants';
 import { DEFAULT_FILTERS, activeFilterCount, applyFilters } from '@/lib/filters';
+import {
+  CARD_GAP,
+  SCREEN_BOTTOM_PADDING,
+  SCREEN_PADDING,
+  gridCardWidth,
+  gridColumnWrapper,
+} from '@/lib/layout';
 import { useAppStore } from '@/lib/store';
-
-const GRID_GAP = 12;
 
 export default function ExploreScreen() {
   const { width } = useWindowDimensions();
@@ -25,7 +31,9 @@ export default function ExploreScreen() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [sheetVisible, setSheetVisible] = useState(false);
 
-  const cardWidth = Math.floor((width - GRID_GAP * 3) / 2);
+  // Cards, header row and chip rails all sit on SCREEN_PADDING, so the grid
+  // lines up with everything above it.
+  const cardWidth = gridCardWidth(width);
   const favoriteCount = Object.keys(favorites).length;
   const filterCount = activeFilterCount(filters);
 
@@ -44,8 +52,8 @@ export default function ExploreScreen() {
         onRefresh={() => {
           void refresh();
         }}
-        columnWrapperStyle={{ gap: GRID_GAP, paddingHorizontal: GRID_GAP }}
-        contentContainerStyle={{ gap: GRID_GAP, paddingBottom: 32 }}
+        columnWrapperStyle={gridColumnWrapper}
+        contentContainerStyle={{ gap: CARD_GAP, paddingBottom: SCREEN_BOTTOM_PADDING }}
         ListHeaderComponent={
           <View className="pb-1">
             <View className="flex-row items-center gap-2 px-4 pt-3">
@@ -55,7 +63,7 @@ export default function ExploreScreen() {
                 returnKeyType="search"
                 placeholder="搜尋商品名稱、描述或賣家..."
                 placeholderTextColorClassName="accent-neutral-400"
-                className="bg-background text-foreground h-11 flex-1 rounded-xl border border-neutral-200 px-4 text-[13px]"
+                className="bg-background text-foreground h-11 flex-1 rounded-xl border border-neutral-200 px-4 text-sm"
               />
               <Button
                 size="sm"
@@ -73,7 +81,7 @@ export default function ExploreScreen() {
 
             {userId ? (
               <View className="mt-3 flex-row items-center justify-between px-4">
-                <Text className="text-muted text-[11px]">共 {visibleListings.length} 件好物</Text>
+                <Text className="text-muted text-2xs">共 {visibleListings.length} 件好物</Text>
                 <View className="flex-row gap-1.5">
                   <Button size="sm" variant="tertiary" onPress={() => router.push('/favorites')}>
                     <Heart size={13} color={SAGE} strokeWidth={2.2} />
@@ -82,12 +90,12 @@ export default function ExploreScreen() {
                 </View>
               </View>
             ) : (
-              <View className="bg-mint mx-4 mt-3 rounded-2xl p-3.5">
+              <View className="bg-mint mx-4 mt-3 rounded-2xl p-4">
                 <View className="flex-row items-center gap-2">
                   <UserPlus size={16} color={SAGE} strokeWidth={2} />
-                  <Text className="text-sage-deep text-[13px] font-bold">現在是訪客瀏覽模式</Text>
+                  <Text className="text-sage-deep text-sm font-bold">現在是訪客瀏覽模式</Text>
                 </View>
-                <Text className="text-sage-deep/90 mt-1.5 text-[11px] leading-4">
+                <Text className="text-sage-deep/90 text-2xs mt-1.5">
                   商品可以自由瀏覽。要出價、上架、私訊或收藏，買賣雙方都需要先註冊易拍通帳號。
                 </Text>
                 <Button
@@ -103,7 +111,11 @@ export default function ExploreScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 6, paddingHorizontal: 16, paddingTop: 12 }}
+              contentContainerStyle={{
+                gap: 6,
+                paddingHorizontal: SCREEN_PADDING,
+                paddingTop: CARD_GAP,
+              }}
             >
               {SORT_OPTIONS.map((option) => (
                 <SelectChip
@@ -120,7 +132,11 @@ export default function ExploreScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}
+              contentContainerStyle={{
+                gap: 6,
+                paddingHorizontal: SCREEN_PADDING,
+                paddingVertical: 10,
+              }}
             >
               {[ALL_CATEGORY, ...CATEGORIES].map((item) => (
                 <SelectChip
@@ -134,8 +150,8 @@ export default function ExploreScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View className="items-center px-8 py-16">
-            <Text className="text-muted text-center text-[13px]">
+          <View className="items-center px-6 py-14">
+            <Text className="text-muted text-center text-sm">
               沒有符合條件的好物。試著清除篩選、換個關鍵字，或到「釋出好物」上架第一件商品。
             </Text>
             {filterCount > 0 || filters.query !== '' ? (

@@ -5,11 +5,12 @@ import {
   Modal,
   Platform,
   ScrollView,
-  Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
+import { gridCardWidth, screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { BadgeCheck, Star } from 'lucide-react-native';
@@ -50,7 +51,7 @@ export default function SellerScreen() {
   const [comment, setComment] = useState('');
   const [isBusy, setIsBusy] = useState(false);
 
-  const cardWidth = Math.floor((width - 36) / 2);
+  const cardWidth = gridCardWidth(width);
   const isMe = userId === id;
   const myReview = reviews.find((review) => review.reviewer_id === userId) ?? null;
 
@@ -140,7 +141,7 @@ export default function SellerScreen() {
   return (
     <ScrollView
       className="bg-canvas flex-1"
-      contentContainerStyle={{ padding: 12, paddingBottom: 40 }}
+      contentContainerStyle={screenContent}
       showsVerticalScrollIndicator={false}
     >
       <Stack.Screen options={{ title: profile?.username ?? '賣家主頁' }} />
@@ -150,14 +151,14 @@ export default function SellerScreen() {
           <Avatar uri={profile?.avatar_url} name={profile?.username} size={56} />
           <View className="ml-3 flex-1">
             <View className="flex-row items-center gap-1">
-              <Text className="text-foreground text-[16px] font-bold">
+              <Text className="text-foreground text-base font-bold">
                 {profile?.username ?? '易拍通賣家'}
               </Text>
               {profile?.verified_status ? (
                 <BadgeCheck size={15} color={SAGE} strokeWidth={2} />
               ) : null}
             </View>
-            <Text className="text-muted mt-0.5 text-[11px]">
+            <Text className="text-muted text-2xs mt-0.5">
               {getRoleLabel(profile?.role)} ∙ {sellerListings.length} 件上架中
             </Text>
             <StarRating
@@ -169,16 +170,14 @@ export default function SellerScreen() {
         </View>
 
         {profile?.bio ? (
-          <Text className="text-muted mt-3 text-[12px] leading-5">{profile.bio}</Text>
+          <Text className="text-muted mt-3 text-xs leading-5">{profile.bio}</Text>
         ) : null}
 
-        <View className="bg-mint mt-3 flex-row items-center justify-between rounded-xl px-3 py-2.5">
-          <Text className="text-sage-deep text-[12px] font-semibold">信任度</Text>
-          <Text className="text-sage-deep text-[15px] font-bold">
-            {profile?.trust_score ?? 80}%
-          </Text>
+        <View className="bg-mint mt-3 flex-row items-center justify-between rounded-xl px-3.5 py-2.5">
+          <Text className="text-sage-deep text-xs font-semibold">信任度</Text>
+          <Text className="text-sage-deep text-base font-bold">{profile?.trust_score ?? 80}%</Text>
         </View>
-        <Text className="text-muted mt-2 text-[11px] leading-4">
+        <Text className="text-muted text-2xs mt-2 leading-4">
           信任度由買家評價自動換算（平均星數 × 20），沒有任何前端可以直接修改。
         </Text>
 
@@ -192,12 +191,12 @@ export default function SellerScreen() {
         )}
       </View>
 
-      <Text className="text-foreground mt-4 px-1 text-[13px] font-semibold">
+      <Text className="text-foreground mt-4 px-1 text-sm font-semibold">
         買家評價（{reviews.length}）
       </Text>
       {reviews.length === 0 ? (
-        <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
-          <Text className="text-muted text-[12px] leading-5">
+        <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
+          <Text className="text-muted text-xs leading-5">
             還沒有人評價這位賣家。完成交易後給彼此一個評價，能讓後續的買家更放心。
           </Text>
         </View>
@@ -209,27 +208,27 @@ export default function SellerScreen() {
               className="bg-background rounded-2xl border border-neutral-200 p-4"
             >
               <View className="flex-row items-center justify-between">
-                <Text className="text-foreground text-[13px] font-semibold">
+                <Text className="text-foreground text-sm font-semibold">
                   {review.reviewerName ?? '易拍通買家'}
                   {review.reviewer_id === userId ? '（我）' : ''}
                 </Text>
-                <Text className="text-muted text-[10px]">
+                <Text className="text-muted text-2xs">
                   {new Date(review.created_at).toLocaleDateString('zh-TW')}
                 </Text>
               </View>
               <StarRating value={review.rating} size={13} className="mt-1.5" />
               {review.comment ? (
-                <Text className="text-muted mt-2 text-[12px] leading-5">{review.comment}</Text>
+                <Text className="text-muted mt-2 text-xs leading-5">{review.comment}</Text>
               ) : null}
             </View>
           ))}
         </View>
       )}
 
-      <Text className="text-foreground mt-4 px-1 text-[13px] font-semibold">上架中的商品</Text>
+      <Text className="text-foreground mt-4 px-1 text-sm font-semibold">上架中的商品</Text>
       {sellerListings.length === 0 ? (
-        <View className="bg-background mt-2 rounded-2xl border border-neutral-200 p-4">
-          <Text className="text-muted text-[12px]">目前沒有公開上架的商品。</Text>
+        <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
+          <Text className="text-muted text-xs">目前沒有公開上架的商品。</Text>
         </View>
       ) : (
         <View className="mt-2 flex-row flex-wrap gap-3">
@@ -263,13 +262,13 @@ export default function SellerScreen() {
               <Text className="text-foreground text-base font-bold">
                 評價 {profile?.username ?? '這位賣家'}
               </Text>
-              <Text className="text-muted mt-2 text-[12px] leading-4">
+              <Text className="text-muted mt-2 text-xs leading-4">
                 星數會直接換算成這位賣家的信任度，請依實際交易體驗評分。
               </Text>
 
               <View className="bg-canvas mt-3 items-center rounded-xl py-4">
                 <StarRating value={rating} size={30} onChange={setRating} />
-                <Text className="text-foreground mt-2 text-[12px] font-semibold">
+                <Text className="text-foreground mt-2 text-xs font-semibold">
                   {rating} 顆星 ∙ 信任度 {rating * 20}%
                 </Text>
               </View>
@@ -281,7 +280,7 @@ export default function SellerScreen() {
                 textAlignVertical="top"
                 placeholder="寫下交易過程、包裝或溝通狀況（選填）"
                 placeholderTextColorClassName="accent-neutral-400"
-                className="bg-canvas text-foreground mt-3 h-20 rounded-xl border border-neutral-200 px-3 pt-2.5 text-[13px]"
+                className="bg-canvas text-foreground mt-3 h-20 rounded-xl border border-neutral-200 px-3 pt-2.5 text-sm"
               />
 
               <View className="mt-4 flex-row gap-2">

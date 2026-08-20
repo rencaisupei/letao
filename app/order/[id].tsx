@@ -1,5 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
+import { screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
@@ -63,7 +66,7 @@ export default function OrderDetailScreen() {
     return (
       <ScrollView
         className="bg-canvas flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         showsVerticalScrollIndicator={false}
       >
         <Stack.Screen options={{ title: '交易詳情' }} />
@@ -82,14 +85,14 @@ export default function OrderDetailScreen() {
     return (
       <ScrollView
         className="bg-canvas flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         showsVerticalScrollIndicator={false}
       >
         <Stack.Screen options={{ title: '交易詳情' }} />
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <PackageSearch size={30} color={SAGE} strokeWidth={1.6} />
           <Text className="text-foreground mt-4 text-base font-bold">找不到這筆交易</Text>
-          <Text className="text-muted mt-2 text-center text-[13px] leading-5">
+          <Text className="text-muted mt-2 text-center text-sm leading-5">
             它可能已被取消，或不屬於這個帳號。
           </Text>
           <Button className="mt-4" variant="secondary" onPress={() => goBackOrReplace('/orders')}>
@@ -170,8 +173,8 @@ export default function OrderDetailScreen() {
     >
       <Stack.Screen options={{ title: '交易詳情' }} />
 
-      <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 40 }}>
-        <View className="bg-background rounded-2xl border border-neutral-200 p-3.5">
+      <ScrollView contentContainerStyle={screenContent}>
+        <View className="bg-background rounded-2xl border border-neutral-200 p-4">
           <View className="flex-row">
             <View className="bg-mint h-16 w-16 items-center justify-center overflow-hidden rounded-xl">
               {source ? (
@@ -182,60 +185,58 @@ export default function OrderDetailScreen() {
             </View>
 
             <View className="ml-3 flex-1">
-              <View className={`self-start rounded-md px-1.5 py-0.5 ${meta.bgClass}`}>
-                <Text className={`text-[9px] font-bold ${meta.textClass}`}>{meta.label}</Text>
+              <View className={`self-start rounded-md px-2 py-1 ${meta.bgClass}`}>
+                <Text className={`text-2xs font-bold ${meta.textClass}`}>{meta.label}</Text>
               </View>
-              <Text numberOfLines={2} className="text-foreground mt-1.5 text-[13px] font-bold">
+              <Text numberOfLines={2} className="text-foreground mt-1.5 text-sm font-bold">
                 {order.listing_title}
               </Text>
-              <Text className="text-foreground mt-1 text-[14px] font-bold">
+              <Text className="text-foreground mt-1 text-sm font-bold">
                 成交 NT$ {order.offer_price.toLocaleString('en-US')}
                 {order.quantity > 1 ? ` × ${order.quantity} 件` : ''}
               </Text>
-              <Text className="text-foreground mt-0.5 text-[11px] font-semibold">
+              <Text className="text-foreground text-2xs mt-0.5 font-semibold">
                 運費 {formatShippingFee(order.shipping_fee)} ∙ 總計 NT${' '}
                 {orderTotal(order).toLocaleString('en-US')}
               </Text>
-              <Text className="text-sage-deep mt-0.5 text-[11px] font-medium">
+              <Text className="text-sage-deep text-2xs mt-0.5 font-medium">
                 {isBuyer ? '賣家' : '買家'}：{order.counterpartName ?? '易拍通用戶'}
               </Text>
             </View>
           </View>
 
-          <Text className="text-muted mt-2.5 text-[11px] leading-4">{meta.hint}</Text>
+          <Text className="text-muted text-2xs mt-2.5 leading-4">{meta.hint}</Text>
         </View>
 
-        <View className="bg-background mt-2.5 rounded-2xl border border-neutral-200 p-3.5">
+        <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
           <View className="flex-row items-center gap-1.5">
             <Truck size={14} color={SAGE} strokeWidth={2.2} />
-            <Text className="text-foreground text-[12px] font-bold">買家的取貨方式</Text>
+            <Text className="text-foreground text-xs font-bold">買家的取貨方式</Text>
           </View>
-          <Text className="text-foreground mt-2 text-[12px] font-semibold">
+          <Text className="text-foreground mt-2 text-xs font-semibold">
             {order.logistics ?? '面交'}
             {order.dest_region === null ? '' : ` ∙ 寄至${order.dest_region}`}
           </Text>
-          <Text className="text-muted mt-1 text-[11px] leading-4">
-            {pickupHint(order.logistics)}
-          </Text>
+          <Text className="text-muted text-2xs mt-1 leading-4">{pickupHint(order.logistics)}</Text>
           {order.meetup_location === null ? null : (
-            <Text className="text-muted mt-1 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-1 leading-4">
               {order.logistics === '面交' ? '面交地點' : '出貨地'}：{order.meetup_location}
             </Text>
           )}
         </View>
 
-        <View className="bg-background mt-2.5 rounded-2xl border border-neutral-200 p-3.5">
+        <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
           <View className="flex-row items-center gap-1.5">
             <Wallet size={14} color={SAGE} strokeWidth={2.2} />
-            <Text className="text-foreground text-[12px] font-bold">買家的付款方式</Text>
+            <Text className="text-foreground text-xs font-bold">買家的付款方式</Text>
           </View>
-          <Text className="text-foreground mt-2 text-[12px] font-semibold">
+          <Text className="text-foreground mt-2 text-xs font-semibold">
             {paymentLabel(order.payment_method)}
           </Text>
-          <Text className="text-muted mt-1 text-[11px] leading-4">
+          <Text className="text-muted text-2xs mt-1 leading-4">
             {payment?.hint ?? '這筆交易沒有記錄付款方式，請雙方在私訊中確認後再交付。'}
           </Text>
-          <Text className="text-foreground mt-2 text-[11px] font-semibold">
+          <Text className="text-foreground text-2xs mt-2 font-semibold">
             {isBuyer ? '應付' : '應收'} NT$ {orderTotal(order).toLocaleString('en-US')}（商品{' '}
             {order.offer_price.toLocaleString('en-US')}
             {order.quantity > 1 ? ` × ${order.quantity} 件` : ''} + 運費{' '}

@@ -1,5 +1,6 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
+import { Text } from '@/components/ui/primitives/Text';
 import { getCondition } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +15,7 @@ export function ConditionBadge({
 
   return (
     <View className={cn('rounded-md px-2 py-1', condition.bgClass, className)}>
-      <Text className={cn('text-[10px] font-bold', condition.textClass)}>{condition.label}</Text>
+      <Text className={cn('text-2xs font-bold', condition.textClass)}>{condition.label}</Text>
     </View>
   );
 }

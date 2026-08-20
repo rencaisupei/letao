@@ -2,13 +2,6 @@
 import '../global.css';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts,
-} from '@expo-google-fonts/inter';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
@@ -53,13 +46,6 @@ Uniwind.setTheme('light');
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-  });
-
   const initStore = useAppStore((state) => state.init);
 
   useEffect(() => {
@@ -92,32 +78,6 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Inject Google Fonts link tag for web to ensure fonts load through proxy
-  // Also register font family names as fallback if expo-font fails
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      // Check if link already exists
-      const existingLink = document.querySelector(
-        'link[href*="fonts.googleapis.com/css2?family=Inter"]',
-      );
-
-      if (!existingLink) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href =
-          'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
-        link.crossOrigin = 'anonymous';
-        document.head.appendChild(link);
-      }
-
-      // Note: The @import in global.css and the link tag above ensure Inter font loads
-      // expo-font will register the font family names (Inter_400Regular, etc.)
-      // If expo-font fails due to proxy issues, the fonts should still be available
-      // via the direct Google Fonts CDN link, though the specific font family names
-      // might not be registered. The app should still render with Inter font.
-    }
-  }, []);
-
   useEffect(() => {
     const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
     if (__DEV__ && Platform.OS !== 'web' && !isExpoGo) {
@@ -140,15 +100,17 @@ export default function RootLayout() {
     registerServiceWorker();
   }, []);
 
+  /*
+   * No web font is loaded on purpose. The UI is Traditional Chinese, and Latin
+   * webfonts (Inter and friends) carry no CJK glyphs — forcing one as the
+   * default family makes Android draw tofu boxes for 中文 instead of falling
+   * back. Every screen therefore uses the platform UI font (SF Pro on iOS,
+   * Roboto + Noto Sans CJK on Android), which is also what the web preview
+   * renders, so device and browser now match.
+   */
   useEffect(() => {
-    if (loaded || error) {
-      void SplashScreen.hideAsync();
-    }
-  }, [loaded, error]);
-
-  if (!loaded && !error) {
-    return null;
-  }
+    void SplashScreen.hideAsync();
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -161,7 +123,7 @@ export default function RootLayout() {
           screenOptions={{
             headerStyle: { backgroundColor: '#FFFFFF' },
             headerTintColor: '#111827',
-            headerTitleStyle: { fontSize: 15, fontWeight: '700' },
+            headerTitleStyle: { fontSize: 17, fontWeight: '600' },
             contentStyle: { backgroundColor: '#F8F9FA' },
           }}
         >

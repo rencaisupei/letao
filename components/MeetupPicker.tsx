@@ -1,4 +1,6 @@
-import { Text, TextInput, View } from 'react-native';
+import { View } from 'react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { MapPin } from 'lucide-react-native';
 
 import { SelectChip } from '@/components/SelectChip';
@@ -56,12 +58,12 @@ export function MeetupPicker({
         editable={!isDisabled}
         placeholder="行政區或地標，例如：信義區 ∙ 市政府站"
         placeholderTextColorClassName="accent-neutral-400"
-        className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
+        className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
       />
 
       <View className="mt-1.5 flex-row items-start gap-1.5">
         <MapPin size={12} color={SAGE} strokeWidth={2.2} />
-        <Text className="text-muted flex-1 text-[11px] leading-4">
+        <Text className="text-muted text-2xs flex-1 leading-4">
           {requiresDetail
             ? '面交請寫得具體一點，例如「信義區 ∙ 市政府站 2 號出口」；這裡選的縣市同時是寄件出貨地。'
             : '選擇縣市可以讓買家用地區篩選找到你的商品，也用來計算離島／偏遠的運費加價。'}

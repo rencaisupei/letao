@@ -1,4 +1,6 @@
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { Button } from 'heroui-native';
 import { X } from 'lucide-react-native';
 
@@ -43,13 +45,13 @@ export function FilterSheet({
       <View className="flex-1 justify-end bg-black/40">
         <View className="bg-background max-h-[86%] rounded-t-3xl">
           <View className="flex-row items-center justify-between border-b border-neutral-100 px-4 py-3.5">
-            <Text className="text-foreground text-[15px] font-bold">篩選條件</Text>
+            <Text className="text-foreground text-base font-bold">篩選條件</Text>
             <View className="flex-row items-center gap-2">
               <Pressable
                 accessibilityRole="button"
                 onPress={() => onChange({ ...DEFAULT_FILTERS, query: filters.query })}
               >
-                <Text className="text-sage-deep text-[12px] font-semibold">全部清除</Text>
+                <Text className="text-sage-deep text-xs font-semibold">全部清除</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -66,7 +68,7 @@ export function FilterSheet({
             contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
             showsVerticalScrollIndicator={false}
           >
-            <Text className="text-foreground text-[13px] font-semibold">商品類別</Text>
+            <Text className="text-foreground text-sm font-semibold">商品類別</Text>
             <View className="mt-2">
               <InlineCategorySelect
                 value={filters.category}
@@ -80,13 +82,11 @@ export function FilterSheet({
                 onPress={() => onChange({ ...filters, category: ALL_CATEGORY })}
                 className="mt-1.5 self-start py-1"
               >
-                <Text className="text-sage-deep text-[11px] font-semibold">清除類別條件</Text>
+                <Text className="text-sage-deep text-2xs font-semibold">清除類別條件</Text>
               </Pressable>
             )}
 
-            <Text className="text-foreground mt-5 text-[13px] font-semibold">
-              商品狀況（可多選）
-            </Text>
+            <Text className="text-foreground mt-5 text-sm font-semibold">商品狀況（可多選）</Text>
             <View className="mt-2 gap-1.5">
               {CONDITIONS.map((item) => (
                 <SelectChip
@@ -99,7 +99,7 @@ export function FilterSheet({
               ))}
             </View>
 
-            <Text className="text-foreground mt-5 text-[13px] font-semibold">
+            <Text className="text-foreground mt-5 text-sm font-semibold">
               運送方式（可多選，賣家有提供即符合）
             </Text>
             <View className="mt-2 flex-row flex-wrap gap-1.5">
@@ -115,7 +115,7 @@ export function FilterSheet({
               ))}
             </View>
 
-            <Text className="text-foreground mt-5 text-[13px] font-semibold">價格區間</Text>
+            <Text className="text-foreground mt-5 text-sm font-semibold">價格區間</Text>
             <View className="mt-2 flex-row flex-wrap gap-1.5">
               {PRICE_RANGES.map((range) => (
                 <SelectChip
@@ -129,7 +129,7 @@ export function FilterSheet({
               ))}
             </View>
 
-            <Text className="text-foreground mt-5 text-[13px] font-semibold">所在地區</Text>
+            <Text className="text-foreground mt-5 text-sm font-semibold">所在地區</Text>
             <View className="mt-2 flex-row flex-wrap gap-1.5">
               <SelectChip
                 size="sm"

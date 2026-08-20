@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { Button } from 'heroui-native';
 
 import { QuantityStepper } from '@/components/QuantityStepper';
@@ -53,7 +55,7 @@ export function StockSheet({ listing, isSaving, onCancel, onSave }: StockSheetPr
         <View className="bg-background max-h-[86%] w-full max-w-sm rounded-2xl border border-neutral-200">
           <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
             <Text className="text-foreground text-base font-bold">調整庫存</Text>
-            <Text className="text-muted mt-1.5 text-[12px]" numberOfLines={2}>
+            <Text className="text-muted mt-1.5 text-xs" numberOfLines={2}>
               {listing?.title ?? ''}
             </Text>
 
@@ -63,7 +65,7 @@ export function StockSheet({ listing, isSaving, onCancel, onSave }: StockSheetPr
               <StockRow label="還可販售" value={`${remaining} 件`} />
             </View>
 
-            <Text className="text-foreground mt-4 text-[13px] font-semibold">新的總數</Text>
+            <Text className="text-foreground mt-4 text-sm font-semibold">新的總數</Text>
             <QuantityStepper
               className="mt-2"
               value={quantity}
@@ -78,7 +80,7 @@ export function StockSheet({ listing, isSaving, onCancel, onSave }: StockSheetPr
               }
             />
 
-            <Text className="text-muted mt-3 text-[11px] leading-4">
+            <Text className="text-muted text-2xs mt-3 leading-4">
               {delta === 0
                 ? `維持 ${total} 件，買家可購買 ${remaining} 件。`
                 : delta > 0
@@ -117,8 +119,8 @@ export function StockSheet({ listing, isSaving, onCancel, onSave }: StockSheetPr
 function StockRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-center justify-between">
-      <Text className="text-muted text-[12px]">{label}</Text>
-      <Text className="text-foreground text-[12px] font-semibold">{value}</Text>
+      <Text className="text-muted text-xs">{label}</Text>
+      <Text className="text-foreground text-xs font-semibold">{value}</Text>
     </View>
   );
 }

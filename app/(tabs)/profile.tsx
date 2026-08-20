@@ -5,10 +5,12 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
+import { listContent, screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -295,13 +297,13 @@ export default function ProfileScreen() {
     return (
       <ScrollView
         className="bg-canvas flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         showsVerticalScrollIndicator={false}
       >
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={32} color={SAGE} strokeWidth={1.6} />
           <Text className="text-foreground mt-4 text-base font-bold">建立您的易拍通帳號</Text>
-          <Text className="text-muted mt-2 text-center text-[13px] leading-5">
+          <Text className="text-muted mt-2 text-center text-sm leading-5">
             註冊後才會有 EcoCoins
             錢包、收藏清單、私訊、評價與信任度。買家與賣家共用同一組帳號，可隨時切換身分。
           </Text>
@@ -313,9 +315,9 @@ export default function ProfileScreen() {
         <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
           <View className="flex-row items-center gap-2">
             <ShieldCheck size={16} color={SAGE} strokeWidth={2} />
-            <Text className="text-foreground text-[13px] font-semibold">為什麼一定要註冊</Text>
+            <Text className="text-foreground text-sm font-semibold">為什麼一定要註冊</Text>
           </View>
-          <Text className="text-muted mt-2 text-[12px] leading-5">
+          <Text className="text-muted mt-2 text-xs leading-5">
             易拍通的防砍價機制、賣家信任度與內容審核都綁在帳號上。沒有帳號的訪客可以自由瀏覽商品，但無法出價、上架、私訊或收藏。
           </Text>
         </View>
@@ -354,19 +356,19 @@ export default function ProfileScreen() {
         onRefresh={() => {
           void refresh();
         }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40, gap: 14 }}
+        contentContainerStyle={listContent}
         ListHeaderComponent={
           <View className="gap-3">
             <View className="bg-background flex-row items-center rounded-2xl border border-neutral-200 p-4">
               <Avatar uri={avatarUrl} name={username} size={48} />
               <View className="ml-3 flex-1">
                 <View className="flex-row items-center gap-1">
-                  <Text className="text-foreground text-[15px] font-bold">
+                  <Text className="text-foreground text-base font-bold">
                     {username ?? '易拍通用戶'}
                   </Text>
                   {verified ? <BadgeCheck size={15} color={SAGE} strokeWidth={2} /> : null}
                 </View>
-                <Text className="text-sage-deep mt-0.5 text-[11px] font-semibold">
+                <Text className="text-sage-deep text-2xs mt-0.5 font-semibold">
                   {getRoleLabel(role)} ∙ 信任度 {trustScore}% ∙ 公開上架 {publicCount} 件
                 </Text>
               </View>
@@ -427,18 +429,18 @@ export default function ProfileScreen() {
             <View className="bg-background rounded-2xl border border-neutral-200 p-4">
               <View className="flex-row items-center gap-2">
                 <Coins size={18} color={SAGE} strokeWidth={1.8} />
-                <Text className="text-foreground text-[13px] font-semibold">EcoCoins 錢包</Text>
+                <Text className="text-foreground text-sm font-semibold">EcoCoins 錢包</Text>
               </View>
               <Text className="text-foreground mt-2 text-3xl font-bold">{balance}</Text>
-              <Text className="text-muted mt-1 text-[11px] leading-4">
+              <Text className="text-muted text-2xs mt-1 leading-4">
                 提升排名一次扣 {BUMP_COST} 枚，置頂曝光 {BUMP_DURATION_LABEL}
                 。餘額由資料庫函數控管， 前端無法直接修改。
               </Text>
 
-              <View className="bg-mint mt-3 rounded-xl p-3.5">
+              <View className="bg-mint mt-3 rounded-xl p-4">
                 <View className="flex-row items-center gap-1.5">
                   <Flame size={15} color={SAGE} strokeWidth={2.2} />
-                  <Text className="text-sage-deep text-[12px] font-bold">
+                  <Text className="text-sage-deep text-xs font-bold">
                     每日簽到 ∙ 連續 {claimStreak} 天
                   </Text>
                 </View>
@@ -453,16 +455,12 @@ export default function ProfileScreen() {
                         }`}
                       >
                         <Text
-                          className={`text-[10px] font-bold ${
-                            reached ? 'text-white' : 'text-muted'
-                          }`}
+                          className={`text-2xs font-bold ${reached ? 'text-white' : 'text-muted'}`}
                         >
                           {dailyRewardFor(day)}
                         </Text>
                         <Text
-                          className={`mt-0.5 text-[9px] ${
-                            reached ? 'text-white/90' : 'text-muted'
-                          }`}
+                          className={`text-2xs mt-0.5 ${reached ? 'text-white/90' : 'text-muted'}`}
                         >
                           第 {day} 天
                         </Text>
@@ -470,7 +468,7 @@ export default function ProfileScreen() {
                     );
                   })}
                 </View>
-                <Text className="text-sage-deep/90 mt-2 text-[10px] leading-4">
+                <Text className="text-sage-deep/90 text-2xs mt-2 leading-4">
                   {canClaim
                     ? `現在領取可拿 ${nextReward} 枚。中斷超過 48 小時會從第 1 天重新計算。`
                     : `已簽到，${formatRemaining(new Date(nextClaimAt).toISOString())}後可再領取。`}
@@ -494,14 +492,14 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            <Text className="text-foreground mt-1 text-[13px] font-semibold">
+            <Text className="text-foreground mt-1 text-sm font-semibold">
               我的上架商品（含審核狀態）
             </Text>
           </View>
         }
         ListEmptyComponent={
           <View className="items-center px-6 py-10">
-            <Text className="text-muted text-center text-[13px]">
+            <Text className="text-muted text-center text-sm">
               還沒有上架商品，到「釋出好物」發佈第一件收藏。
             </Text>
           </View>
@@ -536,14 +534,14 @@ export default function ProfileScreen() {
                 footer={
                   <View className="gap-2">
                     {item.moderation_status === 'approved' ? null : (
-                      <View className="bg-canvas rounded-xl px-3 py-2">
+                      <View className="bg-canvas rounded-xl px-3.5 py-2.5">
                         <ModerationBadge
                           status={item.moderation_status}
                           className="mb-1.5 self-start"
                         />
-                        <Text className="text-muted text-[11px] leading-4">{meta.hint}</Text>
+                        <Text className="text-muted text-2xs leading-4">{meta.hint}</Text>
                         {item.moderation_reason ? (
-                          <Text className="mt-1 text-[11px] leading-4 font-medium text-red-700">
+                          <Text className="text-2xs mt-1 leading-4 font-medium text-red-700">
                             {item.moderation_reason}
                           </Text>
                         ) : null}
@@ -553,15 +551,15 @@ export default function ProfileScreen() {
                     <Pressable
                       accessibilityRole="button"
                       onPress={() => setPendingStock(item)}
-                      className="bg-canvas flex-row items-center gap-1.5 rounded-xl px-3 py-2"
+                      className="bg-canvas flex-row items-center gap-1.5 rounded-xl px-3.5 py-2.5"
                     >
                       <Boxes size={13} color={SAGE} strokeWidth={2.2} />
-                      <Text className="text-muted flex-1 text-[11px]" numberOfLines={1}>
+                      <Text className="text-muted text-2xs flex-1" numberOfLines={1}>
                         庫存：剩 {remainingQuantity(item.quantity, item.sold_quantity)} /{' '}
                         {item.quantity} 件
                         {item.sold_quantity > 0 ? `（已成交 ${item.sold_quantity} 件）` : ''}
                       </Text>
-                      <Text className="text-sage-deep text-[11px] font-semibold">調整</Text>
+                      <Text className="text-sage-deep text-2xs font-semibold">調整</Text>
                     </Pressable>
 
                     {item.payment_methods.length === 0 ? (
@@ -572,12 +570,12 @@ export default function ProfileScreen() {
                       >
                         <View className="flex-row items-center gap-1.5">
                           <Wallet size={13} color="#B45309" strokeWidth={2.2} />
-                          <Text className="flex-1 text-[12px] font-bold text-amber-800">
+                          <Text className="flex-1 text-xs font-bold text-amber-800">
                             未設定付款方式
                           </Text>
-                          <Text className="text-[11px] font-semibold text-amber-700">補設定</Text>
+                          <Text className="text-2xs font-semibold text-amber-700">補設定</Text>
                         </View>
-                        <Text className="mt-1 text-[11px] leading-4 text-amber-700">
+                        <Text className="text-2xs mt-1 leading-4 text-amber-700">
                           買家出價後只能在私訊中另外確認怎麼付款，點這裡補上。
                         </Text>
                       </Pressable>
@@ -585,20 +583,23 @@ export default function ProfileScreen() {
                       <Pressable
                         accessibilityRole="button"
                         onPress={() => setPendingPayments(item)}
-                        className="bg-canvas flex-row items-center gap-1.5 rounded-xl px-3 py-2"
+                        className="bg-canvas flex-row items-center gap-1.5 rounded-xl px-3.5 py-2.5"
                       >
                         <Wallet size={13} color={SAGE} strokeWidth={2.2} />
-                        <Text className="text-muted flex-1 text-[11px]" numberOfLines={1}>
+                        <Text className="text-muted text-2xs flex-1" numberOfLines={1}>
                           付款方式：{paymentSummary(item.payment_methods)}
                         </Text>
-                        <Text className="text-sage-deep text-[11px] font-semibold">調整</Text>
+                        <Text className="text-sage-deep text-2xs font-semibold">調整</Text>
                       </Pressable>
                     )}
 
                     {isPromoted ? (
-                      <View className="bg-mint flex-row items-center justify-between rounded-xl px-3 py-2">
-                        <Text className="text-sage-deep text-[12px] font-bold">⚡ 置頂曝光中</Text>
-                        <Text className="text-sage-deep text-[11px] font-medium">
+                      <View className="bg-mint flex-row items-center justify-between rounded-xl px-3.5 py-2.5">
+                        <View className="flex-row items-center gap-1">
+                          <Zap size={12} color={SAGE} fill={SAGE} strokeWidth={0} />
+                          <Text className="text-sage-deep text-xs font-bold">置頂曝光中</Text>
+                        </View>
+                        <Text className="text-sage-deep text-2xs font-medium">
                           {formatRemaining(endsAt)}
                         </Text>
                       </View>
@@ -677,16 +678,16 @@ export default function ProfileScreen() {
                 <Zap size={18} color={SAGE} strokeWidth={2} />
                 <Text className="text-foreground text-base font-bold">提升商品排名</Text>
               </View>
-              <Text className="text-muted mt-3 text-[13px] leading-5">
+              <Text className="text-muted mt-3 text-sm leading-5">
                 「{pendingBump?.title}」將被推上探索首頁最前排，持續 {BUMP_DURATION_LABEL}。
               </Text>
-              <View className="bg-canvas mt-3 flex-row items-center justify-between rounded-xl px-3 py-2">
-                <Text className="text-muted text-[12px]">本次花費</Text>
-                <Text className="text-foreground text-[13px] font-bold">{BUMP_COST} EcoCoins</Text>
+              <View className="bg-canvas mt-3 flex-row items-center justify-between rounded-xl px-3.5 py-2.5">
+                <Text className="text-muted text-xs">本次花費</Text>
+                <Text className="text-foreground text-sm font-bold">{BUMP_COST} EcoCoins</Text>
               </View>
-              <View className="bg-canvas mt-1.5 flex-row items-center justify-between rounded-xl px-3 py-2">
-                <Text className="text-muted text-[12px]">目前餘額</Text>
-                <Text className="text-foreground text-[13px] font-bold">{balance} EcoCoins</Text>
+              <View className="bg-canvas mt-1.5 flex-row items-center justify-between rounded-xl px-3.5 py-2.5">
+                <Text className="text-muted text-xs">目前餘額</Text>
+                <Text className="text-foreground text-sm font-bold">{balance} EcoCoins</Text>
               </View>
 
               <View className="mt-4 flex-row gap-2">
@@ -724,7 +725,7 @@ export default function ProfileScreen() {
                 <Trash2 size={18} color="#B91C1C" strokeWidth={2} />
                 <Text className="text-foreground text-base font-bold">刪除商品</Text>
               </View>
-              <Text className="text-muted mt-3 text-[13px] leading-5">
+              <Text className="text-muted mt-3 text-sm leading-5">
                 確定要刪除「{pendingDelete?.title}
                 」嗎？商品、收藏與交易紀錄都會一併移除，這個動作無法復原。若只是想暫時停售，選擇「暫時下架」就好。
               </Text>
@@ -770,8 +771,8 @@ function ProfileLink({ icon, label, value, onPress, isLast = false }: ProfileLin
       className={`flex-row items-center px-4 py-3.5 ${isLast ? '' : 'border-b border-neutral-100'}`}
     >
       {icon}
-      <Text className="text-foreground ml-3 flex-1 text-[13px] font-medium">{label}</Text>
-      <Text className="text-muted mr-1.5 text-[11px]">{value}</Text>
+      <Text className="text-foreground ml-3 flex-1 text-sm font-medium">{label}</Text>
+      <Text className="text-muted text-2xs mr-1.5">{value}</Text>
       <ChevronRight size={16} color="#9CA3AF" strokeWidth={2} />
     </Pressable>
   );

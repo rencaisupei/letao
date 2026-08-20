@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, View, useWindowDimensions } from 'react-native';
 import { Button } from 'heroui-native';
 import { Stack, router } from 'expo-router';
 import { HeartOff } from 'lucide-react-native';
 
 import { ListingCard } from '@/components/ListingCard';
+import { Text } from '@/components/ui/primitives/Text';
 import { SAGE } from '@/lib/constants';
+import { gridCardWidth, gridColumnWrapper, gridContent } from '@/lib/layout';
 import { fetchListingsByIds } from '@/lib/queries';
 import { type Listing, useAppStore } from '@/lib/store';
-
-const GRID_GAP = 12;
 
 export default function FavoritesScreen() {
   const { width } = useWindowDimensions();
@@ -21,7 +21,7 @@ export default function FavoritesScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const favoriteIds = useMemo(() => Object.keys(favorites), [favorites]);
-  const cardWidth = Math.floor((width - GRID_GAP * 3) / 2);
+  const cardWidth = gridCardWidth(width);
 
   const inStore = useMemo(
     () => listings.filter((listing) => favorites[listing.id]),
@@ -56,12 +56,12 @@ export default function FavoritesScreen() {
         data={data}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        columnWrapperStyle={{ gap: GRID_GAP, paddingHorizontal: GRID_GAP }}
-        contentContainerStyle={{ gap: GRID_GAP, paddingVertical: GRID_GAP, paddingBottom: 32 }}
+        columnWrapperStyle={gridColumnWrapper}
+        contentContainerStyle={gridContent}
         ListEmptyComponent={
-          <View className="items-center px-8 py-16">
+          <View className="items-center px-6 py-14">
             <HeartOff size={30} color={SAGE} strokeWidth={1.6} />
-            <Text className="text-muted mt-4 text-center text-[13px] leading-5">
+            <Text className="text-muted mt-4 text-center text-sm leading-5">
               {isLoading
                 ? '正在載入收藏...'
                 : '還沒有收藏任何商品。在商品卡右上角按下愛心，就會收進這裡。'}

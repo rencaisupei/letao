@@ -1,5 +1,7 @@
 import { Button } from 'heroui-native';
-import { Modal, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 
 import { useAlertStore } from '@/lib/alert';
 
@@ -30,7 +32,7 @@ export function AlertHost() {
         <View className="bg-background max-h-[86%] w-full max-w-sm rounded-2xl border border-neutral-200">
           <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
             <Text className={`text-base font-bold ${toneClass}`}>{current?.title ?? ''}</Text>
-            <Text className="text-muted mt-3 text-[13px] leading-5">{current?.message ?? ''}</Text>
+            <Text className="text-muted mt-3 text-sm leading-5">{current?.message ?? ''}</Text>
 
             {current?.dismissLabel ? (
               <View className="mt-5 flex-row gap-2">

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { Button } from 'heroui-native';
 import { Check, ChevronRight, Tag, X } from 'lucide-react-native';
 
@@ -49,8 +51,8 @@ export function CategoryPicker({
       >
         <Tag size={15} color={SAGE} strokeWidth={2.2} />
         <View className="ml-2.5 flex-1">
-          <Text className="text-foreground text-[13px] font-semibold">{value}</Text>
-          <Text className="text-muted mt-0.5 text-[11px]">
+          <Text className="text-foreground text-sm font-semibold">{value}</Text>
+          <Text className="text-muted text-2xs mt-0.5">
             {groupTitle ? `${groupTitle} ∙ 點此更換類別` : '點此選擇類別'}
           </Text>
         </View>
@@ -67,8 +69,8 @@ export function CategoryPicker({
           <View className="bg-background max-h-[88%] rounded-t-3xl">
             <View className="flex-row items-center justify-between border-b border-neutral-100 px-4 py-3.5">
               <View className="flex-1">
-                <Text className="text-foreground text-[15px] font-bold">選擇商品類別</Text>
-                <Text className="text-muted mt-0.5 text-[11px]">
+                <Text className="text-foreground text-base font-bold">選擇商品類別</Text>
+                <Text className="text-muted text-2xs mt-0.5">
                   依類型分成 {CATEGORY_GROUPS.length} 區，點一下即選定
                 </Text>
               </View>
@@ -98,7 +100,7 @@ export function CategoryPicker({
 
               {CATEGORY_GROUPS.map((group, index) => (
                 <View key={group.title} className={index === 0 ? '' : 'mt-5'}>
-                  <Text className="text-muted text-[12px] font-bold">
+                  <Text className="text-muted text-xs font-bold">
                     {group.emoji} {group.title}
                   </Text>
                   <View className="mt-2 gap-1.5">
@@ -160,7 +162,7 @@ export function InlineCategorySelect({
           >
             <Text
               className={cn(
-                'text-[12px]',
+                'text-xs',
                 value === ALL_CATEGORY ? 'font-bold text-white' : 'text-muted font-medium',
               )}
             >
@@ -184,7 +186,7 @@ export function InlineCategorySelect({
             >
               <Text
                 className={cn(
-                  'text-[12px]',
+                  'text-xs',
                   isOpen ? 'text-sage-deep font-bold' : 'text-muted font-medium',
                 )}
               >
@@ -239,13 +241,13 @@ function CategoryRow({
       <View className="flex-1">
         <Text
           className={cn(
-            'text-[13px]',
+            'text-sm',
             isSelected ? 'text-sage-deep font-bold' : 'text-foreground font-medium',
           )}
         >
           {label}
         </Text>
-        {hint ? <Text className="text-muted mt-0.5 text-[11px]">{hint}</Text> : null}
+        {hint ? <Text className="text-muted text-2xs mt-0.5">{hint}</Text> : null}
       </View>
       {isSelected ? <Check size={16} color={SAGE} strokeWidth={2.6} /> : null}
     </Pressable>

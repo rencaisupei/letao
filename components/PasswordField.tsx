@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+
+import { TextInput } from '@/components/ui/primitives/Text';
 import { Eye, EyeOff } from 'lucide-react-native';
 
 import { SAGE } from '@/lib/constants';
@@ -33,7 +35,7 @@ export function PasswordField({
         secureTextEntry={!isVisible}
         placeholder={placeholder}
         placeholderTextColorClassName="accent-neutral-400"
-        className="bg-canvas text-foreground h-11 rounded-xl border border-neutral-200 pr-12 pl-4 text-[13px]"
+        className="bg-canvas text-foreground h-11 rounded-xl border border-neutral-200 pr-12 pl-4 text-sm"
       />
       <Pressable
         accessibilityRole="button"

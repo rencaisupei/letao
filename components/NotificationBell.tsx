@@ -1,5 +1,7 @@
 import { useCallback, useEffect } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { router } from 'expo-router';
 import { Bell } from 'lucide-react-native';
 
@@ -43,7 +45,7 @@ export function NotificationBell() {
       <Bell size={20} color={SAGE} strokeWidth={2} />
       {unreadCount > 0 ? (
         <View className="absolute top-1 right-0.5 h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1">
-          <Text className="text-[9px] font-bold text-white">
+          <Text className="text-2xs font-bold text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </Text>
         </View>

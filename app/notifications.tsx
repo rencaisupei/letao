@@ -1,5 +1,8 @@
 import { useCallback } from 'react';
-import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
+import { listContent, screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { BellOff, UserPlus } from 'lucide-react-native';
@@ -55,14 +58,14 @@ export default function NotificationsScreen() {
     return (
       <ScrollView
         className="bg-canvas flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         showsVerticalScrollIndicator={false}
       >
         <Stack.Screen options={{ title: '通知中心' }} />
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={30} color={SAGE} strokeWidth={1.6} />
           <Text className="text-foreground mt-4 text-base font-bold">通知需要註冊帳號</Text>
-          <Text className="text-muted mt-2 text-center text-[13px] leading-5">
+          <Text className="text-muted mt-2 text-center text-sm leading-5">
             註冊後才會收到出價、私訊、審核結果與檢舉處理的通知。
           </Text>
           <Button className="mt-4" onPress={() => router.push('/sign-in')}>
@@ -82,12 +85,12 @@ export default function NotificationsScreen() {
         keyExtractor={(item) => item.id}
         refreshing={isLoading}
         onRefresh={refresh}
-        contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 32 }}
+        contentContainerStyle={{ ...listContent, gap: 8 }}
         ListHeaderComponent={
           <View>
             <PushToggle />
             <View className="mb-1 flex-row items-center justify-between px-1">
-              <Text className="text-muted text-[11px]">
+              <Text className="text-muted text-2xs">
                 {unreadCount > 0 ? `${unreadCount} 則未讀通知` : '沒有未讀通知'}
               </Text>
               {unreadCount > 0 ? (
@@ -105,10 +108,10 @@ export default function NotificationsScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View className="items-center px-8 py-16">
+          <View className="items-center px-6 py-14">
             <BellOff size={30} color={SAGE} strokeWidth={1.6} />
             <Text className="text-foreground mt-4 text-base font-bold">還沒有通知</Text>
-            <Text className="text-muted mt-2 text-center text-[13px] leading-5">
+            <Text className="text-muted mt-2 text-center text-sm leading-5">
               收到出價、私訊、審核結果、檢舉處理、客服回覆或每日 EcoCoins 入帳時，都會出現在這裡。
             </Text>
             <Button className="mt-4" variant="secondary" onPress={() => goBackOrReplace('/')}>
@@ -131,22 +134,22 @@ export default function NotificationsScreen() {
                 isUnread ? 'border-sage/40 bg-mint' : 'bg-background border-neutral-200'
               }`}
             >
-              <Text className="mt-0.5 text-[16px]">{meta.emoji}</Text>
+              <Text className="mt-0.5 text-base">{meta.emoji}</Text>
               <View className="ml-3 flex-1">
                 <View className="flex-row items-center justify-between">
                   <Text
-                    className={`text-[13px] font-bold ${
+                    className={`text-sm font-bold ${
                       isUnread ? 'text-sage-deep' : 'text-foreground'
                     }`}
                   >
                     {item.title}
                   </Text>
-                  <Text className="text-muted text-[10px]">{relativeTime(item.created_at)}</Text>
+                  <Text className="text-muted text-2xs">{relativeTime(item.created_at)}</Text>
                 </View>
                 {item.body ? (
-                  <Text className="text-muted mt-1 text-[12px] leading-4">{item.body}</Text>
+                  <Text className="text-muted mt-1 text-xs leading-4">{item.body}</Text>
                 ) : null}
-                <Text className="text-muted mt-1.5 text-[10px] font-medium">{meta.label}</Text>
+                <Text className="text-muted text-2xs mt-1.5 font-medium">{meta.label}</Text>
               </View>
               {isUnread ? <View className="bg-sage mt-1.5 ml-2 h-2 w-2 rounded-full" /> : null}
             </Pressable>

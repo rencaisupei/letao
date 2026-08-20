@@ -52,14 +52,14 @@ export function BrandWordmark({ align = 'left' }: { align?: 'left' | 'center' })
     <View className={centered ? 'items-center' : 'items-start'}>
       <View className="flex-row items-baseline gap-1.5">
         <Text
-          className="text-foreground text-[20px] font-extrabold"
+          className="text-foreground text-xl font-extrabold"
           style={{ letterSpacing: 1 }}
           allowFontScaling={false}
         >
           易拍通
         </Text>
         <Text
-          className="text-[11px] font-bold text-neutral-400"
+          className="text-2xs font-bold text-neutral-400"
           style={{ letterSpacing: 0.5 }}
           allowFontScaling={false}
         >
@@ -67,7 +67,7 @@ export function BrandWordmark({ align = 'left' }: { align?: 'left' | 'center' })
         </Text>
       </View>
       <Text
-        className="mt-0.5 text-[11px] font-medium text-neutral-500"
+        className="text-2xs mt-0.5 font-medium text-neutral-500"
         style={{ letterSpacing: 2 }}
         allowFontScaling={false}
       >

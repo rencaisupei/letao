@@ -1,4 +1,6 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { Check } from 'lucide-react-native';
 
 import {
@@ -84,7 +86,7 @@ export function PaymentMethodsPicker({
               </View>
               <Text
                 className={cn(
-                  'flex-1 text-[13px]',
+                  'flex-1 text-sm',
                   !isUsable
                     ? 'font-medium text-neutral-400'
                     : isSelected
@@ -95,14 +97,14 @@ export function PaymentMethodsPicker({
                 {item.emoji} {item.label}
               </Text>
               {isUsable ? null : (
-                <Text className="text-[10px] font-semibold text-neutral-400">
+                <Text className="text-2xs font-semibold text-neutral-400">
                   {unavailableHint(item.code)}
                 </Text>
               )}
             </View>
             <Text
               className={cn(
-                'mt-1 pl-7 text-[11px] leading-4',
+                'text-2xs mt-1 pl-7 leading-4',
                 isUsable ? 'text-muted' : 'text-neutral-400',
               )}
             >
@@ -130,7 +132,7 @@ export function PaymentChoiceList({ options, logistics, value, onChange }: Payme
 
   if (usable.length === 0) {
     return (
-      <Text className="text-muted text-[11px] leading-4">
+      <Text className="text-muted text-2xs leading-4">
         {options.length === 0
           ? '賣家尚未設定付款方式，出價成立後請在私訊中確認怎麼付款。'
           : `賣家設定的付款方式不適用於${logistics ?? MEETUP_METHOD}，請改選其他運送方式或私訊確認。`}
@@ -158,13 +160,13 @@ export function PaymentChoiceList({ options, logistics, value, onChange }: Payme
           >
             <Text
               className={cn(
-                'text-[12px]',
+                'text-xs',
                 isChosen ? 'text-sage-deep font-bold' : 'text-muted font-medium',
               )}
             >
               {meta.emoji} {meta.label}
             </Text>
-            <Text className="text-muted mt-0.5 text-[10px] leading-4">{meta.hint}</Text>
+            <Text className="text-muted text-2xs mt-0.5 leading-4">{meta.hint}</Text>
           </Pressable>
         );
       })}

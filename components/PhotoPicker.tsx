@@ -1,4 +1,6 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 import { Camera, ImagePlus, X } from 'lucide-react-native';
 
 import { MAX_LISTING_PHOTOS, SAGE } from '@/lib/constants';
@@ -70,7 +72,7 @@ export function PhotoPicker({ photos, onChange, isDisabled = false }: PhotoPicke
             </Pressable>
             {index === 0 ? (
               <View className="bg-sage absolute bottom-1 left-1 rounded px-1.5 py-0.5">
-                <Text className="text-[9px] font-bold text-white">封面</Text>
+                <Text className="text-2xs font-bold text-white">封面</Text>
               </View>
             ) : null}
           </View>
@@ -88,7 +90,7 @@ export function PhotoPicker({ photos, onChange, isDisabled = false }: PhotoPicke
             className="items-center justify-center rounded-[10px] border border-dashed border-neutral-300 bg-white"
           >
             <ImagePlus size={20} color={SAGE} strokeWidth={1.8} />
-            <Text className="text-sage-deep mt-1 text-[10px] font-semibold">相簿</Text>
+            <Text className="text-sage-deep text-2xs mt-1 font-semibold">相簿</Text>
           </Pressable>
         ) : null}
 
@@ -104,12 +106,12 @@ export function PhotoPicker({ photos, onChange, isDisabled = false }: PhotoPicke
             className="items-center justify-center rounded-[10px] border border-dashed border-neutral-300 bg-white"
           >
             <Camera size={20} color={SAGE} strokeWidth={1.8} />
-            <Text className="text-sage-deep mt-1 text-[10px] font-semibold">拍照</Text>
+            <Text className="text-sage-deep text-2xs mt-1 font-semibold">拍照</Text>
           </Pressable>
         ) : null}
       </View>
 
-      <Text className="text-muted mt-2 text-[11px] leading-4">
+      <Text className="text-muted text-2xs mt-2 leading-4">
         最多 {MAX_LISTING_PHOTOS} 張，第一張會成為封面。相片會在送出時上傳，並一併送入 AI 審核。
       </Text>
     </View>

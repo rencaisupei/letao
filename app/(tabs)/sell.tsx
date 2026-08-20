@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { router } from 'expo-router';
-import { ShieldCheck, Sparkles, UserPlus } from 'lucide-react-native';
+import { ShieldCheck, Sparkles, TriangleAlert, UserPlus } from 'lucide-react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
+import { screenContent } from '@/lib/layout';
 
 import { PhotoPicker } from '@/components/PhotoPicker';
 import { CategoryPicker } from '@/components/CategoryPicker';
@@ -267,13 +270,13 @@ export default function SellScreen() {
     return (
       <ScrollView
         className="bg-canvas flex-1"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        contentContainerStyle={screenContent}
         showsVerticalScrollIndicator={false}
       >
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={32} color={SAGE} strokeWidth={1.6} />
           <Text className="text-foreground mt-4 text-base font-bold">上架商品需要註冊帳號</Text>
-          <Text className="text-muted mt-2 text-center text-[13px] leading-5">
+          <Text className="text-muted mt-2 text-center text-sm leading-5">
             賣家必須註冊，商品才能綁定賣家身分、接受買家評價與累積信任度，也才能通過易拍通的內容審核流程。
           </Text>
           <Button className="mt-4" onPress={() => router.push('/sign-in')}>
@@ -290,61 +293,64 @@ export default function SellScreen() {
       className="bg-canvas flex-1"
     >
       <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+        contentContainerStyle={screenContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Text className="text-foreground text-base font-bold">✦ 釋出您的個人收藏</Text>
+        <Text className="text-foreground text-lg font-bold">釋出您的個人收藏</Text>
 
         <View className="mt-3 rounded-xl border border-red-100 bg-red-50 p-4">
-          <Text className="text-[13px] font-bold text-red-800">⚠️ 易拍通安全與法規合規公告</Text>
-          <Text className="mt-2 text-[11px] leading-4 text-red-800/90">
+          <View className="flex-row items-center gap-2">
+            <TriangleAlert size={15} color="#991B1B" strokeWidth={2.2} />
+            <Text className="flex-1 text-sm font-bold text-red-800">易拍通安全與法規合規公告</Text>
+          </View>
+          <Text className="text-2xs mt-2 leading-4 text-red-800/90">
             依據台灣法律與兩大 App
             商店審查指南，本平台【嚴禁刊登】以下商品，違者將直接刪文並永久封鎖帳號：
           </Text>
           {PROHIBITED_ITEMS.map((item) => (
-            <Text key={item} className="mt-1.5 text-[11px] leading-4 font-medium text-red-700">
+            <Text key={item} className="text-2xs mt-1.5 leading-4 font-medium text-red-700">
               ∙ {item}
             </Text>
           ))}
         </View>
 
-        <View className="bg-mint mt-3 rounded-xl p-3.5">
+        <View className="bg-mint mt-3 rounded-xl p-4">
           <View className="flex-row items-center gap-2">
             <Sparkles size={15} color={SAGE} strokeWidth={2} />
-            <Text className="text-sage-deep text-[12px] font-bold">送出後會先經過雙層審核</Text>
+            <Text className="text-sage-deep text-xs font-bold">送出後會先經過雙層審核</Text>
           </View>
-          <Text className="text-sage-deep/90 mt-1.5 text-[11px] leading-4">
+          <Text className="text-sage-deep/90 text-2xs mt-1.5 leading-4">
             1. AI 自動比對禁售規範與文案語意 ∙ 2.
             需要判斷的案件轉給管理員人工複審。通過後才會公開在探索首頁。
           </Text>
         </View>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">商品相片</Text>
+        <Text className="text-foreground mt-4 text-sm font-semibold">商品相片</Text>
         <View className="mt-2">
           <PhotoPicker photos={photos} onChange={setPhotos} isDisabled={isSubmitting} />
         </View>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">商品名稱</Text>
+        <Text className="text-foreground mt-4 text-sm font-semibold">商品名稱</Text>
         <TextInput
           value={title}
           onChangeText={setTitle}
           placeholder="請輸入主標題..."
           placeholderTextColorClassName="accent-neutral-400"
-          className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
+          className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
         />
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">售價（NT$）</Text>
+        <Text className="text-foreground mt-4 text-sm font-semibold">售價（NT$）</Text>
         <TextInput
           value={price}
           onChangeText={setPrice}
           keyboardType="number-pad"
           placeholder="0"
           placeholderTextColorClassName="accent-neutral-400"
-          className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-[13px]"
+          className="bg-background text-foreground mt-2 h-11 rounded-xl border border-neutral-200 px-4 text-sm"
         />
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">商品數量（庫存）</Text>
+        <Text className="text-foreground mt-4 text-sm font-semibold">商品數量（庫存）</Text>
         <QuantityStepper
           value={quantity}
           onChange={setQuantity}
@@ -358,7 +364,7 @@ export default function SellScreen() {
           }
         />
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">商品類別</Text>
+        <Text className="text-foreground mt-4 text-sm font-semibold">商品類別</Text>
         <CategoryPicker
           value={category}
           onChange={setCategory}
@@ -366,7 +372,7 @@ export default function SellScreen() {
           className="mt-2"
         />
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">商品狀況（新舊程度）</Text>
+        <Text className="text-foreground mt-4 text-sm font-semibold">商品狀況（新舊程度）</Text>
         <View className="mt-2 gap-1.5">
           {CONDITIONS.map((item) => (
             <SelectChip
@@ -380,11 +386,11 @@ export default function SellScreen() {
         </View>
 
         {isMeetup ? (
-          <Text className="text-foreground mt-4 text-[13px] font-semibold">
+          <Text className="text-foreground mt-4 text-sm font-semibold">
             面交地點與出貨縣市（買家會看到這段文字）
           </Text>
         ) : (
-          <Text className="text-foreground mt-4 text-[13px] font-semibold">
+          <Text className="text-foreground mt-4 text-sm font-semibold">
             商品所在地與出貨縣市（用於搜尋與運費計算）
           </Text>
         )}
@@ -397,14 +403,14 @@ export default function SellScreen() {
           />
         </View>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">
+        <Text className="text-foreground mt-4 text-sm font-semibold">
           包裝資訊（填了就能自動算運費）
         </Text>
         <View className="mt-2">
           <ParcelPicker value={parcel} isDisabled={isSubmitting} onChange={setParcel} />
         </View>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">
+        <Text className="text-foreground mt-4 text-sm font-semibold">
           運送與交付方式（可多選，運費自動試算或自訂）
         </Text>
         <View className="mt-2">
@@ -418,7 +424,7 @@ export default function SellScreen() {
           />
         </View>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">
+        <Text className="text-foreground mt-4 text-sm font-semibold">
           買家的付款方式（可多選，買家出價時選一種）
         </Text>
         <View className="mt-2">
@@ -429,20 +435,20 @@ export default function SellScreen() {
             onChange={setPayments}
           />
         </View>
-        <Text className="text-muted mt-1.5 text-[11px] leading-4">
+        <Text className="text-muted text-2xs mt-1.5 leading-4">
           {usablePayments.length > 0
             ? `商品頁會公開顯示：${usablePayments.map((code) => getPayment(code)?.label ?? code).join('、')}。`
             : '請至少勾選一種與運送方式相容的付款方式。'}
         </Text>
 
-        <View className="bg-background mt-3 flex-row items-start gap-2 rounded-xl border border-neutral-200 p-3">
+        <View className="bg-background mt-3 flex-row items-start gap-2 rounded-xl border border-neutral-200 p-3.5">
           <ShieldCheck size={14} color={SAGE} strokeWidth={2} />
-          <Text className="text-muted flex-1 text-[11px] leading-4">
+          <Text className="text-muted text-2xs flex-1 leading-4">
             易拍通安全提醒：面交請選擇人潮眾多、設有監視器的公共場所；超商交貨便請保留寄件單據，交易紀錄會保存於雙方帳號。
           </Text>
         </View>
 
-        <Text className="text-foreground mt-4 text-[13px] font-semibold">商品描述</Text>
+        <Text className="text-foreground mt-4 text-sm font-semibold">商品描述</Text>
         <TextInput
           value={description}
           onChangeText={setDescription}
@@ -450,7 +456,7 @@ export default function SellScreen() {
           textAlignVertical="top"
           placeholder="描述一下商品的細節、配件完好度或故事..."
           placeholderTextColorClassName="accent-neutral-400"
-          className="bg-background text-foreground mt-2 h-24 rounded-xl border border-neutral-200 px-4 pt-3 text-[13px]"
+          className="bg-background text-foreground mt-2 min-h-24 rounded-xl border border-neutral-200 px-4 pt-3 text-sm"
         />
 
         <Button

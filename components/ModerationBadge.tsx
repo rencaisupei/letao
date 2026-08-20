@@ -1,5 +1,6 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
+import { Text } from '@/components/ui/primitives/Text';
 import { getModeration } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +14,7 @@ export function ModerationBadge({ status, className }: ModerationBadgeProps) {
 
   return (
     <View className={cn('rounded-md px-2 py-1', meta.bgClass, className)}>
-      <Text className={cn('text-[10px] font-bold', meta.textClass)}>{meta.label}</Text>
+      <Text className={cn('text-2xs font-bold', meta.textClass)}>{meta.label}</Text>
     </View>
   );
 }

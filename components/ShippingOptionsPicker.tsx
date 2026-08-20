@@ -1,4 +1,6 @@
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
+
+import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { Check, Truck } from 'lucide-react-native';
 
 import {
@@ -194,7 +196,7 @@ export function ShippingOptionsPicker({
                   </View>
                   <Text
                     className={cn(
-                      'text-[13px]',
+                      'text-sm',
                       isSelected ? 'text-sage-deep font-bold' : 'text-muted font-medium',
                     )}
                   >
@@ -204,7 +206,7 @@ export function ShippingOptionsPicker({
 
                 {isSelected ? (
                   isMeetup ? (
-                    <Text className="text-sage-deep text-[11px] font-bold">面交不收運費</Text>
+                    <Text className="text-sage-deep text-2xs font-bold">面交不收運費</Text>
                   ) : isAuto ? (
                     <View className="flex-row items-center gap-1.5">
                       {isQuoting ? (
@@ -212,18 +214,18 @@ export function ShippingOptionsPicker({
                       ) : (
                         <Text
                           className={cn(
-                            'text-[13px] font-bold',
+                            'text-sm font-bold',
                             autoBlocked ? 'text-red-700' : 'text-sage-deep',
                           )}
                         >
                           {quote?.available ? formatShippingFee(quote.fee) : '無法寄送'}
                         </Text>
                       )}
-                      <Text className="text-muted text-[10px] font-semibold">自動</Text>
+                      <Text className="text-muted text-2xs font-semibold">自動</Text>
                     </View>
                   ) : (
                     <View className="flex-row items-center gap-1.5">
-                      <Text className="text-muted text-[11px] font-semibold">運費 NT$</Text>
+                      <Text className="text-muted text-2xs font-semibold">運費 NT$</Text>
                       <TextInput
                         value={draft.fee}
                         onChangeText={(text) => patch(method, { fee: text })}
@@ -232,12 +234,12 @@ export function ShippingOptionsPicker({
                         placeholder="0"
                         placeholderTextColorClassName="accent-neutral-400"
                         accessibilityLabel={`${method} 運費`}
-                        className="bg-background text-foreground h-9 w-20 rounded-lg border border-neutral-200 px-2 text-right text-[13px] font-semibold"
+                        className="bg-background text-foreground h-10 w-20 rounded-lg border border-neutral-200 px-2 text-right text-sm font-semibold"
                       />
                     </View>
                   )
                 ) : (
-                  <Text className="text-muted text-[11px]">
+                  <Text className="text-muted text-2xs">
                     {canAutoQuote && quote
                       ? quote.available
                         ? `試算 ${formatShippingFee(quote.fee)}`
@@ -252,7 +254,7 @@ export function ShippingOptionsPicker({
                   {isAuto && quote?.note ? (
                     <Text
                       className={cn(
-                        'text-[11px] leading-4',
+                        'text-2xs leading-4',
                         autoBlocked ? 'font-medium text-red-700' : 'text-muted',
                       )}
                     >
@@ -274,9 +276,7 @@ export function ShippingOptionsPicker({
                           })
                         }
                       >
-                        <Text className="text-sage-deep text-[11px] font-semibold">
-                          改為自訂運費
-                        </Text>
+                        <Text className="text-sage-deep text-2xs font-semibold">改為自訂運費</Text>
                       </Pressable>
                     ) : (
                       <>
@@ -285,7 +285,7 @@ export function ShippingOptionsPicker({
                             accessibilityRole="button"
                             onPress={() => patch(method, { mode: 'auto' })}
                           >
-                            <Text className="text-sage-deep text-[11px] font-semibold">
+                            <Text className="text-sage-deep text-2xs font-semibold">
                               改用自動試算
                             </Text>
                           </Pressable>
@@ -295,7 +295,7 @@ export function ShippingOptionsPicker({
                             accessibilityRole="button"
                             onPress={() => patch(method, { fee: '0' })}
                           >
-                            <Text className="text-sage-deep text-[11px] font-semibold">
+                            <Text className="text-sage-deep text-2xs font-semibold">
                               改為免運（填 0）
                             </Text>
                           </Pressable>
@@ -312,7 +312,7 @@ export function ShippingOptionsPicker({
 
       <View className="mt-2 flex-row items-start gap-1.5">
         <Truck size={12} color={SAGE} strokeWidth={2.2} />
-        <Text className="text-muted flex-1 text-[11px] leading-4">
+        <Text className="text-muted text-2xs flex-1 leading-4">
           {canAutoQuote
             ? `自動試算的金額會依買家收件縣市在下單時重算（離島／偏遠加價）。已選 ${value.length} 種。`
             : `填好包裝重量與尺寸後就能自動試算運費，未填時請自訂金額。已選 ${value.length} 種。`}

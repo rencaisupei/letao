@@ -1,4 +1,6 @@
-import { Image, Text, View } from 'react-native';
+import { Image, View } from 'react-native';
+
+import { Text } from '@/components/ui/primitives/Text';
 
 import { cn } from '@/lib/utils';
 
@@ -26,7 +28,11 @@ export function Avatar({ uri, name, size = 44, className }: AvatarProps) {
           accessibilityLabel={`${name ?? '易拍通用戶'}的頭像`}
         />
       ) : (
-        <Text style={{ fontSize: Math.round(size * 0.4) }} className="text-sage-deep font-bold">
+        <Text
+          style={{ fontSize: Math.round(size * 0.4) }}
+          allowFontScaling={false}
+          className="text-sage-deep font-bold"
+        >
           {initial}
         </Text>
       )}

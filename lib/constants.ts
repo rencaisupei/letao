@@ -34,7 +34,7 @@ export type ConditionMeta = {
 export const CONDITIONS: ConditionMeta[] = [
   {
     code: 'brand_new',
-    label: '✨ 全新未拆',
+    label: '全新未拆',
     hint: '全新未拆封，標牌完整',
     minRatio: 0.9,
     bgClass: 'bg-green-100',
@@ -42,7 +42,7 @@ export const CONDITIONS: ConditionMeta[] = [
   },
   {
     code: 'near_new',
-    label: '💎 近全新',
+    label: '近全新',
     hint: '僅開箱測試，基本無瑕',
     minRatio: 0.8,
     bgClass: 'bg-sky-100',
@@ -50,7 +50,7 @@ export const CONDITIONS: ConditionMeta[] = [
   },
   {
     code: 'excellent',
-    label: '🍏 九成新',
+    label: '九成新',
     hint: '保存良好，微小使用痕跡',
     minRatio: 0.8,
     bgClass: 'bg-yellow-100',
@@ -58,7 +58,7 @@ export const CONDITIONS: ConditionMeta[] = [
   },
   {
     code: 'good',
-    label: '👌 八成新',
+    label: '八成新',
     hint: '正常磨損，功能完全完好',
     minRatio: 0.8,
     bgClass: 'bg-neutral-100',
@@ -66,7 +66,7 @@ export const CONDITIONS: ConditionMeta[] = [
   },
   {
     code: 'used',
-    label: '♻️ 五成新',
+    label: '五成新',
     hint: '外觀瑕疵明顯，低價出清',
     minRatio: 0.8,
     bgClass: 'bg-red-100',
@@ -315,10 +315,15 @@ export function getPayment(code: string | null | undefined): PaymentMeta | null 
   return PAYMENT_METHODS.find((item) => item.code === code) ?? null;
 }
 
-/** "📦 貨到付款", or a placeholder when the order carries no choice. */
+/**
+ * "貨到付款", or a placeholder when the order carries no choice.
+ *
+ * Deliberately emoji-free: emoji render at a different size and baseline per
+ * platform, which knocked inline labels out of alignment inside badges and
+ * single-line rows. The emoji stays on PaymentMeta for standalone picker rows.
+ */
 export function paymentLabel(code: string | null | undefined): string {
-  const meta = getPayment(code);
-  return meta ? `${meta.emoji} ${meta.label}` : '待雙方確認';
+  return getPayment(code)?.label ?? '待雙方確認';
 }
 
 /** Mirrors public.payment_allows() so the UI hides choices the server rejects. */
@@ -388,28 +393,28 @@ export type ModerationMeta = {
 export const MODERATION_META: Record<ModerationStatus, ModerationMeta> = {
   pending: {
     status: 'pending',
-    label: '🕓 審核中',
+    label: '審核中',
     hint: '已送出，AI 正在檢查內容是否符合刊登規範。',
     bgClass: 'bg-neutral-100',
     textClass: 'text-neutral-600',
   },
   approved: {
     status: 'approved',
-    label: '✅ 已上架',
+    label: '已上架',
     hint: '通過審核，已公開在探索首頁。',
     bgClass: 'bg-green-100',
     textClass: 'text-green-700',
   },
   flagged: {
     status: 'flagged',
-    label: '🔍 待人工複審',
+    label: '待人工複審',
     hint: 'AI 判定需要管理員確認，通過後才會公開。',
     bgClass: 'bg-yellow-100',
     textClass: 'text-yellow-700',
   },
   rejected: {
     status: 'rejected',
-    label: '⛔ 未通過',
+    label: '未通過',
     hint: '內容不符刊登規範，僅您本人看得到。可修正後重新上架。',
     bgClass: 'bg-red-100',
     textClass: 'text-red-700',
@@ -492,19 +497,19 @@ export const ORDER_STATUS_META: Record<
   { label: string; hint: string; bgClass: string; textClass: string }
 > = {
   pending: {
-    label: '⏳ 待完成交付',
+    label: '待完成交付',
     hint: '雙方已媒合，約好交付方式後由任一方標記完成。',
     bgClass: 'bg-yellow-100',
     textClass: 'text-yellow-700',
   },
   completed: {
-    label: '✅ 交易完成',
+    label: '交易完成',
     hint: '交易已完成，買家可以給賣家評價。',
     bgClass: 'bg-green-100',
     textClass: 'text-green-700',
   },
   cancelled: {
-    label: '✖️ 已取消',
+    label: '已取消',
     hint: '這筆交易已取消，商品會重新開放出價。',
     bgClass: 'bg-neutral-100',
     textClass: 'text-neutral-500',
