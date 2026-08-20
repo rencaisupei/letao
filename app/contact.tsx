@@ -23,7 +23,7 @@ import {
 import { SelectChip } from '@/components/SelectChip';
 import { showAlert } from '@/lib/alert';
 import { SAGE } from '@/lib/constants';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 import {
   MESSAGE_MAX_LENGTH,
   MESSAGE_MIN_LENGTH,
@@ -54,7 +54,7 @@ function formatDate(value: string): string {
 }
 
 export default function ContactScreen() {
-  const userId = useLetaoStore((state) => state.userId);
+  const userId = useAppStore((state) => state.userId);
 
   const [category, setCategory] = useState<SupportCategory>('other');
   const [subject, setSubject] = useState('');
@@ -83,7 +83,7 @@ export default function ContactScreen() {
 
   const openMail = () => {
     void Linking.openURL(
-      `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`[樂淘] ${categoryLabel(category)}`)}`,
+      `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`[易拍通] ${categoryLabel(category)}`)}`,
     );
   };
 

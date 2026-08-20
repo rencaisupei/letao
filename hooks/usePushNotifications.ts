@@ -13,12 +13,12 @@ import {
   releasePushToken,
 } from '@/lib/push';
 import { useNotificationStore } from '@/lib/notificationStore';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 const FLUSH_INTERVAL_MS = 45_000;
 
 export function usePushNotifications() {
-  const userId = useLetaoStore((state) => state.userId);
+  const userId = useAppStore((state) => state.userId);
   const previousUserId = useRef<string | null>(null);
   const handledResponseId = useRef<string | null>(null);
 

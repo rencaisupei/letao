@@ -27,14 +27,14 @@ import {
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
 import { orderTotal, useOrderStore } from '@/lib/orderStore';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const orderId = id ?? '';
 
-  const userId = useLetaoStore((state) => state.userId);
-  const refreshFeed = useLetaoStore((state) => state.refresh);
+  const userId = useAppStore((state) => state.userId);
+  const refreshFeed = useAppStore((state) => state.refresh);
   const orders = useOrderStore((state) => state.orders);
   const loadOrders = useOrderStore((state) => state.load);
   const completeOrder = useOrderStore((state) => state.completeOrder);
@@ -189,7 +189,7 @@ export default function OrderDetailScreen() {
                 {orderTotal(order).toLocaleString('en-US')}
               </Text>
               <Text className="text-sage-deep mt-0.5 text-[11px] font-medium">
-                {isBuyer ? '賣家' : '買家'}：{order.counterpartName ?? '樂淘用戶'}
+                {isBuyer ? '賣家' : '買家'}：{order.counterpartName ?? '易拍通用戶'}
               </Text>
             </View>
           </View>

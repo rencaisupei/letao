@@ -27,7 +27,7 @@ import { registerServiceWorker } from '@/lib/registerServiceWorker';
 import { reportErrorToParent } from '@/lib/reportPreviewError';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { AlertHost } from '@/components/AlertHost';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 /**
@@ -59,11 +59,11 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
-  const initLetao = useLetaoStore((state) => state.init);
+  const initStore = useAppStore((state) => state.init);
 
   useEffect(() => {
-    initLetao();
-  }, [initLetao]);
+    initStore();
+  }, [initStore]);
 
   usePushNotifications();
 
@@ -160,7 +160,7 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: '#F8F9FA' },
           }}
         >
-          <Stack.Screen name="(tabs)" options={{ title: '樂淘拍賣', headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ title: '易拍通', headerShown: false }} />
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />
           <Stack.Screen name="listing/[id]" options={{ title: '商品詳情' }} />
           <Stack.Screen name="seller/[id]" options={{ title: '賣家主頁' }} />

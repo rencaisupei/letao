@@ -5,13 +5,13 @@ import { Bell } from 'lucide-react-native';
 
 import { SAGE } from '@/lib/constants';
 import { useNotificationStore } from '@/lib/notificationStore';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 const POLL_INTERVAL_MS = 20_000;
 
 /** Header bell with the unread badge. Keeps polling while any tab is mounted. */
 export function NotificationBell() {
-  const userId = useLetaoStore((state) => state.userId);
+  const userId = useAppStore((state) => state.userId);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const load = useNotificationStore((state) => state.load);
   const reset = useNotificationStore((state) => state.reset);

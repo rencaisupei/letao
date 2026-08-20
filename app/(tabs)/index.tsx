@@ -9,18 +9,18 @@ import { ListingCard } from '@/components/ListingCard';
 import { SelectChip } from '@/components/SelectChip';
 import { ALL_CATEGORY, CATEGORIES, SAGE, SORT_OPTIONS } from '@/lib/constants';
 import { DEFAULT_FILTERS, activeFilterCount, applyFilters } from '@/lib/filters';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 const GRID_GAP = 12;
 
 export default function ExploreScreen() {
   const { width } = useWindowDimensions();
-  const userId = useLetaoStore((state) => state.userId);
-  const listings = useLetaoStore((state) => state.listings);
-  const promotedUntil = useLetaoStore((state) => state.promotedUntil);
-  const favorites = useLetaoStore((state) => state.favorites);
-  const isRefreshing = useLetaoStore((state) => state.isRefreshing);
-  const refresh = useLetaoStore((state) => state.refresh);
+  const userId = useAppStore((state) => state.userId);
+  const listings = useAppStore((state) => state.listings);
+  const promotedUntil = useAppStore((state) => state.promotedUntil);
+  const favorites = useAppStore((state) => state.favorites);
+  const isRefreshing = useAppStore((state) => state.isRefreshing);
+  const refresh = useAppStore((state) => state.refresh);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -88,7 +88,7 @@ export default function ExploreScreen() {
                   <Text className="text-sage-deep text-[13px] font-bold">現在是訪客瀏覽模式</Text>
                 </View>
                 <Text className="text-sage-deep/90 mt-1.5 text-[11px] leading-4">
-                  商品可以自由瀏覽。要出價、上架、私訊或收藏，買賣雙方都需要先註冊樂淘帳號。
+                  商品可以自由瀏覽。要出價、上架、私訊或收藏，買賣雙方都需要先註冊易拍通帳號。
                 </Text>
                 <Button
                   size="sm"

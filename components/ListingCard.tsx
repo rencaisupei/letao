@@ -62,7 +62,7 @@ export function ListingCard({
           >
             <Leaf size={30} color={SAGE} strokeWidth={1.6} />
             <Text className="text-sage-deep mt-2 text-[11px] font-semibold">
-              {listing.category ?? '樂淘好物'}
+              {listing.category ?? '易拍通好物'}
             </Text>
           </LinearGradient>
         )}

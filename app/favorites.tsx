@@ -7,15 +7,15 @@ import { HeartOff } from 'lucide-react-native';
 import { ListingCard } from '@/components/ListingCard';
 import { SAGE } from '@/lib/constants';
 import { fetchListingsByIds } from '@/lib/queries';
-import { type Listing, useLetaoStore } from '@/lib/store';
+import { type Listing, useAppStore } from '@/lib/store';
 
 const GRID_GAP = 12;
 
 export default function FavoritesScreen() {
   const { width } = useWindowDimensions();
-  const favorites = useLetaoStore((state) => state.favorites);
-  const listings = useLetaoStore((state) => state.listings);
-  const promotedUntil = useLetaoStore((state) => state.promotedUntil);
+  const favorites = useAppStore((state) => state.favorites);
+  const listings = useAppStore((state) => state.listings);
+  const promotedUntil = useAppStore((state) => state.promotedUntil);
 
   const [extra, setExtra] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(false);

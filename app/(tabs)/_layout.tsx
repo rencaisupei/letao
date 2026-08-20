@@ -5,10 +5,10 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { BrandHeader } from '@/components/BrandHeader';
 import { CANVAS, SAGE } from '@/lib/constants';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 export default function TabLayout() {
-  const status = useLetaoStore((state) => state.status);
+  const status = useAppStore((state) => state.status);
 
   if (status === 'loading') {
     return (

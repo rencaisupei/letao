@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { Redirect, Stack } from 'expo-router';
-import { Leaf } from 'lucide-react-native';
 
+import { BrandMark } from '@/components/BrandHeader';
 import { PasswordField } from '@/components/PasswordField';
 import { SelectChip } from '@/components/SelectChip';
 import { bilt } from '@/lib/bilt';
@@ -16,9 +16,9 @@ import {
   describeSignUpError,
   describeVerifyError,
 } from '@/lib/authErrors';
-import { ROLE_OPTIONS, SAGE, type UserRole } from '@/lib/constants';
+import { ROLE_OPTIONS, type UserRole } from '@/lib/constants';
 import { goBackOrReplace } from '@/lib/navigation';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 type Mode = 'password' | 'signup' | 'code' | 'reset';
 type Stage = 'input' | 'verify';
@@ -41,8 +41,8 @@ function FieldLabel({ children, className }: { children: string; className?: str
 }
 
 export default function SignInScreen() {
-  const status = useLetaoStore((state) => state.status);
-  const setPendingRole = useLetaoStore((state) => state.setPendingRole);
+  const status = useAppStore((state) => state.status);
+  const setPendingRole = useAppStore((state) => state.setPendingRole);
 
   const [mode, setMode] = useState<Mode>('password');
   const [stage, setStage] = useState<Stage>('input');
@@ -332,12 +332,14 @@ export default function SignInScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="items-center">
-          <View className="bg-mint h-14 w-14 items-center justify-center rounded-2xl">
-            <Leaf size={28} color={SAGE} strokeWidth={1.8} />
+          <View className="bg-background h-16 w-16 items-center justify-center rounded-2xl border border-neutral-200">
+            <BrandMark size={38} />
           </View>
-          <Text className="text-foreground mt-4 text-[22px] font-bold">樂淘拍賣 Letao</Text>
-          <Text className="text-sage-deep mt-1 text-[11px] font-semibold tracking-[3px]">
-            新 歡 舊 愛 ∙ 皆 可 樂 淘
+          <Text className="text-foreground mt-4 text-[22px] font-extrabold tracking-[1px]">
+            易拍通 YI PAI TONG
+          </Text>
+          <Text className="text-muted mt-1 text-[11px] font-semibold tracking-[3px]">
+            易 拍 即 通 ∙ 成 交 輕 鬆
           </Text>
         </View>
 
@@ -379,7 +381,7 @@ export default function SignInScreen() {
                   設定一組密碼，之後就能直接登入。首次註冊仍需一次 Email 驗證碼確認信箱。
                 </Text>
 
-                <FieldLabel className="mt-4">您想以什麼身分使用樂淘？</FieldLabel>
+                <FieldLabel className="mt-4">您想以什麼身分使用易拍通？</FieldLabel>
                 <View className="mt-2 gap-1.5">
                   {ROLE_OPTIONS.map((option) => (
                     <SelectChip
@@ -464,7 +466,7 @@ export default function SignInScreen() {
                   不想記密碼就用這個方式，驗證碼會寄到你的信箱。沒有帳號也會直接建立。
                 </Text>
 
-                <FieldLabel className="mt-4">您想以什麼身分使用樂淘？</FieldLabel>
+                <FieldLabel className="mt-4">您想以什麼身分使用易拍通？</FieldLabel>
                 <View className="mt-2 gap-1.5">
                   {ROLE_OPTIONS.map((option) => (
                     <SelectChip

@@ -1,12 +1,12 @@
 {
-  "name": "Your App Name",
-  "short_name": "Your App",
-  "description": "An app built with Bilt",
+  "name": "易拍通 YI PAI TONG",
+  "short_name": "易拍通",
+  "description": "易拍即通 · 成交輕鬆：台灣二手好物拍賣交易平台",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#6366f1",
+  "theme_color": "#4C7C59",
   "background_color": "#ffffff",
   "icons": [
     {

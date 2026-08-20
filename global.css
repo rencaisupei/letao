@@ -39,7 +39,7 @@
 
 @source './node_modules/heroui-native/lib';
 
-/* Letao brand palette: sage green (#87A987) + mint (#E2EFE2) */
+/* 易拍通 brand palette: sage green (#87A987) + mint (#E2EFE2) */
 @theme {
   --color-sage: oklch(0.723 0.079 145);
   --color-sage-deep: oklch(0.6 0.075 145);

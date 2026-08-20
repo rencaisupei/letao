@@ -10,7 +10,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
   return {
     ...config,
-    name: 'EcoSwap',
+    name: '易拍通',
     slug: 'ecoswap',
     newArchEnabled: true,
     version: process.env.BILT_APP_VERSION ?? '1.0.0',
@@ -47,8 +47,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         'expo-image-picker',
         {
-          photosPermission: '樂淘需要讀取相簿，讓您挑選要上架的商品照片。',
-          cameraPermission: '樂淘需要使用相機，讓您直接拍攝商品照片。',
+          photosPermission: '易拍通需要讀取相簿，讓您挑選要上架的商品照片。',
+          cameraPermission: '易拍通需要使用相機，讓您直接拍攝商品照片。',
         },
       ],
       [

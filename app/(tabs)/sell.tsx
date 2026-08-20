@@ -45,11 +45,11 @@ import {
   uploadFailureMessage,
   uploadListingPhoto,
 } from '@/lib/uploads';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 export default function SellScreen() {
-  const userId = useLetaoStore((state) => state.userId);
-  const createListing = useLetaoStore((state) => state.createListing);
+  const userId = useAppStore((state) => state.userId);
+  const createListing = useAppStore((state) => state.createListing);
 
   const [title, setTitle] = useState('');
   const [price, setPrice] = useState('');
@@ -270,7 +270,7 @@ export default function SellScreen() {
           <UserPlus size={32} color={SAGE} strokeWidth={1.6} />
           <Text className="text-foreground mt-4 text-base font-bold">上架商品需要註冊帳號</Text>
           <Text className="text-muted mt-2 text-center text-[13px] leading-5">
-            賣家必須註冊，商品才能綁定賣家身分、接受買家評價與累積信任度，也才能通過樂淘的內容審核流程。
+            賣家必須註冊，商品才能綁定賣家身分、接受買家評價與累積信任度，也才能通過易拍通的內容審核流程。
           </Text>
           <Button className="mt-4" onPress={() => router.push('/sign-in')}>
             <Button.Label>註冊成為賣家</Button.Label>
@@ -293,7 +293,7 @@ export default function SellScreen() {
         <Text className="text-foreground text-base font-bold">✦ 釋出您的個人收藏</Text>
 
         <View className="mt-3 rounded-xl border border-red-100 bg-red-50 p-4">
-          <Text className="text-[13px] font-bold text-red-800">⚠️ 樂淘安全與法規合規公告</Text>
+          <Text className="text-[13px] font-bold text-red-800">⚠️ 易拍通安全與法規合規公告</Text>
           <Text className="mt-2 text-[11px] leading-4 text-red-800/90">
             依據台灣法律與兩大 App
             商店審查指南，本平台【嚴禁刊登】以下商品，違者將直接刪文並永久封鎖帳號：
@@ -434,7 +434,7 @@ export default function SellScreen() {
         <View className="bg-background mt-3 flex-row items-start gap-2 rounded-xl border border-neutral-200 p-3">
           <ShieldCheck size={14} color={SAGE} strokeWidth={2} />
           <Text className="text-muted flex-1 text-[11px] leading-4">
-            樂淘安全提醒：面交請選擇人潮眾多、設有監視器的公共場所；超商交貨便請保留寄件單據，交易紀錄會保存於雙方帳號。
+            易拍通安全提醒：面交請選擇人潮眾多、設有監視器的公共場所；超商交貨便請保留寄件單據，交易紀錄會保存於雙方帳號。
           </Text>
         </View>
 

@@ -53,34 +53,34 @@ import {
 } from '@/lib/constants';
 import { useNotificationStore } from '@/lib/notificationStore';
 import { useOrderStore } from '@/lib/orderStore';
-import { type Listing, useLetaoStore } from '@/lib/store';
+import { type Listing, useAppStore } from '@/lib/store';
 import { formatRemaining } from '@/lib/utils';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function ProfileScreen() {
   const { width } = useWindowDimensions();
-  const userId = useLetaoStore((state) => state.userId);
-  const username = useLetaoStore((state) => state.username);
-  const avatarUrl = useLetaoStore((state) => state.avatarUrl);
-  const role = useLetaoStore((state) => state.role);
-  const trustScore = useLetaoStore((state) => state.trustScore);
-  const verified = useLetaoStore((state) => state.verified);
-  const balance = useLetaoStore((state) => state.balance);
-  const lastClaimAt = useLetaoStore((state) => state.lastClaimAt);
-  const claimStreak = useLetaoStore((state) => state.claimStreak);
-  const listings = useLetaoStore((state) => state.listings);
-  const favorites = useLetaoStore((state) => state.favorites);
-  const promotedUntil = useLetaoStore((state) => state.promotedUntil);
-  const isRefreshing = useLetaoStore((state) => state.isRefreshing);
-  const refresh = useLetaoStore((state) => state.refresh);
-  const bump = useLetaoStore((state) => state.bump);
-  const claimDaily = useLetaoStore((state) => state.claimDaily);
-  const setListingStatus = useLetaoStore((state) => state.setListingStatus);
-  const setListingPayments = useLetaoStore((state) => state.setListingPayments);
-  const setListingQuantity = useLetaoStore((state) => state.setListingQuantity);
-  const deleteListing = useLetaoStore((state) => state.deleteListing);
-  const signOut = useLetaoStore((state) => state.signOut);
+  const userId = useAppStore((state) => state.userId);
+  const username = useAppStore((state) => state.username);
+  const avatarUrl = useAppStore((state) => state.avatarUrl);
+  const role = useAppStore((state) => state.role);
+  const trustScore = useAppStore((state) => state.trustScore);
+  const verified = useAppStore((state) => state.verified);
+  const balance = useAppStore((state) => state.balance);
+  const lastClaimAt = useAppStore((state) => state.lastClaimAt);
+  const claimStreak = useAppStore((state) => state.claimStreak);
+  const listings = useAppStore((state) => state.listings);
+  const favorites = useAppStore((state) => state.favorites);
+  const promotedUntil = useAppStore((state) => state.promotedUntil);
+  const isRefreshing = useAppStore((state) => state.isRefreshing);
+  const refresh = useAppStore((state) => state.refresh);
+  const bump = useAppStore((state) => state.bump);
+  const claimDaily = useAppStore((state) => state.claimDaily);
+  const setListingStatus = useAppStore((state) => state.setListingStatus);
+  const setListingPayments = useAppStore((state) => state.setListingPayments);
+  const setListingQuantity = useAppStore((state) => state.setListingQuantity);
+  const deleteListing = useAppStore((state) => state.deleteListing);
+  const signOut = useAppStore((state) => state.signOut);
   const orders = useOrderStore((state) => state.orders);
   const loadOrders = useOrderStore((state) => state.load);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
@@ -295,7 +295,7 @@ export default function ProfileScreen() {
       <View className="bg-canvas flex-1 p-4">
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={32} color={SAGE} strokeWidth={1.6} />
-          <Text className="text-foreground mt-4 text-base font-bold">建立您的樂淘帳號</Text>
+          <Text className="text-foreground mt-4 text-base font-bold">建立您的易拍通帳號</Text>
           <Text className="text-muted mt-2 text-center text-[13px] leading-5">
             註冊後才會有 EcoCoins
             錢包、收藏清單、私訊、評價與信任度。買家與賣家共用同一組帳號，可隨時切換身分。
@@ -311,7 +311,7 @@ export default function ProfileScreen() {
             <Text className="text-foreground text-[13px] font-semibold">為什麼一定要註冊</Text>
           </View>
           <Text className="text-muted mt-2 text-[12px] leading-5">
-            樂淘的防砍價機制、賣家信任度與內容審核都綁在帳號上。沒有帳號的訪客可以自由瀏覽商品，但無法出價、上架、私訊或收藏。
+            易拍通的防砍價機制、賣家信任度與內容審核都綁在帳號上。沒有帳號的訪客可以自由瀏覽商品，但無法出價、上架、私訊或收藏。
           </Text>
         </View>
 
@@ -357,7 +357,7 @@ export default function ProfileScreen() {
               <View className="ml-3 flex-1">
                 <View className="flex-row items-center gap-1">
                   <Text className="text-foreground text-[15px] font-bold">
-                    {username ?? '樂淘用戶'}
+                    {username ?? '易拍通用戶'}
                   </Text>
                   {verified ? <BadgeCheck size={15} color={SAGE} strokeWidth={2} /> : null}
                 </View>
@@ -509,7 +509,7 @@ export default function ProfileScreen() {
               void signOut();
             }}
           >
-            <Button.Label>登出樂淘帳號</Button.Label>
+            <Button.Label>登出易拍通帳號</Button.Label>
           </Button>
         }
         renderItem={({ item }) => {

@@ -9,7 +9,7 @@ import { goBackOrReplace } from '@/lib/navigation';
 import { notificationHref } from '@/lib/push';
 import { type AppNotification, useNotificationStore } from '@/lib/notificationStore';
 import { PushToggle } from '@/components/PushToggle';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -30,7 +30,7 @@ function openTarget(item: AppNotification) {
 }
 
 export default function NotificationsScreen() {
-  const userId = useLetaoStore((state) => state.userId);
+  const userId = useAppStore((state) => state.userId);
   const notifications = useNotificationStore((state) => state.notifications);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const isLoading = useNotificationStore((state) => state.isLoading);

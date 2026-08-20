@@ -20,16 +20,16 @@ import { MIN_PASSWORD_LENGTH, describePasswordUpdateError } from '@/lib/authErro
 import { bilt } from '@/lib/bilt';
 import { ROLE_OPTIONS, SAGE, type UserRole } from '@/lib/constants';
 import { goBackOrReplace } from '@/lib/navigation';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 import { pickPhotosFromLibrary, uploadAvatar, uploadFailureMessage } from '@/lib/uploads';
 
 export default function AccountScreen() {
-  const userId = useLetaoStore((state) => state.userId);
-  const storedUsername = useLetaoStore((state) => state.username);
-  const storedBio = useLetaoStore((state) => state.bio);
-  const storedRole = useLetaoStore((state) => state.role);
-  const storedAvatar = useLetaoStore((state) => state.avatarUrl);
-  const updateProfile = useLetaoStore((state) => state.updateProfile);
+  const userId = useAppStore((state) => state.userId);
+  const storedUsername = useAppStore((state) => state.username);
+  const storedBio = useAppStore((state) => state.bio);
+  const storedRole = useAppStore((state) => state.role);
+  const storedAvatar = useAppStore((state) => state.avatarUrl);
+  const updateProfile = useAppStore((state) => state.updateProfile);
 
   const [username, setUsername] = useState(storedUsername ?? '');
   const [bio, setBio] = useState(storedBio ?? '');

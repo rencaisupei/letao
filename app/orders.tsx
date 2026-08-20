@@ -25,13 +25,13 @@ import {
 import { resolveListingImage } from '@/lib/demoImages';
 import { goBackOrReplace } from '@/lib/navigation';
 import { type Order, orderTotal, useOrderStore } from '@/lib/orderStore';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 type Tab = 'buying' | 'selling';
 
 export default function OrdersScreen() {
-  const userId = useLetaoStore((state) => state.userId);
-  const refreshFeed = useLetaoStore((state) => state.refresh);
+  const userId = useAppStore((state) => state.userId);
+  const refreshFeed = useAppStore((state) => state.refresh);
   const orders = useOrderStore((state) => state.orders);
   const isLoading = useOrderStore((state) => state.isLoading);
   const load = useOrderStore((state) => state.load);
@@ -234,7 +234,7 @@ export default function OrdersScreen() {
                     {orderTotal(item).toLocaleString('en-US')}
                   </Text>
                   <Text className="text-sage-deep mt-0.5 text-[11px] font-medium">
-                    {isBuyer ? '賣家' : '買家'}：{item.counterpartName ?? '樂淘用戶'}
+                    {isBuyer ? '賣家' : '買家'}：{item.counterpartName ?? '易拍通用戶'}
                   </Text>
                 </View>
               </View>

@@ -1,4 +1,4 @@
-// 樂淘拍賣：推播通知
+// 易拍通：推播通知
 // notifications 表是站內通知的唯一入口，推播只是它的第二個出口：
 //   1. 裝置註冊 Expo push token（存進 push_tokens）
 //   2. 任何寫入通知的動作之後，客戶端呼叫 push-dispatch edge function 把待推播的通知送出去
@@ -86,7 +86,7 @@ export async function configurePushRuntime(): Promise<void> {
 
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
-      name: '樂淘通知',
+      name: '易拍通提醒',
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 200, 150, 200],
       lightColor: '#4C7C59',
@@ -242,7 +242,7 @@ export function dispatchPendingPush(delayMs = DISPATCH_DEBOUNCE_MS): void {
 
 /** Fallback alert for environments without a remote token (Expo Go, simulator, web). */
 export async function presentLocalNotification(payload: PushLocalPayload): Promise<void> {
-  const body = payload.body ?? '開啟樂淘查看詳情';
+  const body = payload.body ?? '開啟易拍通查看詳情';
 
   if (Platform.OS === 'web') {
     const web = webNotification();

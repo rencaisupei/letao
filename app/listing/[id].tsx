@@ -70,17 +70,17 @@ import {
   quoteListingShipping,
   sourceLabel,
 } from '@/lib/shipping';
-import { type Listing, useLetaoStore } from '@/lib/store';
+import { type Listing, useAppStore } from '@/lib/store';
 
 export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
 
-  const userId = useLetaoStore((state) => state.userId);
-  const listings = useLetaoStore((state) => state.listings);
-  const reportListing = useLetaoStore((state) => state.reportListing);
-  const setListingPayments = useLetaoStore((state) => state.setListingPayments);
-  const refreshFeed = useLetaoStore((state) => state.refresh);
+  const userId = useAppStore((state) => state.userId);
+  const listings = useAppStore((state) => state.listings);
+  const reportListing = useAppStore((state) => state.reportListing);
+  const setListingPayments = useAppStore((state) => state.setListingPayments);
+  const refreshFeed = useAppStore((state) => state.refresh);
   const startConversation = useChatStore((state) => state.startConversation);
   const orders = useOrderStore((state) => state.orders);
   const loadOrders = useOrderStore((state) => state.load);
@@ -230,7 +230,7 @@ export default function ListingDetailScreen() {
       showAlert({
         title: '⚠️ 出價遭系統攔截',
         tone: 'danger',
-        message: `樂淘交易所防砍價機制：\n${
+        message: `易拍通交易所防砍價機制：\n${
           condition.minRatio === 0.9 ? '【全新品】最低出價限制 90%' : '【二手品】最低出價限制 80%'
         }\n\n該單品最低接受金額為：NT$ ${minAllowed.toLocaleString('en-US')}`,
       });
@@ -369,7 +369,7 @@ export default function ListingDetailScreen() {
     const payMeta = getPayment(result.paymentMethod);
 
     showAlert({
-      title: '🤝 樂淘媒合成功！交易單已建立',
+      title: '🤝 易拍通媒合成功！交易單已建立',
       tone: 'success',
       message: `您與賣家針對「${listing.title}」已達成共識，出價 NT$ ${offer.toLocaleString('en-US')}${units > 1 ? ` × ${units} 件` : ''}。\n\n運送方式：${locationInfo}\n付款方式：${paymentLabel(result.paymentMethod)}${payMeta ? `\n${payMeta.hint}` : ''}\n應付總計：NT$ ${(offer * units + fee).toLocaleString('en-US')}（商品 ${offer.toLocaleString('en-US')}${units > 1 ? ` × ${units}` : ''} + 運費 ${fee.toLocaleString('en-US')}）\n\n交付完成後回到「我的交易」標記完成，就能給賣家評價。`,
       confirmLabel: '前往私訊',
@@ -482,7 +482,7 @@ export default function ListingDetailScreen() {
       title: ok ? '已送出檢舉' : '檢舉沒有送出',
       tone: ok ? 'success' : 'danger',
       message: ok
-        ? '樂淘管理員會在後台看到這筆檢舉並人工複審。感謝你協助維護交易品質。'
+        ? '易拍通管理員會在後台看到這筆檢舉並人工複審。感謝你協助維護交易品質。'
         : '請稍後再試一次。',
     });
   };
@@ -550,7 +550,7 @@ export default function ListingDetailScreen() {
             >
               <Leaf size={40} color={SAGE} strokeWidth={1.5} />
               <Text className="text-sage-deep mt-2 text-[12px] font-semibold">
-                {listing.category ?? '樂淘好物'}
+                {listing.category ?? '易拍通好物'}
               </Text>
             </LinearGradient>
           )}
@@ -853,7 +853,7 @@ export default function ListingDetailScreen() {
                     >
                       <View className="flex-row items-center justify-between">
                         <Text className="text-foreground text-[13px] font-bold">
-                          {order.counterpartName ?? '樂淘買家'}
+                          {order.counterpartName ?? '易拍通買家'}
                         </Text>
                         <View className={`rounded-md px-1.5 py-0.5 ${meta.bgClass}`}>
                           <Text className={`text-[9px] font-bold ${meta.textClass}`}>
@@ -917,7 +917,7 @@ export default function ListingDetailScreen() {
             <View className="ml-3 flex-1">
               <View className="flex-row items-center gap-1">
                 <Text className="text-foreground text-[14px] font-bold">
-                  {listing.seller?.username ?? '樂淘賣家'}
+                  {listing.seller?.username ?? '易拍通賣家'}
                 </Text>
                 {listing.seller?.verified_status ? (
                   <BadgeCheck size={14} color={SAGE} strokeWidth={2} />

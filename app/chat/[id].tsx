@@ -14,7 +14,7 @@ import { ChevronRight, Send, ShieldCheck } from 'lucide-react-native';
 
 import { SAGE } from '@/lib/constants';
 import { type Message, useChatStore } from '@/lib/chatStore';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -24,7 +24,7 @@ function timeLabel(iso: string): string {
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const userId = useLetaoStore((state) => state.userId);
+  const userId = useAppStore((state) => state.userId);
 
   const conversations = useChatStore((state) => state.conversations);
   const messagesMap = useChatStore((state) => state.messages);
@@ -46,8 +46,8 @@ export default function ConversationScreen() {
   const isSeller = conversation?.seller_id === userId;
   const counterpart = conversation
     ? isSeller
-      ? (conversation.buyer_username ?? '樂淘買家')
-      : (conversation.seller_username ?? '樂淘賣家')
+      ? (conversation.buyer_username ?? '易拍通買家')
+      : (conversation.seller_username ?? '易拍通賣家')
     : '對話';
 
   const sync = useCallback(() => {
@@ -124,7 +124,7 @@ export default function ConversationScreen() {
           <View className="bg-mint mb-2 flex-row items-start gap-2 rounded-xl p-3">
             <ShieldCheck size={15} color={SAGE} strokeWidth={2} />
             <Text className="text-sage-deep flex-1 text-[11px] leading-4">
-              樂淘安全提醒：請勿在對話中提供銀行帳號、驗證碼或私人證件。面交請約在人潮眾多、設有監視器的公共場所。
+              易拍通安全提醒：請勿在對話中提供銀行帳號、驗證碼或私人證件。面交請約在人潮眾多、設有監視器的公共場所。
             </Text>
           </View>
         }

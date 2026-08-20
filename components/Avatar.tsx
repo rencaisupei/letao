@@ -23,7 +23,7 @@ export function Avatar({ uri, name, size = 44, className }: AvatarProps) {
           source={{ uri }}
           style={{ width: size, height: size }}
           resizeMode="cover"
-          accessibilityLabel={`${name ?? '樂淘用戶'}的頭像`}
+          accessibilityLabel={`${name ?? '易拍通用戶'}的頭像`}
         />
       ) : (
         <Text style={{ fontSize: Math.round(size * 0.4) }} className="text-sage-deep font-bold">

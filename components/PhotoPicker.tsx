@@ -35,8 +35,8 @@ export function PhotoPicker({ photos, onChange, isDisabled = false }: PhotoPicke
           tone: 'danger',
           message:
             source === 'library'
-              ? '請在系統設定允許樂淘讀取相簿，才能挑選商品照片。'
-              : '請在系統設定允許樂淘使用相機，才能拍攝商品照片。',
+              ? '請在系統設定允許易拍通讀取相簿，才能挑選商品照片。'
+              : '請在系統設定允許易拍通使用相機，才能拍攝商品照片。',
         });
       }
       return;

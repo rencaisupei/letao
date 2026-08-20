@@ -175,7 +175,7 @@ export type ClaimResult = {
   nextClaimAt: string | null;
 };
 
-type LetaoState = {
+type AppState = {
   status: 'loading' | 'guest' | 'ready';
   userId: string | null;
   username: string | null;
@@ -338,7 +338,7 @@ export function toListing(row: ListingRow): Listing {
 let subscribed = false;
 let pendingRole: UserRole | null = null;
 
-export const useLetaoStore = create<LetaoState>((set, get) => {
+export const useAppStore = create<AppState>((set, get) => {
   async function loadFeed() {
     const [listingsResult, promotionsResult] = await Promise.all([
       bilt

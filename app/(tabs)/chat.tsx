@@ -7,7 +7,7 @@ import { Leaf, MessageCircle, UserPlus } from 'lucide-react-native';
 import { SAGE } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
 import { useChatStore } from '@/lib/chatStore';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 
 const POLL_INTERVAL_MS = 6000;
 
@@ -25,7 +25,7 @@ function relativeTime(iso: string | null): string {
 }
 
 export default function ChatScreen() {
-  const userId = useLetaoStore((state) => state.userId);
+  const userId = useAppStore((state) => state.userId);
   const conversations = useChatStore((state) => state.conversations);
   const isLoadingList = useChatStore((state) => state.isLoadingList);
   const loadConversations = useChatStore((state) => state.loadConversations);
@@ -87,8 +87,8 @@ export default function ChatScreen() {
         renderItem={({ item }) => {
           const isSeller = item.seller_id === userId;
           const counterpart = isSeller
-            ? (item.buyer_username ?? '樂淘買家')
-            : (item.seller_username ?? '樂淘賣家');
+            ? (item.buyer_username ?? '易拍通買家')
+            : (item.seller_username ?? '易拍通賣家');
           const source = resolveListingImage(item.listing_images?.[0]);
 
           return (

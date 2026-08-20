@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import { Heart } from 'lucide-react-native';
 
 import { requireAccount } from '@/lib/requireAccount';
-import { useLetaoStore } from '@/lib/store';
+import { useAppStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
 type FavoriteButtonProps = {
@@ -14,8 +14,8 @@ type FavoriteButtonProps = {
 const ROSE = '#E11D48';
 
 export function FavoriteButton({ listingId, size = 18, className }: FavoriteButtonProps) {
-  const favorites = useLetaoStore((state) => state.favorites);
-  const toggleFavorite = useLetaoStore((state) => state.toggleFavorite);
+  const favorites = useAppStore((state) => state.favorites);
+  const toggleFavorite = useAppStore((state) => state.toggleFavorite);
   const isSaved = favorites[listingId];
 
   const handlePress = () => {

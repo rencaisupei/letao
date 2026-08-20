@@ -21,13 +21,13 @@ function describe(mode: PushMode, enabled: boolean, permission: PushPermission):
   }
   if (!enabled) {
     return permission === 'denied'
-      ? '已被系統封鎖。請到裝置的通知設定允許樂淘傳送通知，再回來開啟。'
+      ? '已被系統封鎖。請到裝置的通知設定允許易拍通傳送通知，再回來開啟。'
       : '關閉中。訊息仍會留在通知中心，只是不會主動提醒您。';
   }
   if (mode === 'remote') {
     return '已開啟。收到私訊、出價、交易變更、審核結果與客服回覆時，會立刻推播到這台裝置。';
   }
-  return '已開啟。這個環境（Expo Go、模擬器或網頁）只能在樂淘開啟時提醒；安裝正式版或開發版後才會有背景推播。';
+  return '已開啟。這個環境（Expo Go、模擬器或網頁）只能在易拍通開啟時提醒；安裝正式版或開發版後才會有背景推播。';
 }
 
 /** Per-device push switch. Registering also asks for the system notification permission. */
@@ -74,7 +74,7 @@ export function PushToggle() {
           showAlert({
             title: '需要通知權限',
             message:
-              '系統目前不允許樂淘傳送通知。請到裝置的「設定 → 通知」允許樂淘，再回來開啟推播。',
+              '系統目前不允許易拍通傳送通知。請到裝置的「設定 → 通知」允許易拍通，再回來開啟推播。',
           });
           return;
         }

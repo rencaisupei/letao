@@ -30,13 +30,13 @@ import {
   submitReview,
 } from '@/lib/queries';
 import { requireAccount } from '@/lib/requireAccount';
-import { type Listing, useLetaoStore } from '@/lib/store';
+import { type Listing, useAppStore } from '@/lib/store';
 
 export default function SellerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
-  const userId = useLetaoStore((state) => state.userId);
-  const refresh = useLetaoStore((state) => state.refresh);
+  const userId = useAppStore((state) => state.userId);
+  const refresh = useAppStore((state) => state.refresh);
   const orders = useOrderStore((state) => state.orders);
   const loadOrders = useOrderStore((state) => state.load);
 
@@ -89,7 +89,7 @@ export default function SellerScreen() {
       showAlert({
         title: '完成交易後才能評價',
         message:
-          '樂淘的評價只開放給真實成交的買家：先在商品頁出價媒合，交付完成後在「我的交易」標記完成，就可以回來評價這位賣家。',
+          '易拍通的評價只開放給真實成交的買家：先在商品頁出價媒合，交付完成後在「我的交易」標記完成，就可以回來評價這位賣家。',
         confirmLabel: '查看我的交易',
         dismissLabel: '我知道了',
         onConfirm: () => router.push('/orders'),
@@ -151,7 +151,7 @@ export default function SellerScreen() {
           <View className="ml-3 flex-1">
             <View className="flex-row items-center gap-1">
               <Text className="text-foreground text-[16px] font-bold">
-                {profile?.username ?? '樂淘賣家'}
+                {profile?.username ?? '易拍通賣家'}
               </Text>
               {profile?.verified_status ? (
                 <BadgeCheck size={15} color={SAGE} strokeWidth={2} />
@@ -210,7 +210,7 @@ export default function SellerScreen() {
             >
               <View className="flex-row items-center justify-between">
                 <Text className="text-foreground text-[13px] font-semibold">
-                  {review.reviewerName ?? '樂淘買家'}
+                  {review.reviewerName ?? '易拍通買家'}
                   {review.reviewer_id === userId ? '（我）' : ''}
                 </Text>
                 <Text className="text-muted text-[10px]">

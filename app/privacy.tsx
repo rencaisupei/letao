@@ -15,7 +15,7 @@ type Section = {
 const SECTIONS: Section[] = [
   {
     title: '一、我們收集哪些資料',
-    paragraphs: ['樂淘拍賣（以下稱「本平台」）只收集提供二手交易服務所必要的資料：'],
+    paragraphs: ['易拍通（以下稱「本平台」）只收集提供二手交易服務所必要的資料：'],
     bullets: [
       '帳號資料：電子郵件地址與登入密碼。密碼經加密保管，平台人員無法看到明文。',
       '個人檔案：暱稱、頭像、個人簡介、買賣身分、信任度與評價。',
@@ -124,10 +124,10 @@ export default function PrivacyScreen() {
       <View className="bg-background rounded-2xl border border-neutral-200 p-5">
         <View className="flex-row items-center gap-2">
           <ShieldCheck size={18} color={SAGE} strokeWidth={2} />
-          <Text className="text-foreground text-base font-bold">樂淘拍賣隱私權政策</Text>
+          <Text className="text-foreground text-base font-bold">易拍通隱私權政策</Text>
         </View>
         <Text className="text-muted mt-2 text-[12px] leading-5">
-          本政策說明樂淘拍賣如何蒐集、使用與保護您的個人資料。註冊帳號或使用本平台服務，即表示您已閱讀並同意本政策。
+          本政策說明易拍通如何蒐集、使用與保護您的個人資料。註冊帳號或使用本平台服務，即表示您已閱讀並同意本政策。
         </Text>
         <Text className="text-sage-deep mt-3 text-[11px] font-semibold">
           生效日期：{POLICY_UPDATED_AT}
