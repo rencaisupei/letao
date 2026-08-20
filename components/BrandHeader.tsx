@@ -13,13 +13,10 @@ const BRAND_LABEL = '易拍通 YI PAI TONG，易拍即通 · 成交輕鬆';
  */
 const EMBLEM_TOP = 0.02;
 const EMBLEM_BOTTOM = 0.66;
-const FALLBACK_ASPECT = 479 / 359;
 
-const artworkSource = Image.resolveAssetSource(brandArtwork);
-const ARTWORK_ASPECT =
-  artworkSource?.width && artworkSource?.height
-    ? artworkSource.height / artworkSource.width
-    : FALLBACK_ASPECT;
+// Intrinsic size of assets/brand-logo-full.png (359 x 479). Kept as a constant
+// because Image.resolveAssetSource does not exist on react-native-web.
+const ARTWORK_ASPECT = 479 / 359;
 
 export function BrandMark({ size = 44 }: { size?: number }) {
   // Height of the emblem band, expressed in multiples of the artwork width.
