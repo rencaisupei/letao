@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } fro
 import { Button } from 'heroui-native';
 import { Redirect, Stack } from 'expo-router';
 
-import { BrandMark } from '@/components/BrandHeader';
+import { BrandLockup } from '@/components/BrandHeader';
 import { PasswordField } from '@/components/PasswordField';
 import { SelectChip } from '@/components/SelectChip';
 import { bilt } from '@/lib/bilt';
@@ -332,7 +332,7 @@ export default function SignInScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="items-center">
-          <BrandMark size={150} />
+          <BrandLockup layout="stacked" />
         </View>
 
         <View className="bg-background mt-8 rounded-2xl border border-neutral-200 p-5">
