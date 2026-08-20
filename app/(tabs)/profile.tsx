@@ -16,6 +16,7 @@ import {
   Bell,
   Boxes,
   ChevronRight,
+  CircleHelp,
   Coins,
   FileLock2,
   Flame,
@@ -316,6 +317,12 @@ export default function ProfileScreen() {
 
         <View className="bg-background mt-3 rounded-2xl border border-neutral-200">
           <ProfileLink
+            icon={<CircleHelp size={16} color={SAGE} strokeWidth={2} />}
+            label="常見問題"
+            value="運送、付款與糾紛處理"
+            onPress={() => router.push('/faq')}
+          />
+          <ProfileLink
             icon={<LifeBuoy size={16} color={SAGE} strokeWidth={2} />}
             label="聯絡我們"
             value="客服與問題回報"
@@ -390,6 +397,12 @@ export default function ProfileScreen() {
                 label="我的賣家主頁與評價"
                 value={`信任度 ${trustScore}%`}
                 onPress={() => router.push({ pathname: '/seller/[id]', params: { id: userId } })}
+              />
+              <ProfileLink
+                icon={<CircleHelp size={16} color={SAGE} strokeWidth={2} />}
+                label="常見問題"
+                value="運送、付款與糾紛處理"
+                onPress={() => router.push('/faq')}
               />
               <ProfileLink
                 icon={<LifeBuoy size={16} color={SAGE} strokeWidth={2} />}

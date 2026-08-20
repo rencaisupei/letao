@@ -12,6 +12,7 @@ import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import {
   CircleCheck,
+  CircleHelp,
   Clock,
   Mail,
   MessageSquare,
@@ -192,6 +193,24 @@ export default function ContactScreen() {
             </Text>
             <Button size="sm" variant="secondary" className="mt-2.5 self-start" onPress={openMail}>
               <Button.Label>用電子郵件寄信</Button.Label>
+            </Button>
+          </View>
+
+          <View className="bg-canvas mt-3 rounded-xl p-3.5">
+            <View className="flex-row items-center gap-1.5">
+              <CircleHelp size={14} color={SAGE} strokeWidth={2.2} />
+              <Text className="text-foreground text-[12px] font-bold">先看看常見問題</Text>
+            </View>
+            <Text className="text-muted mt-1 text-[11px] leading-4">
+              運費怎麼算、可以用哪些付款方式、對方不出貨怎麼辦，這些都已經有現成答案，通常比等回信更快。
+            </Text>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="mt-2.5 self-start"
+              onPress={() => router.push('/faq')}
+            >
+              <Button.Label>開啟常見問題</Button.Label>
             </Button>
           </View>
         </View>

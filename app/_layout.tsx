@@ -169,6 +169,7 @@ export default function RootLayout() {
           <Stack.Screen name="account" options={{ title: '編輯個人資料' }} />
           <Stack.Screen name="privacy" options={{ title: '隱私權政策' }} />
           <Stack.Screen name="contact" options={{ title: '聯絡我們' }} />
+          <Stack.Screen name="faq" options={{ title: '常見問題' }} />
         </Stack>
         <AlertHost />
         <InstallPrompt />
