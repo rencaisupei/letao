@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import { bilt } from '@/lib/bilt';
 import { type OrderStatus, type PaymentCode, getPayment } from '@/lib/constants';
+import { dispatchPendingPush } from '@/lib/push';
 
 export type Order = {
   id: string;
@@ -200,6 +201,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     if (!row) return { ok: false, reason: 'error', minPrice: 0, remaining: 0 };
 
     if (row.ok && row.order_id) {
+      dispatchPendingPush();
       return {
         ok: true,
         orderId: row.order_id,
@@ -239,6 +241,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           : order,
       ),
     });
+    dispatchPendingPush();
     return true;
   },
 
@@ -253,6 +256,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         order.id === orderId ? { ...order, status: 'cancelled' } : order,
       ),
     });
+    dispatchPendingPush();
     return true;
   },
 

@@ -6,7 +6,9 @@ import { BellOff, UserPlus } from 'lucide-react-native';
 
 import { SAGE, getNotificationMeta } from '@/lib/constants';
 import { goBackOrReplace } from '@/lib/navigation';
+import { notificationHref } from '@/lib/push';
 import { type AppNotification, useNotificationStore } from '@/lib/notificationStore';
+import { PushToggle } from '@/components/PushToggle';
 import { useLetaoStore } from '@/lib/store';
 
 const POLL_INTERVAL_MS = 15_000;
@@ -23,25 +25,8 @@ function relativeTime(iso: string): string {
 }
 
 function openTarget(item: AppNotification) {
-  if (item.link_type === 'listing' && item.link_id) {
-    router.push({ pathname: '/listing/[id]', params: { id: item.link_id } });
-    return;
-  }
-  if (item.link_type === 'chat' && item.link_id) {
-    router.push({ pathname: '/chat/[id]', params: { id: item.link_id } });
-    return;
-  }
-  if (item.link_type === 'seller' && item.link_id) {
-    router.push({ pathname: '/seller/[id]', params: { id: item.link_id } });
-    return;
-  }
-  if (item.link_type === 'order') {
-    if (item.link_id) {
-      router.push({ pathname: '/order/[id]', params: { id: item.link_id } });
-      return;
-    }
-    router.push('/orders');
-  }
+  const href = notificationHref(item.link_type, item.link_id);
+  if (href) router.push(href);
 }
 
 export default function NotificationsScreen() {
@@ -95,21 +80,24 @@ export default function NotificationsScreen() {
         onRefresh={refresh}
         contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 32 }}
         ListHeaderComponent={
-          <View className="mb-1 flex-row items-center justify-between px-1">
-            <Text className="text-muted text-[11px]">
-              {unreadCount > 0 ? `${unreadCount} 則未讀通知` : '沒有未讀通知'}
-            </Text>
-            {unreadCount > 0 ? (
-              <Button
-                size="sm"
-                variant="tertiary"
-                onPress={() => {
-                  void markAllRead();
-                }}
-              >
-                <Button.Label>全部標記已讀</Button.Label>
-              </Button>
-            ) : null}
+          <View>
+            <PushToggle />
+            <View className="mb-1 flex-row items-center justify-between px-1">
+              <Text className="text-muted text-[11px]">
+                {unreadCount > 0 ? `${unreadCount} 則未讀通知` : '沒有未讀通知'}
+              </Text>
+              {unreadCount > 0 ? (
+                <Button
+                  size="sm"
+                  variant="tertiary"
+                  onPress={() => {
+                    void markAllRead();
+                  }}
+                >
+                  <Button.Label>全部標記已讀</Button.Label>
+                </Button>
+              ) : null}
+            </View>
           </View>
         }
         ListEmptyComponent={
@@ -117,7 +105,7 @@ export default function NotificationsScreen() {
             <BellOff size={30} color={SAGE} strokeWidth={1.6} />
             <Text className="text-foreground mt-4 text-base font-bold">還沒有通知</Text>
             <Text className="text-muted mt-2 text-center text-[13px] leading-5">
-              收到出價、私訊、審核結果、檢舉處理或每日 EcoCoins 入帳時，都會出現在這裡。
+              收到出價、私訊、審核結果、檢舉處理、客服回覆或每日 EcoCoins 入帳時，都會出現在這裡。
             </Text>
             <Button className="mt-4" variant="secondary" onPress={() => goBackOrReplace('/')}>
               <Button.Label>回到探索首頁</Button.Label>

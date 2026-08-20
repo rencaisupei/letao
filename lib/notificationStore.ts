@@ -1,6 +1,13 @@
 import { create } from 'zustand';
 
 import { bilt } from '@/lib/bilt';
+import { isRemotePushActive, presentLocalNotification } from '@/lib/push';
+
+/** Rows we have already shown to this session, so polling never re-alerts the same notification. */
+const alerted = new Set<string>();
+let primed = false;
+const LOCAL_ALERT_WINDOW_MS = 15 * 60_000;
+const MAX_LOCAL_ALERTS = 3;
 
 export type AppNotification = {
   id: string;
@@ -32,6 +39,39 @@ function countUnread(rows: AppNotification[]): number {
   return rows.filter((row) => row.read_at === null).length;
 }
 
+/**
+ * Without a remote push token (Expo Go, simulator, web) the server cannot reach the device, so the
+ * polling loop raises a local notification for anything that arrived since the last check.
+ */
+async function alertNewRows(rows: AppNotification[]): Promise<void> {
+  const fresh = rows.filter(
+    (row) =>
+      row.read_at === null &&
+      !alerted.has(row.id) &&
+      Date.now() - new Date(row.created_at).getTime() < LOCAL_ALERT_WINDOW_MS,
+  );
+
+  for (const row of rows) {
+    alerted.add(row.id);
+  }
+
+  if (!primed) {
+    primed = true;
+    return;
+  }
+  if (fresh.length === 0 || isRemotePushActive()) return;
+
+  for (const row of fresh.slice(0, MAX_LOCAL_ALERTS)) {
+    await presentLocalNotification({
+      id: row.id,
+      title: row.title,
+      body: row.body,
+      linkType: row.link_type,
+      linkId: row.link_id,
+    });
+  }
+}
+
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   unreadCount: 0,
@@ -47,6 +87,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
     const rows = asRows<AppNotification>(data);
     set({ notifications: rows, unreadCount: countUnread(rows), isLoading: false });
+    await alertNewRows(rows);
   },
 
   markRead: async (id) => {
@@ -72,5 +113,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     await bilt.from('notifications').update({ read_at: readAt }).is('read_at', null);
   },
 
-  reset: () => set({ notifications: [], unreadCount: 0 }),
+  reset: () => {
+    alerted.clear();
+    primed = false;
+    set({ notifications: [], unreadCount: 0 });
+  },
 }));

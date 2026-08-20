@@ -1,5 +1,6 @@
 import { bilt } from '@/lib/bilt';
 import type { UserRole } from '@/lib/constants';
+import { dispatchPendingPush } from '@/lib/push';
 import { type Listing, toListing } from '@/lib/store';
 
 export type SellerProfile = {
@@ -125,6 +126,7 @@ export async function submitReview(
   const row = asRow<{ ok: boolean; trust_score: number | null; review_count: number | null }>(data);
   if (!row?.ok) return { ok: false };
 
+  dispatchPendingPush();
   return { ok: true, trustScore: row.trust_score ?? 80, reviewCount: row.review_count ?? 1 };
 }
 

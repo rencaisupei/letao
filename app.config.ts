@@ -51,6 +51,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           cameraPermission: '樂淘需要使用相機，讓您直接拍攝商品照片。',
         },
       ],
+      [
+        'expo-notifications',
+        {
+          color: '#4C7C59',
+          defaultChannel: 'default',
+        },
+      ],
       ...nativePlugins,
     ],
     experiments: {

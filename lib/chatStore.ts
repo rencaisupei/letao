@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { bilt } from '@/lib/bilt';
+import { dispatchPendingPush } from '@/lib/push';
 
 export type Conversation = {
   id: string;
@@ -147,6 +148,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     await get().loadMessages(conversationId);
+    dispatchPendingPush();
     return true;
   },
 

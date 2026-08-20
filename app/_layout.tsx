@@ -28,6 +28,7 @@ import { reportErrorToParent } from '@/lib/reportPreviewError';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { AlertHost } from '@/components/AlertHost';
 import { useLetaoStore } from '@/lib/store';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 /**
  * Custom ErrorBoundary that reports React render errors to the parent window (Bilt preview iframe)
@@ -63,6 +64,8 @@ export default function RootLayout() {
   useEffect(() => {
     initLetao();
   }, [initLetao]);
+
+  usePushNotifications();
 
   // Report uncaught JS errors and unhandled promise rejections to parent (Bilt preview iframe)
   useEffect(() => {

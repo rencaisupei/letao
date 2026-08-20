@@ -523,6 +523,7 @@ export type NotificationKind =
   | 'report'
   | 'review'
   | 'reward'
+  | 'support'
   | 'system';
 
 export const NOTIFICATION_META: Record<NotificationKind, { label: string; emoji: string }> = {
@@ -532,6 +533,7 @@ export const NOTIFICATION_META: Record<NotificationKind, { label: string; emoji:
   report: { label: '檢舉', emoji: '🚩' },
   review: { label: '評價', emoji: '⭐' },
   reward: { label: 'EcoCoins', emoji: '🪙' },
+  support: { label: '客服', emoji: '🎧' },
   system: { label: '系統', emoji: '🔔' },
 };
 

@@ -19,6 +19,7 @@ import {
 import { demoImageUri } from '@/lib/demoImages';
 import { useNotificationStore } from '@/lib/notificationStore';
 import { useOrderStore } from '@/lib/orderStore';
+import { dispatchPendingPush } from '@/lib/push';
 import type { ParcelSpec } from '@/lib/shipping';
 
 export type Seller = {
@@ -548,6 +549,7 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
       });
 
       await get().refresh();
+      dispatchPendingPush();
 
       const verdict = moderation.data;
       if (moderation.error || !verdict) {
@@ -747,6 +749,8 @@ export const useLetaoStore = create<LetaoState>((set, get) => {
         claimStreak: streak,
         lastClaimAt: row.ok ? new Date().toISOString() : get().lastClaimAt,
       });
+
+      if (row.ok) dispatchPendingPush();
 
       return {
         ok: row.ok,
