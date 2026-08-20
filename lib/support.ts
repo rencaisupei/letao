@@ -1,7 +1,7 @@
 import { bilt } from '@/lib/bilt';
 
 /** Public support mailbox shown on the privacy and contact screens. */
-export const SUPPORT_EMAIL = 'support@letao.tw';
+export const SUPPORT_EMAIL = 'letao@talent-core-pro.com';
 
 /** Shown as the effective date of the privacy policy. */
 export const POLICY_UPDATED_AT = '2026 年 8 月 20 日';
