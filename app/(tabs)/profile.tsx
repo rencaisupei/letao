@@ -4,6 +4,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   View,
   useWindowDimensions,
@@ -292,7 +293,11 @@ export default function ProfileScreen() {
 
   if (!userId) {
     return (
-      <View className="bg-canvas flex-1 p-4">
+      <ScrollView
+        className="bg-canvas flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={32} color={SAGE} strokeWidth={1.6} />
           <Text className="text-foreground mt-4 text-base font-bold">建立您的易拍通帳號</Text>
@@ -336,7 +341,7 @@ export default function ProfileScreen() {
             isLast
           />
         </View>
-      </View>
+      </ScrollView>
     );
   }
 

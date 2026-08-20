@@ -265,7 +265,11 @@ export default function SellScreen() {
 
   if (!userId) {
     return (
-      <View className="bg-canvas flex-1 p-4">
+      <ScrollView
+        className="bg-canvas flex-1"
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View className="bg-background items-center rounded-2xl border border-neutral-200 px-6 py-10">
           <UserPlus size={32} color={SAGE} strokeWidth={1.6} />
           <Text className="text-foreground mt-4 text-base font-bold">上架商品需要註冊帳號</Text>
@@ -276,7 +280,7 @@ export default function SellScreen() {
             <Button.Label>註冊成為賣家</Button.Label>
           </Button>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
