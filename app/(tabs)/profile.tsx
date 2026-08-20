@@ -17,13 +17,14 @@ import {
   Boxes,
   ChevronRight,
   Coins,
+  FileLock2,
   Flame,
   Heart,
+  LifeBuoy,
   PackageCheck,
   Pencil,
   ShieldCheck,
   Star,
-  Stethoscope,
   Trash2,
   UserPlus,
   Wallet,
@@ -312,6 +313,22 @@ export default function ProfileScreen() {
             樂淘的防砍價機制、賣家信任度與內容審核都綁在帳號上。沒有帳號的訪客可以自由瀏覽商品，但無法出價、上架、私訊或收藏。
           </Text>
         </View>
+
+        <View className="bg-background mt-3 rounded-2xl border border-neutral-200">
+          <ProfileLink
+            icon={<LifeBuoy size={16} color={SAGE} strokeWidth={2} />}
+            label="聯絡我們"
+            value="客服與問題回報"
+            onPress={() => router.push('/contact')}
+          />
+          <ProfileLink
+            icon={<FileLock2 size={16} color={SAGE} strokeWidth={2} />}
+            label="隱私權政策"
+            value="資料如何被使用"
+            onPress={() => router.push('/privacy')}
+            isLast
+          />
+        </View>
       </View>
     );
   }
@@ -375,10 +392,16 @@ export default function ProfileScreen() {
                 onPress={() => router.push({ pathname: '/seller/[id]', params: { id: userId } })}
               />
               <ProfileLink
-                icon={<Stethoscope size={16} color={SAGE} strokeWidth={2} />}
-                label="裝置檢查"
-                value="相片 / 上傳 / AI 審核"
-                onPress={() => router.push('/diagnostics')}
+                icon={<LifeBuoy size={16} color={SAGE} strokeWidth={2} />}
+                label="聯絡我們"
+                value="客服與問題回報"
+                onPress={() => router.push('/contact')}
+              />
+              <ProfileLink
+                icon={<FileLock2 size={16} color={SAGE} strokeWidth={2} />}
+                label="隱私權政策"
+                value="資料如何被使用"
+                onPress={() => router.push('/privacy')}
                 isLast
               />
             </View>

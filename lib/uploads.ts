@@ -235,27 +235,3 @@ async function uploadToBucket(
   const { data } = bilt.storage.from(bucket).getPublicUrl(path);
   return { ok: true, url: data.publicUrl };
 }
-
-/**
- * Round-trip check used by the device diagnostics screen: uploads a tiny PNG and
- * removes it again, so a signed-in user can confirm storage works on this device.
- */
-export async function runStorageRoundTrip(
-  userId: string,
-): Promise<{ ok: boolean; detail: string }> {
-  // 1x1 transparent PNG.
-  const pixel =
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-  const path = `${userId}/diagnostics-${Date.now()}.png`;
-  const { error } = await bilt.storage
-    .from(LISTING_PHOTO_BUCKET)
-    .upload(path, base64ToBytes(pixel), {
-      contentType: 'image/png',
-      upsert: true,
-    });
-
-  if (error) return { ok: false, detail: error.message };
-
-  await bilt.storage.from(LISTING_PHOTO_BUCKET).remove([path]);
-  return { ok: true, detail: '上傳與刪除都成功' };
-}
