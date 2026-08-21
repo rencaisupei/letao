@@ -74,9 +74,9 @@ config.server = {
 
 const defaultResolveRequest = config.resolver.resolveRequest;
 
+// posthog-js is browser-only; analytics on native goes through lib/posthog.ts.
 const shouldResolveEmpty = (moduleName, platform) =>
-  (moduleName === 'react-native-maps' && platform === 'web') ||
-  (moduleName === 'posthog-js' && platform !== 'web');
+  moduleName === 'posthog-js' && platform !== 'web';
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (shouldResolveEmpty(moduleName, platform)) {

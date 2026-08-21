@@ -90,7 +90,7 @@
   "packageManager": "npm@10.9.0",
   "expo": {
     "autolinking": {
-      "//": "No screen uses maps or location, but both packages ship with the starter and would still be autolinked. Their native code links CoreLocation, so App Store Connect rejects the upload (ITMS-90683) unless the binary carries location purpose strings we have no honest use for. Remove an entry here if a screen starts using it.",
+      "//": "Nothing in the app imports maps or location. While these packages are still installed, autolinking would compile their native code, which links CoreLocation and makes App Store Connect reject the upload (ITMS-90683) unless the binary carries location purpose strings we have no honest use for. Safe to keep as a guard after `npm uninstall`; remove an entry only when a screen genuinely starts using that package.",
       "exclude": [
         "expo-location",
         "react-native-maps"
