@@ -167,6 +167,19 @@ type ListingRow = Omit<
 const LISTING_COLUMNS =
   'id, seller_id, title, description, price, allow_negotiation, condition_rating, category, logistics, shipping_options, payment_methods, parcel_weight_kg, parcel_length_cm, parcel_width_cm, parcel_height_cm, origin_region, images, meetup_location, status, quantity, sold_quantity, moderation_status, moderation_reason, created_at, profiles(username, trust_score, verified_status)';
 
+export type DeleteAccountResult = {
+  ok: boolean;
+  reason: 'pending_orders' | 'unauthenticated' | 'error' | null;
+  /** Open orders that have to be completed or cancelled before deletion. */
+  pendingOrders: number;
+};
+
+type DeleteAccountRow = {
+  ok: boolean;
+  reason: DeleteAccountResult['reason'];
+  pending_orders: number | string | null;
+};
+
 export type ClaimResult = {
   ok: boolean;
   balance: number;
@@ -192,6 +205,8 @@ type AppState = {
   promotedUntil: Record<string, string>;
   /** listing id -> true when the signed-in user saved it */
   favorites: Record<string, true>;
+  /** Members this account has blocked: no chats, no listings in the feed. */
+  blockedUsers: Record<string, true>;
   isRefreshing: boolean;
   init: () => void;
   refresh: () => Promise<void>;
@@ -206,6 +221,15 @@ type AppState = {
   claimDaily: () => Promise<ClaimResult>;
   toggleFavorite: (listingId: string) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, detail: string) => Promise<boolean>;
+  reportUser: (
+    targetUserId: string,
+    reason: string,
+    detail: string,
+    conversationId?: string | null,
+  ) => Promise<boolean>;
+  blockUser: (targetUserId: string) => Promise<boolean>;
+  unblockUser: (targetUserId: string) => Promise<boolean>;
+  deleteAccount: () => Promise<DeleteAccountResult>;
   signOut: () => Promise<void>;
 };
 
@@ -376,6 +400,15 @@ export const useAppStore = create<AppState>((set, get) => {
     return favorites;
   }
 
+  async function loadBlocks(userId: string) {
+    const { data } = await bilt.from('blocked_users').select('blocked_id').eq('blocker_id', userId);
+    const blocked: Record<string, true> = {};
+    for (const row of asRows<{ blocked_id: string }>(data)) {
+      blocked[row.blocked_id] = true;
+    }
+    return blocked;
+  }
+
   async function loadAccount(userId: string) {
     const [profileResult, walletResult] = await Promise.all([
       bilt
@@ -422,6 +455,7 @@ export const useAppStore = create<AppState>((set, get) => {
         lastClaimAt: null,
         claimStreak: 0,
         favorites: {},
+        blockedUsers: {},
         ...feed,
       });
       return;
@@ -448,8 +482,12 @@ export const useAppStore = create<AppState>((set, get) => {
       await Promise.all([backfillDemoImages(userId), backfillDemoShipping(userId)]);
     }
 
-    const [feed, favorites] = await Promise.all([loadFeed(), loadFavorites(userId)]);
-    set({ ...feed, favorites, status: 'ready' });
+    const [feed, favorites, blockedUsers] = await Promise.all([
+      loadFeed(),
+      loadFavorites(userId),
+      loadBlocks(userId),
+    ]);
+    set({ ...feed, favorites, blockedUsers, status: 'ready' });
   }
 
   return {
@@ -467,6 +505,7 @@ export const useAppStore = create<AppState>((set, get) => {
     listings: [],
     promotedUntil: {},
     favorites: {},
+    blockedUsers: {},
     isRefreshing: false,
 
     init: () => {
@@ -496,15 +535,17 @@ export const useAppStore = create<AppState>((set, get) => {
         return;
       }
 
-      const [feed, favorites, account] = await Promise.all([
+      const [feed, favorites, account, blockedUsers] = await Promise.all([
         loadFeed(),
         loadFavorites(userId),
         loadAccount(userId),
+        loadBlocks(userId),
       ]);
       set({
         ...feed,
         ...account,
         favorites,
+        blockedUsers,
         isRefreshing: false,
       });
     },
@@ -807,6 +848,74 @@ export const useAppStore = create<AppState>((set, get) => {
       return !error;
     },
 
+    reportUser: async (targetUserId, reason, detail, conversationId) => {
+      const userId = get().userId;
+      if (!userId || targetUserId === userId) return false;
+
+      const { data, error } = await bilt.rpc('report_user', {
+        p_user_id: targetUserId,
+        p_reason: reason,
+        p_detail: detail.trim() === '' ? null : detail.trim(),
+        p_conversation_id: conversationId ?? null,
+      });
+      if (error) return false;
+      return asRow<{ ok: boolean }>(data)?.ok === true;
+    },
+
+    blockUser: async (targetUserId) => {
+      const userId = get().userId;
+      if (!userId || targetUserId === userId) return false;
+
+      const { error } = await bilt
+        .from('blocked_users')
+        .upsert(
+          { blocker_id: userId, blocked_id: targetUserId },
+          { onConflict: 'blocker_id,blocked_id' },
+        );
+      if (error) return false;
+
+      set({ blockedUsers: { ...get().blockedUsers, [targetUserId]: true } });
+      return true;
+    },
+
+    unblockUser: async (targetUserId) => {
+      const userId = get().userId;
+      if (!userId) return false;
+
+      const { error } = await bilt
+        .from('blocked_users')
+        .delete()
+        .eq('blocker_id', userId)
+        .eq('blocked_id', targetUserId);
+      if (error) return false;
+
+      const next = { ...get().blockedUsers };
+      delete next[targetUserId];
+      set({ blockedUsers: next });
+      return true;
+    },
+
+    deleteAccount: async () => {
+      const failure: DeleteAccountResult = { ok: false, reason: 'error', pendingOrders: 0 };
+      if (!get().userId) return { ...failure, reason: 'unauthenticated' };
+
+      const { data, error } = await bilt.rpc('delete_my_account');
+      if (error) return failure;
+
+      const row = asRow<DeleteAccountRow>(data);
+      if (!row) return failure;
+
+      const result: DeleteAccountResult = {
+        ok: row.ok,
+        reason: row.ok ? null : (row.reason ?? 'error'),
+        pendingOrders: toCount(row.pending_orders, 0),
+      };
+
+      // The account row is gone, so drop the local session and cached data too.
+      if (result.ok) await get().signOut();
+      return result;
+    },
+
     signOut: async () => {
       await bilt.auth.signOut();
       useChatStore.getState().reset();
@@ -826,6 +935,7 @@ export const useAppStore = create<AppState>((set, get) => {
         lastClaimAt: null,
         claimStreak: 0,
         favorites: {},
+        blockedUsers: {},
         ...feed,
       });
     },

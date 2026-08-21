@@ -27,12 +27,18 @@ export default function FavoritesScreen() {
     () => listings.filter((listing) => favorites[listing.id]),
     [listings, favorites],
   );
-  const missingIds = useMemo(
-    () => favoriteIds.filter((id) => !inStore.some((listing) => listing.id === id)),
-    [favoriteIds, inStore],
-  );
+  // A plain array would be a new reference on every feed refresh and would send
+  // loadMissing (and its network call) round again. Compare by content instead.
+  const missingKey = useMemo(() => {
+    const present = new Set(inStore.map((listing) => listing.id));
+    return favoriteIds
+      .filter((id) => !present.has(id))
+      .sort((a, b) => a.localeCompare(b))
+      .join(',');
+  }, [favoriteIds, inStore]);
 
   const loadMissing = useCallback(async () => {
+    const missingIds = missingKey === '' ? [] : missingKey.split(',');
     if (missingIds.length === 0) {
       setExtra([]);
       return;
@@ -41,7 +47,7 @@ export default function FavoritesScreen() {
     const rows = await fetchListingsByIds(missingIds);
     setExtra(rows);
     setIsLoading(false);
-  }, [missingIds]);
+  }, [missingKey]);
 
   useEffect(() => {
     void loadMissing();

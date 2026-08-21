@@ -6,6 +6,9 @@ export const SUPPORT_EMAIL = 'letao@talent-core-pro.com';
 /** Shown as the effective date of the privacy policy. */
 export const POLICY_UPDATED_AT = '2026 年 8 月 20 日';
 
+/** Shown as the effective date of the terms of service. */
+export const TERMS_UPDATED_AT = '2026 年 8 月 21 日';
+
 export const SUBJECT_MAX_LENGTH = 80;
 export const MESSAGE_MIN_LENGTH = 10;
 export const MESSAGE_MAX_LENGTH = 2000;

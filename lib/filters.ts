@@ -74,11 +74,14 @@ export function applyFilters(
   listings: Listing[],
   filters: ListingFilters,
   promotedUntil: Record<string, string>,
+  /** Sellers the viewer blocked; their items never reach the feed. */
+  blockedSellers?: Record<string, true>,
 ): Listing[] {
   const range = priceRange(filters.priceCode);
 
   const filtered = listings.filter((listing) => {
     if (!isBrowsable(listing)) return false;
+    if (blockedSellers?.[listing.seller_id]) return false;
     if (filters.category !== ALL_CATEGORY && listing.category !== filters.category) return false;
     if (
       filters.conditions.length > 0 &&

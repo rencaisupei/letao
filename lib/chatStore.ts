@@ -93,18 +93,38 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   loadMessages: async (conversationId) => {
-    const { data } = await bilt
+    const known = get().messages[conversationId] ?? [];
+    // The thread polls every few seconds. After the first load only ask for rows
+    // newer than the newest one we already hold, instead of refetching the whole
+    // history each tick.
+    const latest = known.reduce<string | null>(
+      (newest, message) =>
+        message.pending || (newest !== null && message.created_at <= newest)
+          ? newest
+          : message.created_at,
+      null,
+    );
+
+    let query = bilt
       .from('messages')
       .select('id, conversation_id, sender_id, body, created_at')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true })
-      .limit(300);
+      .eq('conversation_id', conversationId);
+
+    query =
+      latest === null
+        ? // First open: newest 100 rows, reversed by mergeMessages below.
+          query.order('created_at', { ascending: false }).limit(100)
+        : query.gt('created_at', latest).order('created_at', { ascending: true }).limit(100);
+
+    const { data } = await query;
 
     const incoming = asRows<Message>(data);
+    if (incoming.length === 0 && known.length > 0) return;
+
     set({
       messages: {
         ...get().messages,
-        [conversationId]: mergeMessages(get().messages[conversationId] ?? [], incoming),
+        [conversationId]: mergeMessages(known, incoming),
       },
     });
   },

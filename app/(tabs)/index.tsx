@@ -25,6 +25,7 @@ export default function ExploreScreen() {
   const listings = useAppStore((state) => state.listings);
   const promotedUntil = useAppStore((state) => state.promotedUntil);
   const favorites = useAppStore((state) => state.favorites);
+  const blockedUsers = useAppStore((state) => state.blockedUsers);
   const isRefreshing = useAppStore((state) => state.isRefreshing);
   const refresh = useAppStore((state) => state.refresh);
 
@@ -38,8 +39,8 @@ export default function ExploreScreen() {
   const filterCount = activeFilterCount(filters);
 
   const visibleListings = useMemo(
-    () => applyFilters(listings, filters, promotedUntil),
-    [listings, filters, promotedUntil],
+    () => applyFilters(listings, filters, promotedUntil, blockedUsers),
+    [listings, filters, promotedUntil, blockedUsers],
   );
 
   return (

@@ -162,12 +162,18 @@ export function BumpFx({ playToken, persistGlow = false, children }: BumpFxProps
 
       <View pointerEvents="none" className="absolute inset-0 items-center justify-center">
         <View className="h-0 w-0 items-center justify-center">
-          {particles.map((config) => (
-            <Particle key={config.id} config={config} playToken={playToken} />
-          ))}
-          <Animated.View style={[{ position: 'absolute', left: -15, top: -15 }, rocketStyle]}>
-            <Rocket size={30} color={SAGE} strokeWidth={1.8} />
-          </Animated.View>
+          {/* 13 animated nodes per card; only mount them once a celebration
+              actually runs, so a long listing grid stays cheap to render. */}
+          {playToken > 0 ? (
+            <>
+              {particles.map((config) => (
+                <Particle key={config.id} config={config} playToken={playToken} />
+              ))}
+              <Animated.View style={[{ position: 'absolute', left: -15, top: -15 }, rocketStyle]}>
+                <Rocket size={30} color={SAGE} strokeWidth={1.8} />
+              </Animated.View>
+            </>
+          ) : null}
         </View>
       </View>
     </View>

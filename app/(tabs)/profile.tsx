@@ -22,6 +22,7 @@ import {
   CircleHelp,
   Coins,
   FileLock2,
+  FileText,
   Flame,
   Heart,
   LifeBuoy,
@@ -340,6 +341,12 @@ export default function ProfileScreen() {
             label="隱私權政策"
             value="資料如何被使用"
             onPress={() => router.push('/privacy')}
+          />
+          <ProfileLink
+            icon={<FileText size={16} color={SAGE} strokeWidth={2} />}
+            label="服務條款"
+            value="使用規範與禁止行為"
+            onPress={() => router.push('/terms')}
             isLast
           />
         </View>
@@ -422,6 +429,12 @@ export default function ProfileScreen() {
                 label="隱私權政策"
                 value="資料如何被使用"
                 onPress={() => router.push('/privacy')}
+              />
+              <ProfileLink
+                icon={<FileText size={16} color={SAGE} strokeWidth={2} />}
+                label="服務條款"
+                value="使用規範與帳號刪除"
+                onPress={() => router.push('/terms')}
                 isLast
               />
             </View>

@@ -13,11 +13,12 @@ import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { gridCardWidth, screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { BadgeCheck, Star } from 'lucide-react-native';
+import { BadgeCheck, ShieldAlert, Star } from 'lucide-react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { ListingCard } from '@/components/ListingCard';
 import { StarRating } from '@/components/StarRating';
+import { UserActionsSheet } from '@/components/UserActionsSheet';
 import { showAlert } from '@/lib/alert';
 import { SAGE, getRoleLabel } from '@/lib/constants';
 import { hasCompletedDealWith, useOrderStore } from '@/lib/orderStore';
@@ -47,12 +48,14 @@ export default function SellerScreen() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [formVisible, setFormVisible] = useState(false);
+  const [isSafetyVisible, setIsSafetyVisible] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [isBusy, setIsBusy] = useState(false);
 
   const cardWidth = gridCardWidth(width);
   const isMe = userId === id;
+  const isBlocked = useAppStore((state) => (id ? id in state.blockedUsers : false));
   const myReview = reviews.find((review) => review.reviewer_id === userId) ?? null;
 
   const load = useCallback(async () => {
@@ -79,6 +82,11 @@ export default function SellerScreen() {
   }, [userId, loadOrders]);
 
   const canReview = userId && id ? hasCompletedDealWith(orders, id, userId) : false;
+
+  const openSafetySheet = () => {
+    if (!requireAccount('檢舉或封鎖會員')) return;
+    setIsSafetyVisible(true);
+  };
 
   const openForm = () => {
     if (!requireAccount('評價賣家')) return;
@@ -182,14 +190,29 @@ export default function SellerScreen() {
         </Text>
 
         {isMe ? null : (
-          <Button size="sm" variant="secondary" className="mt-3 self-start" onPress={openForm}>
-            <Star size={13} color={SAGE} strokeWidth={2.2} />
-            <Button.Label>
-              {myReview ? '修改我的評價' : canReview ? '給這位賣家評價' : '完成交易後可評價'}
-            </Button.Label>
-          </Button>
+          <View className="mt-3 flex-row flex-wrap gap-2">
+            <Button size="sm" variant="secondary" onPress={openForm}>
+              <Star size={13} color={SAGE} strokeWidth={2.2} />
+              <Button.Label>
+                {myReview ? '修改我的評價' : canReview ? '給這位賣家評價' : '完成交易後可評價'}
+              </Button.Label>
+            </Button>
+            <Button size="sm" variant="tertiary" onPress={openSafetySheet}>
+              <ShieldAlert size={13} color={SAGE} strokeWidth={2.2} />
+              <Button.Label>{isBlocked ? '已封鎖 ∙ 安全設定' : '檢舉或封鎖'}</Button.Label>
+            </Button>
+          </View>
         )}
       </View>
+
+      {isMe || !id ? null : (
+        <UserActionsSheet
+          isVisible={isSafetyVisible}
+          onClose={() => setIsSafetyVisible(false)}
+          targetUserId={id}
+          targetName={profile?.username ?? '這位賣家'}
+        />
+      )}
 
       <Text className="text-foreground mt-4 px-1 text-sm font-semibold">
         買家評價（{reviews.length}）

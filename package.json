@@ -87,5 +87,14 @@
   "engines": {
     "node": ">=20.19.4"
   },
-  "packageManager": "npm@10.9.0"
+  "packageManager": "npm@10.9.0",
+  "expo": {
+    "autolinking": {
+      "//": "No screen uses maps or location, but both packages ship with the starter and would still be autolinked. Their native code links CoreLocation, so App Store Connect rejects the upload (ITMS-90683) unless the binary carries location purpose strings we have no honest use for. Remove an entry here if a screen starts using it.",
+      "exclude": [
+        "expo-location",
+        "react-native-maps"
+      ]
+    }
+  }
 }

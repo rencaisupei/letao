@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
@@ -13,29 +13,41 @@ export function useAsyncStorage<T>(
 ): [T | null, (value: T | null) => Promise<void>, () => Promise<void>, boolean] {
   const [storedValue, setStoredValue] = useState<T | null>(initialValue ?? null);
   const [isLoading, setIsLoading] = useState(true);
+  // Callers routinely pass an object/array literal, which is a new reference on
+  // every render. Keeping it in a ref stops the load effect below from re-running
+  // (and hammering AsyncStorage) on each render.
+  const fallbackRef = useRef(initialValue);
+  fallbackRef.current = initialValue;
 
   // Load initial value from storage
   useEffect(() => {
+    let isActive = true;
+
     const loadStoredValue = async () => {
       try {
         const item = await AsyncStorage.getItem(key);
+        if (!isActive) return;
         if (item !== null) {
           setStoredValue(JSON.parse(item));
-        } else if (initialValue !== undefined) {
-          setStoredValue(initialValue);
+        } else if (fallbackRef.current !== undefined) {
+          setStoredValue(fallbackRef.current);
         }
       } catch (error) {
         console.error(`Error loading ${key} from AsyncStorage:`, error);
-        if (initialValue !== undefined) {
-          setStoredValue(initialValue);
+        if (isActive && fallbackRef.current !== undefined) {
+          setStoredValue(fallbackRef.current);
         }
       } finally {
-        setIsLoading(false);
+        if (isActive) setIsLoading(false);
       }
     };
 
     void loadStoredValue();
-  }, [key, initialValue]);
+
+    return () => {
+      isActive = false;
+    };
+  }, [key]);
 
   // Set value in storage
   const setValue = useCallback(

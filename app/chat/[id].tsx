@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { ChevronRight, Send, ShieldCheck } from 'lucide-react-native';
+import { ChevronRight, Send, ShieldAlert, ShieldCheck } from 'lucide-react-native';
 
 import { Text, TextInput } from '@/components/ui/primitives/Text';
+import { UserActionsSheet } from '@/components/UserActionsSheet';
 import { SAGE } from '@/lib/constants';
 import { SCREEN_PADDING } from '@/lib/layout';
+import { type BlockState, blockNotice, fetchBlockState } from '@/lib/moderation';
 import { type Message, useChatStore } from '@/lib/chatStore';
 import { useAppStore } from '@/lib/store';
 
@@ -29,6 +31,8 @@ export default function ConversationScreen() {
 
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isSheetVisible, setIsSheetVisible] = useState(false);
+  const [blockState, setBlockState] = useState<BlockState>('none');
   const listRef = useRef<FlatList<Message>>(null);
 
   const conversation = useMemo(
@@ -38,6 +42,11 @@ export default function ConversationScreen() {
   const messages = useMemo(() => (id ? (messagesMap[id] ?? []) : []), [messagesMap, id]);
 
   const isSeller = conversation?.seller_id === userId;
+  const counterpartId = conversation
+    ? isSeller
+      ? conversation.buyer_id
+      : conversation.seller_id
+    : null;
   const counterpart = conversation
     ? isSeller
       ? (conversation.buyer_username ?? '易拍通買家')
@@ -54,6 +63,19 @@ export default function ConversationScreen() {
       void loadConversations();
     }
   }, [conversations.length, loadConversations]);
+
+  // Blocks can come from either side, and only the server knows about the
+  // incoming direction, so re-check whenever the thread is opened.
+  const syncBlockState = useCallback(() => {
+    if (!counterpartId) return;
+    void fetchBlockState(counterpartId).then(setBlockState);
+  }, [counterpartId]);
+
+  const notice = blockNotice(blockState);
+
+  useEffect(() => {
+    syncBlockState();
+  }, [syncBlockState]);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,7 +95,7 @@ export default function ConversationScreen() {
   }, [messages.length]);
 
   const handleSend = async () => {
-    if (!id || !userId || draft.trim() === '') return;
+    if (!id || !userId || draft.trim() === '' || notice !== null) return;
     const body = draft;
     setDraft('');
     setIsSending(true);
@@ -87,7 +109,24 @@ export default function ConversationScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       className="bg-canvas flex-1"
     >
-      <Stack.Screen options={{ title: counterpart }} />
+      <Stack.Screen
+        options={{
+          title: counterpart,
+          headerRight: counterpartId
+            ? () => (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="安全與檢舉"
+                  onPress={() => setIsSheetVisible(true)}
+                  className="min-h-9 flex-row items-center gap-1 px-2"
+                >
+                  <ShieldAlert size={17} color={SAGE} strokeWidth={2} />
+                  <Text className="text-sage-deep text-xs font-semibold">安全</Text>
+                </Pressable>
+              )
+            : undefined,
+        }}
+      />
 
       {conversation ? (
         <Pressable
@@ -150,26 +189,46 @@ export default function ConversationScreen() {
         }}
       />
 
-      <View className="bg-background pb-safe-offset-2.5 flex-row items-end gap-2 border-t border-neutral-200 px-4 pt-2.5">
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          multiline
-          placeholder="輸入訊息..."
-          placeholderTextColorClassName="accent-neutral-400"
-          className="bg-canvas text-foreground max-h-24 min-h-11 flex-1 rounded-2xl border border-neutral-200 px-4 py-2.5 text-sm"
-        />
-        <Button
-          size="sm"
-          className="h-11 w-11 rounded-full"
-          isDisabled={isSending || draft.trim() === ''}
-          onPress={() => {
-            void handleSend();
-          }}
-        >
-          <Send size={16} color="#FFFFFF" strokeWidth={2.2} />
-        </Button>
+      <View className="bg-background pb-safe-offset-2.5 border-t border-neutral-200 px-4 pt-2.5">
+        {notice ? (
+          <View className="mb-2 flex-row items-start gap-2 rounded-xl bg-red-50 p-3">
+            <ShieldAlert size={15} color="#B91C1C" strokeWidth={2} />
+            <Text className="text-2xs flex-1 leading-4 text-red-700">{notice}</Text>
+          </View>
+        ) : null}
+        <View className="flex-row items-end gap-2">
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+            editable={notice === null}
+            placeholder={notice === null ? '輸入訊息...' : '已封鎖，無法傳送訊息'}
+            placeholderTextColorClassName="accent-neutral-400"
+            className="bg-canvas text-foreground max-h-24 min-h-11 flex-1 rounded-2xl border border-neutral-200 px-4 py-2.5 text-sm"
+          />
+          <Button
+            size="sm"
+            className="h-11 w-11 rounded-full"
+            isDisabled={isSending || draft.trim() === '' || notice !== null}
+            onPress={() => {
+              void handleSend();
+            }}
+          >
+            <Send size={16} color="#FFFFFF" strokeWidth={2.2} />
+          </Button>
+        </View>
       </View>
+
+      {counterpartId ? (
+        <UserActionsSheet
+          isVisible={isSheetVisible}
+          onClose={() => setIsSheetVisible(false)}
+          targetUserId={counterpartId}
+          targetName={counterpart}
+          conversationId={id ?? null}
+          onBlockChange={syncBlockState}
+        />
+      ) : null}
     </KeyboardAvoidingView>
   );
 }

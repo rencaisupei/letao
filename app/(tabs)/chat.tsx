@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { FlatList, Image, Pressable, ScrollView, View } from 'react-native';
 
 import { Text } from '@/components/ui/primitives/Text';
@@ -29,9 +29,21 @@ function relativeTime(iso: string | null): string {
 
 export default function ChatScreen() {
   const userId = useAppStore((state) => state.userId);
+  const blockedUsers = useAppStore((state) => state.blockedUsers);
   const conversations = useChatStore((state) => state.conversations);
   const isLoadingList = useChatStore((state) => state.isLoadingList);
   const loadConversations = useChatStore((state) => state.loadConversations);
+
+  // Blocking hides the thread from this side; the row itself stays on the server
+  // so an unblock brings the history back.
+  const visibleConversations = useMemo(
+    () =>
+      conversations.filter((item) => {
+        const counterpartId = item.seller_id === userId ? item.buyer_id : item.seller_id;
+        return !blockedUsers[counterpartId];
+      }),
+    [conversations, blockedUsers, userId],
+  );
 
   const refreshList = useCallback(() => {
     if (!userId) return;
@@ -74,7 +86,7 @@ export default function ChatScreen() {
   return (
     <View className="bg-canvas flex-1">
       <FlatList
-        data={conversations}
+        data={visibleConversations}
         keyExtractor={(item) => item.id}
         refreshing={isLoadingList}
         onRefresh={refreshList}

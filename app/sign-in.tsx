@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 
 import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { SCREEN_BOTTOM_PADDING, SCREEN_PADDING } from '@/lib/layout';
 import { Button } from 'heroui-native';
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, router } from 'expo-router';
+import { Check } from 'lucide-react-native';
 
 import { BrandLockup } from '@/components/BrandHeader';
 import { PasswordField } from '@/components/PasswordField';
@@ -41,6 +42,44 @@ function FieldLabel({ children, className }: { children: string; className?: str
   );
 }
 
+/**
+ * Account-creating flows have to show the terms and privacy policy, and the
+ * platform is 18+ (with guardian consent) per the terms.
+ */
+function ConsentRow({ isChecked, onToggle }: { isChecked: boolean; onToggle: () => void }) {
+  return (
+    <View className="mt-4">
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isChecked }}
+        accessibilityLabel="同意服務條款與隱私權政策，並確認已滿 18 歲或已取得法定代理人同意"
+        onPress={onToggle}
+        className="flex-row items-start gap-2.5"
+      >
+        <View
+          className={`mt-0.5 h-5 w-5 items-center justify-center rounded-md border ${
+            isChecked ? 'border-sage bg-sage' : 'bg-background border-neutral-300'
+          }`}
+        >
+          {isChecked ? <Check size={13} color="#FFFFFF" strokeWidth={3} /> : null}
+        </View>
+        <Text className="text-muted text-2xs flex-1 leading-4">
+          我已滿 18 歲，或已取得法定代理人同意，並同意易拍通的服務條款與隱私權政策。
+        </Text>
+      </Pressable>
+      <View className="mt-2 flex-row gap-2 pl-7">
+        <Pressable accessibilityRole="link" onPress={() => router.push('/terms')}>
+          <Text className="text-sage-deep text-2xs font-semibold underline">服務條款</Text>
+        </Pressable>
+        <Text className="text-muted text-2xs">·</Text>
+        <Pressable accessibilityRole="link" onPress={() => router.push('/privacy')}>
+          <Text className="text-sage-deep text-2xs font-semibold underline">隱私權政策</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 export default function SignInScreen() {
   const status = useAppStore((state) => state.status);
   const setPendingRole = useAppStore((state) => state.setPendingRole);
@@ -54,6 +93,7 @@ export default function SignInScreen() {
   const [code, setCode] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [hasAgreed, setHasAgreed] = useState(false);
 
   useEffect(() => {
     if (cooldown <= 0) return undefined;
@@ -409,9 +449,13 @@ export default function SignInScreen() {
                 <Text className="text-muted text-2xs mt-2 leading-4">
                   驗證完成即開通帳號，並自動建立 EcoCoins 錢包。
                 </Text>
+                <ConsentRow
+                  isChecked={hasAgreed}
+                  onToggle={() => setHasAgreed((value) => !value)}
+                />
                 <Button
                   className="mt-4"
-                  isDisabled={isBusy || cooldown > 0}
+                  isDisabled={isBusy || cooldown > 0 || !hasAgreed}
                   onPress={() => {
                     void signUpWithPassword();
                   }}
@@ -476,9 +520,13 @@ export default function SignInScreen() {
                 </View>
 
                 <View className="mt-4">{emailField}</View>
+                <ConsentRow
+                  isChecked={hasAgreed}
+                  onToggle={() => setHasAgreed((value) => !value)}
+                />
                 <Button
                   className="mt-4"
-                  isDisabled={isBusy || cooldown > 0}
+                  isDisabled={isBusy || cooldown > 0 || !hasAgreed}
                   onPress={() => {
                     void sendCode();
                   }}
