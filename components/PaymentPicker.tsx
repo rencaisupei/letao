@@ -17,8 +17,12 @@ function fitsAnyMethod(code: PaymentCode, methods: string[]): boolean {
   return methods.some((method) => isPaymentAllowedFor(code, method));
 }
 
+/**
+ * Says what to tick to unlock the row, not just that it is unavailable — a
+ * seller who only offers 面交 otherwise reads the greyed 貨到付款 row as a bug.
+ */
 function unavailableHint(code: PaymentCode): string {
-  return code === 'cash' ? '此商品未提供面交' : '此商品僅提供面交';
+  return code === 'cash' ? '需先勾選「面交」' : '需先勾選超商或宅配寄送';
 }
 
 type PaymentMethodsPickerProps = {
