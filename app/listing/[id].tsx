@@ -59,6 +59,7 @@ import {
   stockLabel,
 } from '@/lib/constants';
 import { resolveListingImage } from '@/lib/demoImages';
+import { blockNotice, fetchBlockState } from '@/lib/moderation';
 import { goBackOrReplace } from '@/lib/navigation';
 import { orderTotal, useOrderStore } from '@/lib/orderStore';
 import { fetchListingById } from '@/lib/queries';
@@ -460,10 +461,13 @@ export default function ListingDetailScreen() {
     setIsBusy(false);
 
     if (!conversationId) {
+      // A block in either direction stops the thread from being created, so name
+      // the real reason instead of blaming the network.
+      const blocked = blockNotice(await fetchBlockState(listing.seller_id));
       showAlert({
         title: '無法開啟對話',
         tone: 'danger',
-        message: '對話沒有建立成功，請確認網路狀態後再試一次。',
+        message: blocked ?? '對話沒有建立成功，請確認網路狀態後再試一次。',
       });
       return;
     }

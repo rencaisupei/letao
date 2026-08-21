@@ -6,6 +6,7 @@ import { ChevronRight, Send, ShieldAlert, ShieldCheck } from 'lucide-react-nativ
 
 import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { UserActionsSheet } from '@/components/UserActionsSheet';
+import { showAlert } from '@/lib/alert';
 import { SAGE } from '@/lib/constants';
 import { SCREEN_PADDING } from '@/lib/layout';
 import { type BlockState, blockNotice, fetchBlockState } from '@/lib/moderation';
@@ -99,8 +100,24 @@ export default function ConversationScreen() {
     const body = draft;
     setDraft('');
     setIsSending(true);
-    await sendMessage(id, userId, body);
+    const wasSent = await sendMessage(id, userId, body);
     setIsSending(false);
+
+    if (!wasSent) {
+      // The optimistic bubble is already gone, so give the text back instead of
+      // letting the message vanish without a word.
+      setDraft(body);
+      // The usual server-side refusal is a block created after this screen loaded.
+      const current = counterpartId ? await fetchBlockState(counterpartId) : 'none';
+      setBlockState(current);
+      showAlert({
+        title: '訊息沒有送出',
+        tone: 'danger',
+        message: blockNotice(current) ?? '請確認網路狀態後再試一次，訊息內容已保留在輸入框。',
+      });
+      return;
+    }
+
     void loadConversations();
   };
 
