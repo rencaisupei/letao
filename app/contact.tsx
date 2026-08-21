@@ -5,15 +5,7 @@ import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { screenContent } from '@/lib/layout';
 import { Button } from 'heroui-native';
 import { Stack, router, useFocusEffect } from 'expo-router';
-import {
-  CircleCheck,
-  CircleHelp,
-  Clock,
-  Mail,
-  MessageSquare,
-  ShieldCheck,
-  UserPlus,
-} from 'lucide-react-native';
+import { CircleCheck, Clock, Mail, MessageSquare, UserPlus } from 'lucide-react-native';
 
 import { SelectChip } from '@/components/SelectChip';
 import { showAlert } from '@/lib/alert';
@@ -190,24 +182,6 @@ export default function ContactScreen() {
               <Button.Label>用電子郵件寄信</Button.Label>
             </Button>
           </View>
-
-          <View className="bg-canvas mt-3 rounded-xl p-4">
-            <View className="flex-row items-center gap-1.5">
-              <CircleHelp size={14} color={SAGE} strokeWidth={2.2} />
-              <Text className="text-foreground text-xs font-bold">先看看常見問題</Text>
-            </View>
-            <Text className="text-muted text-2xs mt-1 leading-4">
-              運費怎麼算、可以用哪些付款方式、對方不出貨怎麼辦，這些都已經有現成答案，通常比等回信更快。
-            </Text>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="mt-2.5 self-start"
-              onPress={() => router.push('/faq')}
-            >
-              <Button.Label>開啟常見問題</Button.Label>
-            </Button>
-          </View>
         </View>
 
         {userId ? (
@@ -332,19 +306,6 @@ export default function ContactScreen() {
             ))}
           </View>
         ) : null}
-
-        <View className="bg-background mt-5 rounded-2xl border border-neutral-200 p-4">
-          <View className="flex-row items-center gap-2">
-            <ShieldCheck size={15} color={SAGE} strokeWidth={2} />
-            <Text className="text-foreground flex-1 text-xs font-semibold">您的資料怎麼被使用</Text>
-            <Button size="sm" variant="tertiary" onPress={() => router.push('/privacy')}>
-              <Button.Label>隱私權政策</Button.Label>
-            </Button>
-          </View>
-          <Text className="text-muted text-2xs mt-2 leading-4">
-            客服來信只有管理員看得到，內容會與您的帳號綁定以便查詢交易紀錄，處理完成後保留於客服紀錄中。
-          </Text>
-        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
