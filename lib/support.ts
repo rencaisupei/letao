@@ -53,6 +53,7 @@ export type SubmitSupportResult =
   | { ok: false; reason: 'quota' | 'invalid' | 'network' };
 
 export type SubmitSupportInput = {
+  /** Tickets are always tied to an account; the contact form requires sign-in. */
   userId: string;
   replyEmail: string;
   category: SupportCategory;
@@ -60,7 +61,10 @@ export type SubmitSupportInput = {
   message: string;
 };
 
-/** Files a support request. Row-level security ties it to the signed-in user. */
+/**
+ * Files a support request for the signed-in user. Row-level security ties the
+ * row to them and enforces the daily quota.
+ */
 export async function submitSupportMessage(
   input: SubmitSupportInput,
 ): Promise<SubmitSupportResult> {

@@ -76,7 +76,6 @@ export default function ContactScreen() {
 
   const handleSend = async () => {
     if (!userId) return;
-
     if (subject.trim().length < 2) {
       showAlert({
         title: '請填寫主旨',
@@ -254,13 +253,15 @@ export default function ContactScreen() {
             </Button>
           </View>
         ) : (
-          <View className="bg-background mt-3 items-center rounded-2xl border border-neutral-200 px-6 py-8">
-            <UserPlus size={28} color={SAGE} strokeWidth={1.6} />
-            <Text className="text-foreground mt-3 text-sm font-bold">登入後可使用站內表單</Text>
-            <Text className="text-muted mt-2 text-center text-xs leading-5">
-              站內表單會帶上您的帳號，客服才能查到相關的商品與訂單。尚未登入也可以直接寄電子郵件給我們。
+          <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
+            <View className="flex-row items-center gap-1.5">
+              <UserPlus size={16} color={SAGE} strokeWidth={2.2} />
+              <Text className="text-foreground text-sm font-bold">登入後可用站內表單</Text>
+            </View>
+            <Text className="text-muted mt-2 text-xs leading-5">
+              登入後可以直接在這裡填寫問題送給客服，處理進度與客服回覆會顯示在這一頁，也會收到站內通知。還沒登入的話，請先用上方的客服信箱寄信給我們。
             </Text>
-            <Button className="mt-4" onPress={() => router.push('/sign-in')}>
+            <Button className="mt-3" onPress={() => router.push('/sign-in')}>
               <Button.Label>註冊 / 登入</Button.Label>
             </Button>
           </View>
