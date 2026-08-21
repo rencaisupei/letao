@@ -9,7 +9,7 @@ import { Copy, PackageCheck, RefreshCw, Truck } from 'lucide-react-native';
 import { CvsStoreSummary } from '@/components/CvsStoreSummary';
 import { Text } from '@/components/ui/primitives/Text';
 import { showAlert } from '@/lib/alert';
-import { SAGE } from '@/lib/constants';
+import { SAGE, paymentLabel } from '@/lib/constants';
 import {
   ECPAY_DISABLED,
   type EcpayConfig,
@@ -17,6 +17,7 @@ import {
   type EcpayLogisticsOrder,
   type EcpaySenderProfile,
   type EcpaySubType,
+  collectionBreakdown,
   createLogisticsOrder,
   ecpayFailureMessage,
   ecpaySubTypeFor,
@@ -37,7 +38,7 @@ import {
   stageForCode,
   timelineIndex,
 } from '@/lib/ecpayStatus';
-import { type Order, orderTotal } from '@/lib/orderStore';
+import { type Order } from '@/lib/orderStore';
 
 /** 這些階段代表包裹還在線上，同一筆交易不需要（也不能）再建一張物流單。 */
 const ACTIVE_STAGES: ShipmentStage[] = [
@@ -166,6 +167,7 @@ export function CvsShipmentCard({ order, userId }: CvsShipmentCardProps) {
   if (subType === null) return null;
 
   const info = subTypeInfo(subType);
+  const collection = collectionBreakdown(order);
   const hasStore = order.cvs_store_id !== null;
   const stage = shipment?.stage ?? null;
   const isActive = stage !== null && ACTIVE_STAGES.includes(stage);
@@ -217,7 +219,9 @@ export function CvsShipmentCard({ order, userId }: CvsShipmentCardProps) {
     <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
       <View className="flex-row items-center gap-1.5">
         <Truck size={14} color={SAGE} strokeWidth={2.2} />
-        <Text className="text-foreground text-xs font-bold">超商取貨付款</Text>
+        <Text className="text-foreground text-xs font-bold">
+          {collection.collects ? '超商取貨付款' : '超商取貨（不代收）'}
+        </Text>
         {stage === null ? null : (
           <View className={`ml-auto rounded-md px-2 py-1 ${STAGE_META[stage].bgClass}`}>
             <Text className={`text-2xs font-bold ${STAGE_META[stage].textClass}`}>
@@ -289,8 +293,9 @@ export function CvsShipmentCard({ order, userId }: CvsShipmentCardProps) {
                 {sender.returnStoreId === null ? '' : ` ∙ 退貨門市 ${sender.returnStoreId}`}
               </Text>
               <Text className="text-muted text-2xs mt-1 leading-4">
-                代收金額 NT$ {orderTotal(order).toLocaleString('en-US')}
-                {config.collectionIncludesShipping ? '（含運費）' : '（不含運費）'}
+                {collection.collects
+                  ? `代收金額 NT$ ${collection.amount.toLocaleString('en-US')}（商品 NT$ ${collection.goodsSubtotal.toLocaleString('en-US')} ＋ 運費 NT$ ${collection.shippingFee.toLocaleString('en-US')}）`
+                  : `不代收貨款：買家用${paymentLabel(order.payment_method)}付款，超商不會再向買家收錢。`}
               </Text>
               <View className="mt-3 flex-row gap-2">
                 <Button
@@ -363,7 +368,9 @@ export function CvsShipmentCard({ order, userId }: CvsShipmentCardProps) {
               : ` ∙ 綠界物流單號 ${shipment.allPayLogisticsId}`}
           </Text>
           <Text className="text-muted text-2xs mt-0.5 leading-4">
-            代收金額 NT$ {shipment.collectionAmount.toLocaleString('en-US')}
+            {shipment.collectionAmount > 0
+              ? `代收金額 NT$ ${shipment.collectionAmount.toLocaleString('en-US')}`
+              : '不代收貨款'}
             {shipment.statusUpdatedAt === null
               ? ''
               : ` ∙ 更新於 ${formatMoment(shipment.statusUpdatedAt)}`}

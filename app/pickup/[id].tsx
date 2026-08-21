@@ -9,7 +9,7 @@ import { CvsStoreSummary } from '@/components/CvsStoreSummary';
 import { StoreMapView } from '@/components/StoreMapView';
 import { Text, TextInput } from '@/components/ui/primitives/Text';
 import { showAlert } from '@/lib/alert';
-import { SAGE } from '@/lib/constants';
+import { SAGE, paymentLabel } from '@/lib/constants';
 import {
   type EcpayConfig,
   ECPAY_DISABLED,
@@ -18,6 +18,7 @@ import {
   type EcpaySubType,
   attachStoreToOrder,
   beginStoreSelection,
+  collectionBreakdown,
   ecpayFailureMessage,
   ecpaySubTypeFor,
   fetchEcpayConfig,
@@ -245,6 +246,7 @@ export default function PickupScreen() {
   }
 
   const info = subTypeInfo(subType);
+  const collection = collectionBreakdown(order);
   const isSupported = config.isEnabled && config.enabledSubTypes.includes(subType) && !info.retired;
   const isSelected = selection?.status === 'selected' && selection.storeId !== null;
 
@@ -265,11 +267,15 @@ export default function PickupScreen() {
             {order.listing_title}
           </Text>
           <Text className="text-foreground mt-1 text-sm font-semibold">
-            {info.label} ∙ 代收 NT${' '}
-            {(order.offer_price * order.quantity + order.shipping_fee).toLocaleString('en-US')}
+            {info.label} ∙{' '}
+            {collection.collects
+              ? `代收 NT$ ${collection.amount.toLocaleString('en-US')}`
+              : '取貨不付款'}
           </Text>
           <Text className="text-muted text-2xs mt-1 leading-4">
-            到門市取貨時付款，取件後綠界才會把款項撥給賣家。
+            {collection.collects
+              ? `商品 NT$ ${collection.goodsSubtotal.toLocaleString('en-US')} ＋ 運費 NT$ ${collection.shippingFee.toLocaleString('en-US')}，到門市取貨時一次付清。`
+              : `已選${paymentLabel(order.payment_method)}，超商不會向你收款，到門市出示證件領件即可。`}
           </Text>
         </View>
 

@@ -108,14 +108,61 @@ export function toEcpaySubType(value: string | null): EcpaySubType | null {
 /** 綠界商品金額與代收金額的合法範圍。 */
 export const ECPAY_AMOUNT_LIMITS = { min: 1, max: 20000 };
 
+// ------------------------------------------------------------ 代收貨款
+
+/**
+ * 是否請超商代收貨款（建單時的 IsCollection）。只有「貨到付款」才代收；匯款與
+ * 行動支付都是買家事前付清，取貨時不能再收一次。付款方式還沒談定（null）時
+ * 沿用超商店到店的常態做法：代收。
+ *
+ * 這個判斷在 `ecpay-logistics` 邊緣函式的 collectsPayment() 也有一份，那份才是
+ * 真的送給綠界的依據；這裡只負責畫面文案，兩邊必須一致。
+ */
+export function isCollectionPayment(paymentMethod: string | null): boolean {
+  return paymentMethod === null || paymentMethod === '' || paymentMethod === 'cod';
+}
+
+/** 計算代收金額需要的訂單欄位。 */
+export type CollectionSource = {
+  offer_price: number;
+  quantity: number;
+  shipping_fee: number;
+  payment_method: string | null;
+};
+
+export type CollectionBreakdown = {
+  /** true = 買家在門市付款，物流單帶 IsCollection=Y。 */
+  collects: boolean;
+  /** 單價 × 數量。 */
+  goodsSubtotal: number;
+  shippingFee: number;
+  /** 買家取貨時要付的金額（商品總金額 + 運費）；不代收時為 0。 */
+  amount: number;
+};
+
+/**
+ * 代收金額 = 商品總金額 + 運費，與買家在交易詳情看到的「應付總計」同一個數字。
+ * 7-ELEVEN 交貨便要求 CollectionAmount 必須等於 GoodsAmount，所以後端代收時
+ * 兩個欄位都帶這個含運費的金額。
+ */
+export function collectionBreakdown(order: CollectionSource): CollectionBreakdown {
+  const goodsSubtotal = order.offer_price * order.quantity;
+  const shippingFee = Math.max(0, order.shipping_fee);
+  const collects = isCollectionPayment(order.payment_method);
+  return {
+    collects,
+    goodsSubtotal,
+    shippingFee,
+    amount: collects ? goodsSubtotal + shippingFee : 0,
+  };
+}
+
 // ---------------------------------------------------------------- 型別
 
 export type EcpayConfig = {
   isEnabled: boolean;
   environment: 'stage' | 'production';
   enabledSubTypes: EcpaySubType[];
-  /** true = 代收金額含運費。 */
-  collectionIncludesShipping: boolean;
 };
 
 export type EcpaySenderProfile = {
@@ -210,7 +257,7 @@ const FAILURE_MESSAGES: Record<EcpayFailure, string> = {
   store_not_selected: '買家還沒選好取貨門市與收件資料。',
   already_created: '這筆交易已經有物流單了，請直接查看寄貨編號。',
   sender_profile: '請先填寫寄件人姓名與手機，姓名需為 2 至 5 個中文字。',
-  goods_amount: `代收金額需在 ${ECPAY_AMOUNT_LIMITS.min} 至 ${ECPAY_AMOUNT_LIMITS.max} 元之間。`,
+  goods_amount: `商品金額與代收金額需在 ${ECPAY_AMOUNT_LIMITS.min} 至 ${ECPAY_AMOUNT_LIMITS.max} 元之間。`,
   credentials_missing: '綠界介接設定尚未完成，請聯絡客服。',
   ecpay_rejected: '綠界退回了這筆物流單。',
   signature: '綠界回傳的資料驗證失敗，請稍後再試。',
@@ -298,14 +345,12 @@ type ConfigRow = {
   is_enabled: boolean;
   environment: string;
   enabled_sub_types: string[] | null;
-  collection_includes_shipping: boolean;
 };
 
 export const ECPAY_DISABLED: EcpayConfig = {
   isEnabled: false,
   environment: 'stage',
   enabledSubTypes: [],
-  collectionIncludesShipping: true,
 };
 
 export async function fetchEcpayConfig(): Promise<EcpayConfig> {
@@ -321,7 +366,6 @@ export async function fetchEcpayConfig(): Promise<EcpayConfig> {
     enabledSubTypes: (row.enabled_sub_types ?? [])
       .filter((code) => ECPAY_SUB_TYPES.some((entry) => entry.code === code))
       .map((code) => toSubType(code)),
-    collectionIncludesShipping: row.collection_includes_shipping,
   };
 }
 
