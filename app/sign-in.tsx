@@ -361,14 +361,12 @@ export default function SignInScreen() {
               >
                 <Button.Label>{isBusy ? '登入中...' : '登入'}</Button.Label>
               </Button>
-              <View className="mt-2 flex-row">
-                <Button variant="tertiary" className="flex-1" onPress={() => switchMode('reset')}>
-                  <Button.Label>忘記密碼</Button.Label>
-                </Button>
-                <Button variant="tertiary" className="flex-1" onPress={() => switchMode('code')}>
-                  <Button.Label>改用驗證碼登入</Button.Label>
-                </Button>
-              </View>
+              <Button variant="tertiary" className="mt-2" onPress={() => switchMode('code')}>
+                <Button.Label>改用驗證碼登入</Button.Label>
+              </Button>
+              <Button variant="tertiary" className="mt-1" onPress={() => switchMode('reset')}>
+                <Button.Label>忘記密碼</Button.Label>
+              </Button>
             </>
           ) : null}
 
