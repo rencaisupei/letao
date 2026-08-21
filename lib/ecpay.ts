@@ -1,4 +1,5 @@
 import { bilt } from '@/lib/bilt';
+import { type ShipmentStage, toStage } from '@/lib/ecpayStatus';
 
 /**
  * 綠界 ECPay C2C 超商取貨付款的前端串接層。
@@ -28,6 +29,10 @@ export type EcpaySubTypeInfo = {
   returnsStoreAddress: boolean;
   /** 是否可指定退貨門市（ReturnStoreID）。 */
   supportsReturnStore: boolean;
+  /** 訂單有效日（日曆天）：建單後賣家必須在這個期限內到門市寄件。 */
+  shipWithinDays: number;
+  /** true = 該通路已停止服務，不可再開通。 */
+  retired: boolean;
   note: string;
 };
 
@@ -38,6 +43,8 @@ export const ECPAY_SUB_TYPES: EcpaySubTypeInfo[] = [
     mapSupported: true,
     returnsStoreAddress: false,
     supportsReturnStore: true,
+    shipWithinDays: 5,
+    retired: false,
     note: '代收金額必須等於商品金額，會取得寄貨編號與驗證碼。',
   },
   {
@@ -46,6 +53,8 @@ export const ECPAY_SUB_TYPES: EcpaySubTypeInfo[] = [
     mapSupported: true,
     returnsStoreAddress: true,
     supportsReturnStore: false,
+    shipWithinDays: 6,
+    retired: false,
     note: '寄件人手機留空時，綠界會改用廠商後台登記的號碼。',
   },
   {
@@ -54,6 +63,8 @@ export const ECPAY_SUB_TYPES: EcpaySubTypeInfo[] = [
     mapSupported: true,
     returnsStoreAddress: true,
     supportsReturnStore: false,
+    shipWithinDays: 7,
+    retired: false,
     note: '商品名稱與寄件人手機為必填。',
   },
   {
@@ -62,7 +73,11 @@ export const ECPAY_SUB_TYPES: EcpaySubTypeInfo[] = [
     mapSupported: false,
     returnsStoreAddress: true,
     supportsReturnStore: false,
-    note: '電子地圖不支援，門市代碼需另行取得。',
+    shipWithinDays: 7,
+    // 綠界公告 OK 超商 C2C 物流已於 2026/7/1 終止服務，官方貨態代碼表也移除了它。
+    // 保留這一筆只為了讓既有資料的 sub_type 仍能顯示名稱。
+    retired: true,
+    note: '此通路已於 2026 年 7 月終止服務，無法再建立物流單。',
   },
 ];
 
@@ -80,6 +95,14 @@ export function ecpaySubTypeFor(logistics: string | null): EcpaySubType | null {
 
 export function subTypeInfo(code: EcpaySubType): EcpaySubTypeInfo {
   return ECPAY_SUB_TYPES.find((entry) => entry.code === code) ?? ECPAY_SUB_TYPES[0];
+}
+
+/** 資料庫的 text 欄位 → 子類型；不是合法代碼時回傳 null。 */
+export function toEcpaySubType(value: string | null): EcpaySubType | null {
+  return ECPAY_SUB_TYPES.some((entry) => entry.code === value)
+    ? // eslint-disable-next-line typescript/no-unsafe-type-assertion -- 上一行已確認 value 是有效的子類型代碼
+      (value as EcpaySubType)
+    : null;
 }
 
 /** 綠界商品金額與代收金額的合法範圍。 */
@@ -126,7 +149,8 @@ export type EcpayLogisticsOrder = {
   orderId: string;
   merchantTradeNo: string;
   subType: EcpaySubType;
-  status: string;
+  /** 語意化階段，由後端依綠界貨態代碼寫入（見 lib/ecpayStatus.ts）。 */
+  stage: ShipmentStage;
   goodsAmount: number;
   collectionAmount: number;
   goodsName: string;
@@ -139,6 +163,16 @@ export type EcpayLogisticsOrder = {
   rtnMsg: string | null;
   statusUpdatedAt: string | null;
   createdAt: string;
+};
+
+/** 一筆貨態通知（或人工查詢）的紀錄，用來畫貨態時間軸。 */
+export type EcpayLogisticsEvent = {
+  id: string;
+  code: number | null;
+  message: string | null;
+  /** 綠界回報的物流狀態更新時間，沒有時退回收到通知的時間。 */
+  happenedAt: string;
+  signatureValid: boolean;
 };
 
 /** 送單失敗的原因，全部來自邊緣函式的 reason 欄位。 */
@@ -291,12 +325,13 @@ export async function fetchEcpayConfig(): Promise<EcpayConfig> {
   };
 }
 
-/** 買家能選的門市通路：商品支援、綠界開通、且電子地圖支援。 */
+/** 買家能選的門市通路：商品支援、綠界開通、電子地圖支援，且通路仍在服務中。 */
 export function usableSubTypes(config: EcpayConfig, logistics: string | null): EcpaySubType[] {
   const wanted = ecpaySubTypeFor(logistics);
   return ECPAY_SUB_TYPES.filter(
     (entry) =>
       entry.mapSupported &&
+      !entry.retired &&
       config.enabledSubTypes.includes(entry.code) &&
       (wanted === null || wanted === entry.code),
   ).map((entry) => entry.code);
@@ -567,7 +602,7 @@ function toLogisticsOrder(row: LogisticsOrderRow): EcpayLogisticsOrder {
     orderId: row.order_id,
     merchantTradeNo: row.merchant_trade_no,
     subType: toSubType(row.logistics_sub_type),
-    status: row.status,
+    stage: toStage(row.status),
     goodsAmount: Math.round(Number(row.goods_amount)),
     collectionAmount: Math.round(Number(row.collection_amount)),
     goodsName: row.goods_name,
@@ -620,6 +655,39 @@ export async function refreshLogisticsOrder(merchantTradeNo: string): Promise<bo
 
   if (error) return false;
   return asRow<{ ok?: boolean }>(data)?.ok === true;
+}
+
+type LogisticsEventRow = {
+  id: string;
+  rtn_code: number | string | null;
+  rtn_msg: string | null;
+  update_status_date: string | null;
+  received_at: string;
+  signature_valid: boolean | null;
+};
+
+/** 一筆物流單的貨態紀錄，最新的在最前面。驗證失敗的通知不顯示給使用者。 */
+export async function fetchLogisticsEvents(
+  logisticsOrderId: string,
+): Promise<EcpayLogisticsEvent[]> {
+  const { data, error } = await bilt
+    .from('ecpay_logistics_events')
+    .select('id, rtn_code, rtn_msg, update_status_date, received_at, signature_valid')
+    .eq('logistics_order_id', logisticsOrderId)
+    .order('received_at', { ascending: false })
+    .limit(60);
+
+  if (error) return [];
+
+  return asRows<LogisticsEventRow>(data)
+    .filter((row) => row.signature_valid === true)
+    .map((row) => ({
+      id: row.id,
+      code: row.rtn_code === null ? null : Number(row.rtn_code),
+      message: row.rtn_msg,
+      happenedAt: row.update_status_date ?? row.received_at,
+      signatureValid: true,
+    }));
 }
 
 // ------------------------------------------------------------------ 診斷

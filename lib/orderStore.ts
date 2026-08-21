@@ -24,6 +24,17 @@ export type Order = {
   meetup_location: string | null;
   completed_at: string | null;
   created_at: string;
+  /** 超商取貨：買家選好的取貨門市，面交／宅配為 null。 */
+  cvs_sub_type: string | null;
+  cvs_store_id: string | null;
+  cvs_store_name: string | null;
+  cvs_store_address: string | null;
+  cvs_store_telephone: string | null;
+  /** true = 離島門市，運費與配送天數不同。 */
+  cvs_outlying: boolean;
+  receiver_name: string | null;
+  receiver_cellphone: string | null;
+  receiver_email: string | null;
   listing_title: string;
   listing_images: string[] | null;
   listing_price: number;
@@ -71,6 +82,15 @@ type OrderRow = {
   meetup_location: string | null;
   completed_at: string | null;
   created_at: string;
+  cvs_sub_type: string | null;
+  cvs_store_id: string | null;
+  cvs_store_name: string | null;
+  cvs_store_address: string | null;
+  cvs_store_telephone: string | null;
+  cvs_outlying: boolean | null;
+  receiver_name: string | null;
+  receiver_cellphone: string | null;
+  receiver_email: string | null;
   listings: {
     title: string | null;
     images: string[] | null;
@@ -137,7 +157,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     const { data } = await bilt
       .from('orders')
       .select(
-        'id, listing_id, buyer_id, seller_id, offer_price, quantity, status, logistics, shipping_fee, dest_region, payment_method, meetup_location, completed_at, created_at, listings(title, images, price)',
+        'id, listing_id, buyer_id, seller_id, offer_price, quantity, status, logistics, shipping_fee, dest_region, payment_method, meetup_location, completed_at, created_at, cvs_sub_type, cvs_store_id, cvs_store_name, cvs_store_address, cvs_store_telephone, cvs_outlying, receiver_name, receiver_cellphone, receiver_email, listings(title, images, price)',
       )
       .order('created_at', { ascending: false })
       .limit(200);
@@ -175,6 +195,15 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         meetup_location: row.meetup_location,
         completed_at: row.completed_at,
         created_at: row.created_at,
+        cvs_sub_type: row.cvs_sub_type,
+        cvs_store_id: row.cvs_store_id,
+        cvs_store_name: row.cvs_store_name,
+        cvs_store_address: row.cvs_store_address,
+        cvs_store_telephone: row.cvs_store_telephone,
+        cvs_outlying: row.cvs_outlying === true,
+        receiver_name: row.receiver_name,
+        receiver_cellphone: row.receiver_cellphone,
+        receiver_email: row.receiver_email,
         listing_title: row.listings?.title ?? '已刪除的商品',
         listing_images: row.listings?.images ?? null,
         listing_price: Number(row.listings?.price ?? 0),

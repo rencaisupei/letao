@@ -524,6 +524,7 @@ export function getOrderStatus(status: string | null | undefined): OrderStatus {
 export type NotificationKind =
   | 'message'
   | 'order'
+  | 'logistics'
   | 'moderation'
   | 'report'
   | 'review'
@@ -534,6 +535,7 @@ export type NotificationKind =
 export const NOTIFICATION_META: Record<NotificationKind, { label: string; emoji: string }> = {
   message: { label: '私訊', emoji: '💬' },
   order: { label: '交易', emoji: '🤝' },
+  logistics: { label: '物流', emoji: '📦' },
   moderation: { label: '審核', emoji: '🛡️' },
   report: { label: '檢舉', emoji: '🚩' },
   review: { label: '評價', emoji: '⭐' },

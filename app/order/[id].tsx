@@ -16,6 +16,7 @@ import {
   XCircle,
 } from 'lucide-react-native';
 
+import { CvsShipmentCard } from '@/components/CvsShipmentCard';
 import { showAlert } from '@/lib/alert';
 import { useChatStore } from '@/lib/chatStore';
 import {
@@ -224,6 +225,8 @@ export default function OrderDetailScreen() {
             </Text>
           )}
         </View>
+
+        <CvsShipmentCard order={order} userId={userId} />
 
         <View className="bg-background mt-3 rounded-2xl border border-neutral-200 p-4">
           <View className="flex-row items-center gap-1.5">

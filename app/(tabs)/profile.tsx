@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   Star,
   Trash2,
+  Truck,
   UserPlus,
   Wallet,
   Zap,
@@ -411,6 +412,12 @@ export default function ProfileScreen() {
                 label="我的賣家主頁與評價"
                 value={`信任度 ${trustScore}%`}
                 onPress={() => router.push({ pathname: '/seller/[id]', params: { id: userId } })}
+              />
+              <ProfileLink
+                icon={<Truck size={16} color={SAGE} strokeWidth={2} />}
+                label="寄件人資料"
+                value="超商店到店寄件用"
+                onPress={() => router.push('/sender-profile')}
               />
               <ProfileLink
                 icon={<CircleHelp size={16} color={SAGE} strokeWidth={2} />}

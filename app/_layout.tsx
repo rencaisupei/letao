@@ -135,6 +135,8 @@ export default function RootLayout() {
           <Stack.Screen name="favorites" options={{ title: '我的收藏' }} />
           <Stack.Screen name="orders" options={{ title: '我的交易' }} />
           <Stack.Screen name="order/[id]" options={{ title: '交易詳情' }} />
+          <Stack.Screen name="pickup/[id]" options={{ title: '選擇取貨門市' }} />
+          <Stack.Screen name="sender-profile" options={{ title: '寄件人資料' }} />
           <Stack.Screen name="notifications" options={{ title: '通知中心' }} />
           <Stack.Screen name="account" options={{ title: '編輯個人資料' }} />
           <Stack.Screen name="privacy" options={{ title: '隱私權政策' }} />
